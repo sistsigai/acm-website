@@ -42,7 +42,6 @@ jobs:
             "$CPANEL_HOST" >> ~/.ssh/known_hosts
 
           ssh \
-            -o IdentitiesOnly=yes \
             -p "$CPANEL_PORT" \
             "$CPANEL_USER@$CPANEL_HOST" \
             "whoami && pwd"
