@@ -8,10 +8,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Setup SSH agent
+      - name: Test SSH connection
         env:
           SSH_PRIVATE_KEY: ${{ secrets.CPANEL_SSH_KEY }}
           SSH_PASSPHRASE: ${{ secrets.CPANEL_SSH_PASSPHRASE }}
+          CPANEL_HOST: ${{ secrets.CPANEL_HOST }}
+          CPANEL_USER: ${{ secrets.CPANEL_USER }}
+          CPANEL_PORT: ${{ secrets.CPANEL_PORT }}
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
@@ -34,17 +37,12 @@ jobs:
 
           ssh-add ~/.ssh/github_deploy
 
-      - name: Add server to known hosts
-        run: |
           ssh-keyscan \
-            -p "${{ secrets.CPANEL_PORT }}" \
-            "${{ secrets.CPANEL_HOST }}" \
-            >> ~/.ssh/known_hosts
+            -p "$CPANEL_PORT" \
+            "$CPANEL_HOST" >> ~/.ssh/known_hosts
 
-      - name: Test SSH connection
-        run: |
           ssh \
-            -o BatchMode=yes \
-            -p "${{ secrets.CPANEL_PORT }}" \
-            "${{ secrets.CPANEL_USER }}@${{ secrets.CPANEL_HOST }}" \
+            -o IdentitiesOnly=yes \
+            -p "$CPANEL_PORT" \
+            "$CPANEL_USER@$CPANEL_HOST" \
             "whoami && pwd"
