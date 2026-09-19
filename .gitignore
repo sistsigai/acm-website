@@ -19,9 +19,10 @@ node_modules/
 # =====================
 dist/
 dist-ssr/
+build/
 
 # =====================
-# Env files
+# Environment files
 # =====================
 *.local
 .env
@@ -35,6 +36,7 @@ dist-ssr/
 !.vscode/extensions.json
 .idea
 .DS_Store
+Thumbs.db
 *.suo
 *.ntvs*
 *.njsproj

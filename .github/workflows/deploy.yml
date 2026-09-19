@@ -1,0 +1,254 @@
+name: Production CI/CD Deployment
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      deploy_client:
+        description: 'Deploy Frontend (client)'
+        type: boolean
+        default: true
+      deploy_server:
+        description: 'Deploy Backend (server)'
+        type: boolean
+        default: true
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      client: ${{ steps.filter.outputs.client }}
+      server: ${{ steps.filter.outputs.server }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Detect Changed Paths
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            client:
+              - 'client/**'
+            server:
+              - 'server/**'
+
+  deploy-frontend:
+    name: Build & Deploy Frontend
+    needs: changes
+    if: >-
+      (github.event_name == 'push' && needs.changes.outputs.client == 'true') ||
+      (github.event_name == 'workflow_dispatch' && inputs.deploy_client == true)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: client/package-lock.json
+
+      - name: Install Frontend Dependencies
+        working-directory: client
+        run: npm ci
+
+      - name: Build Frontend Application
+        working-directory: client
+        env:
+          VITE_API_URL: https://api.sistsigai.acm.org
+          VITE_API_BASE_URL: https://api.sistsigai.acm.org/api
+        run: npm run build
+
+      - name: Setup SSH Agent
+        env:
+          CPANEL_SSH_KEY: ${{ secrets.CPANEL_SSH_KEY }}
+          CPANEL_SSH_PASSPHRASE: ${{ secrets.CPANEL_SSH_PASSPHRASE }}
+          CPANEL_HOST: ${{ secrets.CPANEL_HOST }}
+          CPANEL_PORT: ${{ secrets.CPANEL_PORT }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+
+          printf '%s\n' "$CPANEL_SSH_KEY" > ~/.ssh/github_deploy
+          chmod 600 ~/.ssh/github_deploy
+
+          eval "$(ssh-agent -s)"
+
+          cat > ~/.ssh/askpass.sh <<'EOF'
+          #!/bin/sh
+          printf '%s\n' "$CPANEL_SSH_PASSPHRASE"
+          EOF
+          chmod 700 ~/.ssh/askpass.sh
+
+          export SSH_ASKPASS="$HOME/.ssh/askpass.sh"
+          export SSH_ASKPASS_REQUIRE=force
+          export DISPLAY=:0
+
+          ssh-add ~/.ssh/github_deploy
+          rm -f ~/.ssh/askpass.sh
+
+          ssh-keyscan -p "$CPANEL_PORT" "$CPANEL_HOST" >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+          echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK" >> "$GITHUB_ENV"
+          echo "SSH_AGENT_PID=$SSH_AGENT_PID" >> "$GITHUB_ENV"
+
+      - name: Deploy Frontend to A2 Hosting
+        env:
+          CPANEL_HOST: ${{ secrets.CPANEL_HOST }}
+          CPANEL_USER: ${{ secrets.CPANEL_USER }}
+          CPANEL_PORT: ${{ secrets.CPANEL_PORT }}
+        run: |
+          TARGET_DIR="/home/sistsigaihosting/public_html"
+          echo "Checking remote rsync availability on $CPANEL_HOST:$CPANEL_PORT..."
+
+          if ssh -p "$CPANEL_PORT" "$CPANEL_USER@$CPANEL_HOST" "command -v rsync" >/dev/null 2>&1; then
+            echo "rsync found. Deploying client/dist/ with preservation rules..."
+            rsync -avz --delete \
+              --exclude='.well-known' \
+              --exclude='.well-known/***' \
+              --exclude='api' \
+              --exclude='api/***' \
+              --exclude='.htaccess' \
+              -e "ssh -p $CPANEL_PORT" \
+              client/dist/ "$CPANEL_USER@$CPANEL_HOST:$TARGET_DIR/"
+          else
+            echo "rsync not found. Using safe tar/scp fallback strategy..."
+            tar -czf frontend-dist.tar.gz -C client/dist .
+            scp -P "$CPANEL_PORT" frontend-dist.tar.gz "$CPANEL_USER@$CPANEL_HOST:$TARGET_DIR/"
+            ssh -p "$CPANEL_PORT" "$CPANEL_USER@$CPANEL_HOST" << 'EOF'
+              set -e
+              cd /home/sistsigaihosting/public_html
+              # Safely prune stale files/directories, preserving .well-known, api, and .htaccess
+              find . -mindepth 1 -maxdepth 1 ! -name '.well-known' ! -name 'api' ! -name '.htaccess' ! -name 'frontend-dist.tar.gz' -exec rm -rf {} +
+              tar -xzf frontend-dist.tar.gz
+              rm -f frontend-dist.tar.gz
+          EOF
+            rm -f frontend-dist.tar.gz
+          fi
+          echo "Frontend deployment completed successfully."
+
+  deploy-backend:
+    name: Build & Deploy Backend
+    needs: changes
+    if: >-
+      (github.event_name == 'push' && needs.changes.outputs.server == 'true') ||
+      (github.event_name == 'workflow_dispatch' && inputs.deploy_server == true)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install Backend Dependencies
+        working-directory: server
+        run: npm ci
+
+      - name: Build Backend Application
+        working-directory: server
+        run: npm run build
+
+      - name: Setup SSH Agent
+        env:
+          CPANEL_SSH_KEY: ${{ secrets.CPANEL_SSH_KEY }}
+          CPANEL_SSH_PASSPHRASE: ${{ secrets.CPANEL_SSH_PASSPHRASE }}
+          CPANEL_HOST: ${{ secrets.CPANEL_HOST }}
+          CPANEL_PORT: ${{ secrets.CPANEL_PORT }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+
+          printf '%s\n' "$CPANEL_SSH_KEY" > ~/.ssh/github_deploy
+          chmod 600 ~/.ssh/github_deploy
+
+          eval "$(ssh-agent -s)"
+
+          cat > ~/.ssh/askpass.sh <<'EOF'
+          #!/bin/sh
+          printf '%s\n' "$CPANEL_SSH_PASSPHRASE"
+          EOF
+          chmod 700 ~/.ssh/askpass.sh
+
+          export SSH_ASKPASS="$HOME/.ssh/askpass.sh"
+          export SSH_ASKPASS_REQUIRE=force
+          export DISPLAY=:0
+
+          ssh-add ~/.ssh/github_deploy
+          rm -f ~/.ssh/askpass.sh
+
+          ssh-keyscan -p "$CPANEL_PORT" "$CPANEL_HOST" >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+          echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK" >> "$GITHUB_ENV"
+          echo "SSH_AGENT_PID=$SSH_AGENT_PID" >> "$GITHUB_ENV"
+
+      - name: Deploy Backend to A2 Hosting
+        env:
+          CPANEL_HOST: ${{ secrets.CPANEL_HOST }}
+          CPANEL_USER: ${{ secrets.CPANEL_USER }}
+          CPANEL_PORT: ${{ secrets.CPANEL_PORT }}
+        run: |
+          TARGET_DIR="/home/sistsigaihosting/api.sistsigai.acm.org"
+          echo "Staging backend build artifacts..."
+          mkdir -p backend-payload
+          cp -r server/dist backend-payload/
+          cp server/app.js backend-payload/
+          cp server/package.json backend-payload/
+          cp server/package-lock.json backend-payload/
+
+          echo "Checking remote rsync availability on $CPANEL_HOST:$CPANEL_PORT..."
+          if ssh -p "$CPANEL_PORT" "$CPANEL_USER@$CPANEL_HOST" "command -v rsync" >/dev/null 2>&1; then
+            echo "rsync found. Deploying backend payload with preservation rules..."
+            rsync -avz \
+              --exclude='.env*' \
+              --exclude='uploads' \
+              --exclude='uploads/***' \
+              --exclude='tmp' \
+              --exclude='tmp/***' \
+              --exclude='node_modules' \
+              --exclude='node_modules/***' \
+              --exclude='stderr.log' \
+              -e "ssh -p $CPANEL_PORT" \
+              backend-payload/ "$CPANEL_USER@$CPANEL_HOST:$TARGET_DIR/"
+          else
+            echo "rsync not found. Using safe tar/scp fallback strategy..."
+            tar -czf backend-dist.tar.gz -C backend-payload .
+            scp -P "$CPANEL_PORT" backend-dist.tar.gz "$CPANEL_USER@$CPANEL_HOST:$TARGET_DIR/"
+            ssh -p "$CPANEL_PORT" "$CPANEL_USER@$CPANEL_HOST" << 'EOF'
+              set -e
+              cd /home/sistsigaihosting/api.sistsigai.acm.org
+              tar -xzf backend-dist.tar.gz
+              rm -f backend-dist.tar.gz
+          EOF
+            rm -f backend-dist.tar.gz
+          fi
+
+          echo "Installing production dependencies on server and restarting Passenger..."
+          ssh -p "$CPANEL_PORT" "$CPANEL_USER@$CPANEL_HOST" << 'EOF'
+            set -e
+            cd /home/sistsigaihosting/api.sistsigai.acm.org
+            npm ci --omit=dev
+            mkdir -p tmp
+            touch tmp/restart.txt
+          EOF
+
+          rm -rf backend-payload
+          echo "Backend deployment and restart completed successfully."

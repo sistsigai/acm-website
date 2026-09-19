@@ -25,10 +25,8 @@ dist-ssr/
 # =====================
 *.local
 .env
-.env.dev
-.env.prod
-.env.development
-.env.production
+.env.*
+!.env.example
 
 
 # =====================

@@ -160,11 +160,12 @@ const RecruitmentApplications: React.FC = () => {
     };
 
 const handleViewResume = (resumePath: string) => {
-    const BASE_URL = import.meta.env.VITE_API_BASE_URL.replace("/api", "");
+    const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.VITE_API_BASE_URL ? import.meta.env.VITE_API_BASE_URL.replace(/\/api\/?$/, "") : "");
 
+    const normalizedPath = resumePath.startsWith("/") ? resumePath : `/${resumePath}`;
     const fullUrl = resumePath.startsWith("http")
         ? resumePath
-        : `${BASE_URL}${resumePath}`;
+        : `${API_URL}${normalizedPath}`;
 
     window.open(fullUrl, "_blank", "noopener,noreferrer");
 };
