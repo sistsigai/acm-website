@@ -244,10 +244,51 @@ jobs:
           echo "Installing production dependencies on server and restarting Passenger..."
           ssh -p "$CPANEL_PORT" "$CPANEL_USER@$CPANEL_HOST" << 'EOF'
             set -e
+
+            # Explicitly configure CloudLinux Node.js 24 and npm in PATH
+            export PATH="/opt/alt/alt-nodejs24/root/usr/bin:$PATH"
+
+            echo "Verifying Node.js and npm executables..."
+            command -v node
+            command -v npm
+
+            NODE_PATH="$(command -v node || true)"
+            NPM_PATH="$(command -v npm || true)"
+
+            if [ "$NODE_PATH" != "/opt/alt/alt-nodejs24/root/usr/bin/node" ]; then
+              echo "Error: node executable does not resolve to /opt/alt/alt-nodejs24/root/usr/bin/node (resolved: $NODE_PATH)" >&2
+              exit 1
+            fi
+
+            if [ "$NPM_PATH" != "/opt/alt/alt-nodejs24/root/usr/bin/npm" ]; then
+              echo "Error: npm executable does not resolve to /opt/alt/alt-nodejs24/root/usr/bin/npm (resolved: $NPM_PATH)" >&2
+              exit 1
+            fi
+
+            echo "Node version: $(node -v)"
+            echo "npm version: $(npm -v)"
+
+            NODE_VERSION="$(node -v)"
+            NPM_VERSION="$(npm -v)"
+
+            if [ "$NODE_VERSION" != "v24.20.0" ]; then
+              echo "Error: Expected Node.js version v24.20.0, but got $NODE_VERSION" >&2
+              exit 1
+            fi
+
+            if [ "$NPM_VERSION" != "11.19.0" ]; then
+              echo "Error: Expected npm version 11.19.0, but got $NPM_VERSION" >&2
+              exit 1
+            fi
+
             cd /home/sistsigaihosting/api.sistsigai.acm.org
+            echo "Installing production dependencies..."
             npm ci --omit=dev
-            mkdir -p tmp
-            touch tmp/restart.txt
+
+            echo "Restarting cPanel Passenger application..."
+            mkdir -p /home/sistsigaihosting/api.sistsigai.acm.org/tmp
+            touch /home/sistsigaihosting/api.sistsigai.acm.org/tmp/restart.txt
+            echo "Backend restart triggered successfully."
           EOF
 
           rm -rf backend-payload
