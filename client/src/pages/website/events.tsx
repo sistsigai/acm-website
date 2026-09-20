@@ -4,6 +4,7 @@ import { FaCalendarAlt, FaClock, FaMapMarkerAlt, FaWhatsapp, FaUser, FaTimes, Fa
 import { getAllEvents, submitEventRegistration, type EventData, type EventRegistrationPayload } from '../../services/website/webeventService';
 import { GlobalLoader } from '../../components/GlobalLoader';
 import { FloatingOrb } from '../../components/StatusMessage';
+import DynamicFormRenderer from '../../components/FormRenderer/DynamicFormRenderer';
 
 // --- TYPE EXTENSION ---
 interface ExtendedEventData extends EventData {
@@ -659,6 +660,10 @@ const Events: React.FC = () => {
     const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
     const [globalLoading, setGlobalLoading] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    // Dynamic form answers (for customQuestions)
+    const [dynamicAnswers, setDynamicAnswers] = useState<Record<string, any>>({});
+    const [dynamicErrors, setDynamicErrors] = useState<Record<string, string>>({});
+    const [useDynamicForm, setUseDynamicForm] = useState(false);
 
     // Use custom toast hook
     const { toast, showToast, hideToast } = useToast();
@@ -759,12 +764,22 @@ const Events: React.FC = () => {
 
     // Handle registration button click
     const handleRegisterClick = () => {
-        if (selectedEvent && selectedEvent.registrationQuestions) {
+        if (!selectedEvent) return;
+
+        // Check if event has rich customQuestions
+        if (selectedEvent.customQuestions && selectedEvent.customQuestions.length > 0) {
+            setDynamicAnswers({});
+            setDynamicErrors({});
+            setUseDynamicForm(true);
+            setShowRegisterModal(true);
+        } else if (selectedEvent.registrationQuestions) {
+            // Legacy string-based questions
             const initialData: Record<string, string> = {};
             selectedEvent.registrationQuestions.forEach(q => initialData[q] = '');
             setFormData(initialData);
             setFormErrors({});
             setTouchedFields(new Set());
+            setUseDynamicForm(false);
             setShowRegisterModal(true);
         }
     };
@@ -943,6 +958,117 @@ const Events: React.FC = () => {
 
     // Render registration form with validation
     const renderRegistrationForm = () => {
+        if (!selectedEvent) return null;
+
+        // If using dynamic form (customQuestions present)
+        if (useDynamicForm && selectedEvent.customQuestions && selectedEvent.customQuestions.length > 0) {
+            return (
+                <form
+                    onSubmit={async (e) => {
+                        e.preventDefault();
+                        if (!selectedEvent) return;
+
+                        // Validate required fields
+                        const newErrors: Record<string, string> = {};
+                        selectedEvent.customQuestions!.forEach((q) => {
+                            const val = dynamicAnswers[q.id];
+                            if (q.required) {
+                                if (!val || (typeof val === 'string' && !val.trim()) || (Array.isArray(val) && val.length === 0)) {
+                                    newErrors[q.id] = `${q.question} is required`;
+                                }
+                            }
+                        });
+
+                        if (Object.keys(newErrors).length > 0) {
+                            setDynamicErrors(newErrors);
+                            showToast("Please fill all required fields", "error");
+                            return;
+                        }
+
+                        try {
+                            setIsSubmitting(true);
+                            setGlobalLoading(true);
+
+                            // Build answers map keyed by question text
+                            const answersMap: Record<string, any> = {};
+                            selectedEvent.customQuestions!.forEach((q) => {
+                                answersMap[q.question] = dynamicAnswers[q.id] || '';
+                            });
+
+                            // Extract standard fields from dynamic answers
+                            const findAnswer = (keywords: string[]): string => {
+                                for (const q of selectedEvent.customQuestions!) {
+                                    const lower = q.question.toLowerCase();
+                                    for (const kw of keywords) {
+                                        if (lower.includes(kw)) {
+                                            return String(dynamicAnswers[q.id] || '');
+                                        }
+                                    }
+                                }
+                                return '';
+                            };
+
+                            const payload: EventRegistrationPayload = {
+                                eventId: selectedEvent._id,
+                                name: findAnswer(['name']),
+                                registerNo: findAnswer(['register', 'reg no', 'registration']),
+                                dept: findAnswer(['department', 'dept']),
+                                year: findAnswer(['year']),
+                                section: findAnswer(['section']),
+                                email: findAnswer(['email']),
+                                phone: findAnswer(['phone', 'mobile', 'whatsapp']),
+                                answers: answersMap,
+                            };
+
+                            await submitEventRegistration(payload);
+                            showToast("Successfully registered for the event!", "success");
+                            setShowRegisterModal(false);
+                            setDynamicAnswers({});
+                            setDynamicErrors({});
+                        } catch (error: any) {
+                            if (error?.response?.data) {
+                                showToast(error.response.data.message || "Registration failed", "error");
+                            } else {
+                                showToast(error.message || "Registration failed. Please try again.", "error");
+                            }
+                        } finally {
+                            setIsSubmitting(false);
+                            setGlobalLoading(false);
+                        }
+                    }}
+                    noValidate
+                    autoComplete="off"
+                >
+                    <DynamicFormRenderer
+                        questions={selectedEvent.customQuestions}
+                        answers={dynamicAnswers}
+                        errors={dynamicErrors}
+                        onChange={(questionId, value) => {
+                            setDynamicAnswers((prev) => ({ ...prev, [questionId]: value }));
+                            // Clear error on change
+                            if (dynamicErrors[questionId]) {
+                                setDynamicErrors((prev) => {
+                                    const next = { ...prev };
+                                    delete next[questionId];
+                                    return next;
+                                });
+                            }
+                        }}
+                        disabled={isSubmitting}
+                    />
+                    <button
+                        type="submit"
+                        className="btn-submit-reg mt-3"
+                        disabled={isSubmitting || globalLoading}
+                    >
+                        <FaPaperPlane />
+                        {isSubmitting ? "Submitting..." : "Submit Registration"}
+                    </button>
+                </form>
+            );
+        }
+
+        // Legacy string-based form
         if (!selectedEvent?.registrationQuestions) return null;
 
         return (

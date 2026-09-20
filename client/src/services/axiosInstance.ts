@@ -6,12 +6,16 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL || (API_URL ? `${API_URL}/api
 const axiosInstance = axios.create({
   baseURL: BASE_URL,
   timeout: 20000,
+  withCredentials: true,
 });
 
 /* ---------------- REQUEST INTERCEPTOR ---------------- */
 axiosInstance.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("adminToken");
+    // If a bearer token exists in memory/fallback storage, include it
+    const token =
+      sessionStorage.getItem("adminToken") ||
+      localStorage.getItem("adminToken");
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;

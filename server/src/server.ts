@@ -1,10 +1,13 @@
+import "./config/env";
+import { envFile } from "./config/env";
 import express, { Application, Request, Response, NextFunction } from "express";
-import dotenv from "dotenv";
 import connectDB from "./config/db";
 import path from "path";
+import fs from "fs";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
+import cookieParser from "cookie-parser";
 import rateLimit from "express-rate-limit";
 
 import adminAuthRoutes from "./routes/authRoutes";
@@ -19,25 +22,6 @@ import recruitmentRoutes from "./routes/recruitmentRoutes";
 import aboutRoute from "./routes/aboutRoute";
 import joinusRoute from "./routes/joinusRoute";
 import eventRoute from "./routes/eventRoute";
-
-import fs from "fs";
-
-process.env.DOTENV_CONFIG_QUIET = "true";
-
-// Determine environment and load corresponding configuration file
-const NODE_ENV = process.env.NODE_ENV || "development";
-if (!process.env.NODE_ENV) {
-    process.env.NODE_ENV = NODE_ENV;
-}
-
-const envFile = NODE_ENV === "production" ? ".env.production" : ".env.development";
-const envPath = path.resolve(process.cwd(), envFile);
-
-if (fs.existsSync(envPath)) {
-    dotenv.config({ path: envPath });
-} else {
-    console.warn(`⚠️ Warning: Environment file '${envFile}' was not found at ${envPath}`);
-}
 
 if (!process.env.MONGO_URI) {
     console.error("❌ ERROR: MONGO_URI environment variable is required");
@@ -66,19 +50,34 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     next();
 });
 
-const corsOptions = {
-    origin: isProduction 
-        ? (process.env.ALLOWED_ORIGINS 
-            ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
-            : ['https://sistsigai.acm.org'])
-        : '*',
+const defaultAllowedOrigins = [
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+    'http://localhost:3000',
+    'https://sistsigai.acm.org'
+];
+
+const configuredOrigins = process.env.ALLOWED_ORIGINS 
+    ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
+    : [];
+
+const allowedOrigins = Array.from(new Set([...defaultAllowedOrigins, ...configuredOrigins]));
+
+const corsOptions: cors.CorsOptions = {
+    origin: (origin, callback) => {
+        if (!origin || !isProduction || allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+        return callback(new Error(`Origin ${origin} not allowed by CORS`));
+    },
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "Accept"],
-    credentials: false,
+    credentials: true,
     maxAge: 86400
 };
 
 app.use(cors(corsOptions));
+app.use(cookieParser());
 
 // ========== LOGGING ==========
 app.use(morgan(isProduction ? 'combined' : 'dev'));

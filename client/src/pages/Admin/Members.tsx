@@ -274,20 +274,7 @@ const Members = () => {
         const loadMembers = async () => {
             try {
                 setLoading(true);
-
-                const start = Date.now();
-
                 const data = await getMembers();
-
-                // Minimum loader time (ms)
-                const MIN_LOADING_TIME = 400;
-                const elapsed = Date.now() - start;
-
-                if (elapsed < MIN_LOADING_TIME) {
-                    await new Promise(resolve =>
-                        setTimeout(resolve, MIN_LOADING_TIME - elapsed)
-                    );
-                }
 
                 setMembers(
                     data.map((m: any) => ({

@@ -8,6 +8,8 @@ import {
   toggleRecruitmentStatus,
 } from "../../services/admin/recruitmentService";
 import { useNavigate } from "react-router-dom";
+import FormBuilder from "../../components/FormBuilder/FormBuilder";
+import { IQuestion, ACM_STANDARD_STUDENT_QUESTIONS } from "../../types/formBuilder";
 
 /* ---------------- TYPES ---------------- */
 interface QuestionOption {
@@ -114,6 +116,7 @@ const Recruitments: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showQuestionBuilder, setShowQuestionBuilder] = useState(false);
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
+  const [recruitmentModalTab, setRecruitmentModalTab] = useState<'details' | 'form'>('details');
 
   const navigate = useNavigate();
 
@@ -1239,411 +1242,291 @@ const Recruitments: React.FC = () => {
       {/* Create/Edit Modal */}
       {showModal && (
         <div className="modal fade show d-block" style={{ backgroundColor: "rgba(0,0,0,0.7)", backdropFilter: 'blur(4px)' }}>
-          <div className="modal-dialog modal-dialog-centered modal-lg">
+          <div className="modal-dialog modal-dialog-centered modal-lg" style={{ maxWidth: recruitmentModalTab === 'form' ? '940px' : undefined, transition: 'max-width 0.3s ease' }}>
             <div className="modal-content modal-content-glass rounded-4 overflow-hidden text-light">
 
               <div className="modal-header border-bottom border-secondary border-opacity-25 p-4">
-                <h5 className="modal-title fw-bold">
-                  {editingId ? "Edit Recruitment" : "Create New Drive"}
-                </h5>
-
+                <div>
+                  <h5 className="modal-title fw-bold mb-1">
+                    {editingId ? "Edit Recruitment" : "Create New Drive"}
+                  </h5>
+                  <p className="text-secondary small mb-0">Configure drive details and application form</p>
+                </div>
                 <button type="button" className="btn-close btn-close-white" onClick={() => {
                   setShowModal(false);
                   setValidationErrors({});
                   setShowQuestionBuilder(false);
                   resetQuestionForm();
+                  setRecruitmentModalTab('details');
                 }}></button>
               </div>
 
-              <div className="modal-body p-4">
-                {/* Title */}
-                <div className="mb-3">
-                  <label className="form-label text-secondary small fw-bold text-uppercase">
-                    Title <span className="required-asterisk">*</span>
-                  </label>
-                  <input
-                    className={`form-control form-control-glass ${validationErrors.title ? 'is-invalid' : ''}`}
-                    value={form.title}
-                    onChange={(e) => {
-                      setForm({ ...form, title: e.target.value });
-                      setValidationErrors({ ...validationErrors, title: validateTitle(e.target.value) });
-                    }}
-                    maxLength={100}
-                  />
-                  {validationErrors.title && (
-                    <div className="invalid-feedback-custom">
-                      {validationErrors.title}
-                    </div>
-                  )}
-                  <div className={`character-counter ${form.title.length > 90 ? 'warning' : ''} ${form.title.length >= 100 ? 'danger' : ''}`}>
-                    {form.title.length} / 100
-                  </div>
-                </div>
-
-                {/* Role */}
-                <div className="mb-3">
-                  <label className="form-label text-secondary small fw-bold text-uppercase">
-                    Role / Position <span className="required-asterisk">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    className={`form-control form-control-glass ${validationErrors.role ? 'is-invalid' : ''}`}
-                    value={form.role}
-                    onChange={(e) => {
-                      setForm({ ...form, role: e.target.value });
-                      setValidationErrors({ ...validationErrors, role: validateRole(e.target.value) });
-                    }}
-                    maxLength={50}
-                  />
-                  {validationErrors.role && (
-                    <div className="invalid-feedback-custom">
-                      {validationErrors.role}
-                    </div>
-                  )}
-                  <div className={`character-counter ${form.role.length > 45 ? 'warning' : ''} ${form.role.length >= 50 ? 'danger' : ''}`}>
-                    {form.role.length} / 50
-                  </div>
-                </div>
-
-                {/* Description */}
-                <div className="mb-3">
-                  <label className="form-label text-secondary small fw-bold text-uppercase">
-                    Description
-                  </label>
-                  <textarea
-                    className={`form-control form-control-glass ${validationErrors.description ? 'is-invalid' : ''}`}
-                    rows={3}
-                    value={form.description}
-                    onChange={(e) => {
-                      setForm({ ...form, description: e.target.value });
-                      setValidationErrors({ ...validationErrors, description: validateDescription(e.target.value) });
-                    }}
-                    maxLength={500}
-                  />
-                  {validationErrors.description && (
-                    <div className="invalid-feedback-custom">
-                      {validationErrors.description}
-                    </div>
-                  )}
-                  <div className={`character-counter ${form.description.length > 450 ? 'warning' : ''} ${form.description.length >= 500 ? 'danger' : ''}`}>
-                    {form.description.length} / 500
-                  </div>
-                </div>
-
-                {/* Dates */}
-                <div className="row g-3 mb-4">
-                  <div className="col-6">
-                    <label className="form-label text-secondary small fw-bold text-uppercase">
-                      Start Date <span className="required-asterisk">*</span>
-                    </label>
-                    <input
-                      type="date"
-                      className={`form-control form-control-glass ${validationErrors.startDate || validationErrors.dateRange ? 'is-invalid' : ''}`}
-                      value={form.startDate}
-                      min={getTodayDate()}
-                      onChange={(e) => {
-                        const newStartDate = e.target.value;
-                        setForm({ ...form, startDate: newStartDate });
-
-                        // Clear end date if start date is after current end date
-                        if (form.endDate && new Date(newStartDate) >= new Date(form.endDate)) {
-                          setForm(prev => ({ ...prev, endDate: "" }));
-                        }
-
-                        const errors = { ...validationErrors };
-                        errors.startDate = validateStartDate(newStartDate);
-                        errors.endDate = validateEndDate(form.endDate, newStartDate);
-                        errors.dateRange = validateDateRange(newStartDate, form.endDate);
-                        setValidationErrors(errors);
-                      }}
-                      onClick={(e) => (e.target as any).showPicker && (e.target as any).showPicker()}
-                    />
-                    {validationErrors.startDate && (
-                      <div className="invalid-feedback-custom">
-                        {validationErrors.startDate}
-                      </div>
-                    )}
-                  </div>
-                  <div className="col-6">
-                    <label className="form-label text-secondary small fw-bold text-uppercase">
-                      End Date <span className="required-asterisk">*</span>
-                    </label>
-                    <input
-                      type="date"
-                      className={`form-control form-control-glass ${validationErrors.endDate || validationErrors.dateRange ? 'is-invalid' : ''}`}
-                      value={form.endDate}
-                      min={getMinEndDate()}
-                      onChange={(e) => {
-                        const newEndDate = e.target.value;
-                        setForm({ ...form, endDate: newEndDate });
-
-                        const errors = { ...validationErrors };
-                        errors.endDate = validateEndDate(newEndDate, form.startDate);
-                        errors.dateRange = validateDateRange(form.startDate, newEndDate);
-                        setValidationErrors(errors);
-                      }}
-                      onClick={(e) => (e.target as any).showPicker && (e.target as any).showPicker()}
-                    />
-                    {validationErrors.endDate && (
-                      <div className="invalid-feedback-custom">
-                        {validationErrors.endDate}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Date Range Error */}
-                  {validationErrors.dateRange && (
-                    <div className="col-12">
-                      <div className="invalid-feedback-custom">
-                        {validationErrors.dateRange}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Questions Section */}
-                <div className="mb-4">
-                  <div className="d-flex justify-content-between align-items-center mb-3">
-                    <label className="form-label text-secondary small fw-bold text-uppercase mb-0">
-                      Custom Application Questions
-                    </label>
-                    <span className="text-secondary small">
-                      {form.questions?.length || 0} questions added
-                    </span>
-                  </div>
-
-                  {/* Questions List */}
-                  <div className="question-builder p-3 mb-3">
-                    {form.questions && form.questions.length > 0 ? (
-                      <div className="mb-3">
-                        <div className="d-flex justify-content-between align-items-center mb-2">
-                          <span className="text-light small fw-medium">Questions Preview</span>
-                          <button
-                            className="btn btn-sm btn-outline-danger"
-                            onClick={clearAllQuestions}
-                          >
-                            <i className="bi bi-trash me-1"></i> Clear All
-                          </button>
-                        </div>
-
-                        <div className="list-group">
-                          {form.questions.map((q, index) => (
-                            <div key={q.id} className="list-group-item bg-transparent border border-secondary border-opacity-25 rounded mb-2 p-3">
-                              <div className="d-flex justify-content-between align-items-start">
-                                <div className="flex-grow-1">
-                                  <div className="d-flex align-items-center gap-2 mb-2">
-                                    <span className={`question-type-badge question-type-${q.type}`}>
-                                      {q.type === 'text' && 'Short Text'}
-                                      {q.type === 'textarea' && 'Long Text'}
-                                      {q.type === 'multiple-choice' && 'Multiple Choice'}
-                                      {q.type === 'checkbox' && 'Checkboxes'}
-                                      {q.type === 'dropdown' && 'Dropdown'}
-                                      {q.type === 'yes-no' && 'Yes/No'}
-                                      {q.type === 'file' && 'File Upload'}
-                                    </span>
-                                    {q.required && (
-                                      <span className="badge bg-danger bg-opacity-25 text-danger border border-danger border-opacity-25">
-                                        Required
-                                      </span>
-                                    )}
-                                    <span className="text-secondary ms-auto small">
-                                      Question {index + 1}
-                                    </span>
-                                  </div>
-
-                                  <h6 className="text-white mb-1">{q.question}</h6>
-
-                                  {q.description && (
-                                    <p className="text-secondary small mb-2">{q.description}</p>
-                                  )}
-
-                                  {q.type === 'multiple-choice' && q.options && (
-                                    <div className="mt-2">
-                                      {q.options.map(opt => (
-                                        <div key={opt.id} className="form-check">
-                                          <input className="form-check-input" type="radio" disabled />
-                                          <label className="form-check-label text-secondary">
-                                            {opt.label}
-                                          </label>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  )}
-
-                                  {q.type === 'checkbox' && q.options && (
-                                    <div className="mt-2">
-                                      {q.options.map(opt => (
-                                        <div key={opt.id} className="form-check">
-                                          <input className="form-check-input" type="checkbox" disabled />
-                                          <label className="form-check-label text-secondary">
-                                            {opt.label}
-                                          </label>
-                                        </div>
-                                      ))}
-                                      {q.type === 'checkbox' && (
-                                        <div className="mt-2 text-secondary small">
-                                          <i className="bi bi-info-circle me-1"></i>
-                                          Select between {(q as CheckboxQuestion).minSelections || 0} and {(q as CheckboxQuestion).maxSelections || q.options.length} options
-                                        </div>
-                                      )}
-                                    </div>
-                                  )}
-
-                                  {q.type === 'dropdown' && q.options && (
-                                    <div className="mt-2">
-                                      <select className="form-select-glass form-select-sm w-auto" disabled>
-                                        <option>Select an option</option>
-                                        {q.options.map(opt => (
-                                          <option key={opt.id}>{opt.label}</option>
-                                        ))}
-                                      </select>
-                                    </div>
-                                  )}
-
-                                  {q.type === 'yes-no' && (
-                                    <div className="mt-2 d-flex gap-3">
-                                      <div className="form-check">
-                                        <input className="form-check-input" type="radio" disabled />
-                                        <label className="form-check-label text-secondary">Yes</label>
-                                      </div>
-                                      <div className="form-check">
-                                        <input className="form-check-input" type="radio" disabled />
-                                        <label className="form-check-label text-secondary">No</label>
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  {q.type === 'file' && (
-                                    <div className="mt-2">
-                                      <div className="border border-secondary border-opacity-25 rounded p-3 bg-dark bg-opacity-25">
-                                        <div className="d-flex align-items-center gap-2 mb-2">
-                                          <i className="bi bi-cloud-upload text-info"></i>
-                                          <span className="text-secondary">File Upload</span>
-                                        </div>
-                                        <div className="text-secondary small">
-                                          <div>
-                                            <i className="bi bi-file-earmark-text me-1"></i>
-                                            Allowed formats: {(q as FileQuestion).allowedFormats?.join(', ') || 'Any'}
-                                          </div>
-                                          <div>
-                                            <i className="bi bi-hdd me-1"></i>
-                                            Max size: {(q as FileQuestion).maxFileSize || 10} MB
-                                          </div>
-                                          <div>
-                                            <i className="bi bi-files me-1"></i>
-                                            Max files: {(q as FileQuestion).maxFiles || 1}
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-
-                                <div className="d-flex flex-column gap-1 ms-3">
-                                  <button
-                                    className="btn btn-sm btn-outline-info"
-                                    onClick={() => editQuestion(q)}
-                                  >
-                                    <i className="bi bi-pencil"></i>
-                                  </button>
-                                  <button
-                                    className="btn btn-sm btn-outline-danger"
-                                    onClick={() => deleteQuestion(q.id)}
-                                  >
-                                    <i className="bi bi-trash"></i>
-                                  </button>
-                                  <button
-                                    className="btn btn-sm btn-outline-secondary drag-handle"
-                                    title="Drag to reorder"
-                                    onMouseDown={() => { }}
-                                  >
-                                    <i className="bi bi-grip-vertical"></i>
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="text-center py-4">
-                        <i className="bi bi-question-circle display-6 text-secondary opacity-50 mb-3 d-block"></i>
-                        <p className="text-secondary mb-0">No questions added yet.</p>
-                        <p className="text-secondary small">Add questions to collect specific information from applicants.</p>
-                      </div>
-                    )}
-
-                    <div className="d-flex gap-2 question-actions">
-                      <button
-                        className="btn btn-outline-primary flex-grow-1"
-                        onClick={() => setShowQuestionBuilder(true)}
-                      >
-                        <i className="bi bi-plus-lg me-2"></i>
-                        Add Question
-                      </button>
-
-                      {form.questions && form.questions.length > 0 && (
-                        <button
-                          className="btn btn-outline-secondary"
-                          onClick={() => {
-                            // Simple reordering: move first to last
-                            if (form.questions && form.questions.length > 1) {
-                              moveQuestion(0, form.questions.length - 1);
-                            }
-                          }}
-                        >
-                          <i className="bi bi-arrow-down-up me-2"></i>
-                          Reorder
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Open Applications Toggle */}
-                <div className="form-check form-switch p-3 bg-dark bg-opacity-50 rounded-3 border border-secondary border-opacity-25 d-flex align-items-center justify-content-between">
-                  <label className="form-check-label text-white fw-medium mb-0 ms-1">
-                    Immediately Open Applications?
-                  </label>
-                  <input
-                    className="form-check-input m-0"
-                    type="checkbox"
-                    style={{ width: '3em', height: '1.5em', cursor: 'pointer' }}
-                    checked={form.isOpen}
-                    onChange={(e) => setForm({ ...form, isOpen: e.target.checked })}
-                  />
-                </div>
+              {/* Modal Tabs */}
+              <div className="d-flex gap-2 mx-4 mt-3 p-1 bg-dark bg-opacity-50 rounded-3 border border-secondary border-opacity-25">
+                <button
+                  type="button"
+                  className={`btn flex-fill py-2 rounded-2 fw-semibold d-flex align-items-center justify-content-center gap-2 ${
+                    recruitmentModalTab === 'details'
+                      ? 'btn-primary text-white shadow'
+                      : 'text-secondary btn-link text-decoration-none'
+                  }`}
+                  onClick={() => setRecruitmentModalTab('details')}
+                >
+                  <i className="bi bi-briefcase"></i>
+                  <span>1. Drive Details</span>
+                </button>
+                <button
+                  type="button"
+                  className={`btn flex-fill py-2 rounded-2 fw-semibold d-flex align-items-center justify-content-center gap-2 ${
+                    recruitmentModalTab === 'form'
+                      ? 'btn-primary text-white shadow'
+                      : 'text-secondary btn-link text-decoration-none'
+                  }`}
+                  onClick={() => setRecruitmentModalTab('form')}
+                >
+                  <i className="bi bi-ui-checks-grid"></i>
+                  <span>2. Application Form</span>
+                  <span className="badge bg-secondary bg-opacity-50 text-light rounded-pill px-2">
+                    {form.questions?.length || 0}
+                  </span>
+                </button>
               </div>
 
-              <div className="modal-footer border-top border-secondary border-opacity-25 p-4">
-                <button className="btn btn-outline-light rounded-pill px-4" onClick={() => {
-                  setShowModal(false);
-                  setValidationErrors({});
-                  setShowQuestionBuilder(false);
-                  resetQuestionForm();
-                }}>Cancel</button>
-                <button
-                  className="btn btn-primary rounded-pill px-5 fw-bold"
-                  onClick={handleSave}
-                  disabled={hasValidationErrors || isSubmitting}
-                >
-                  {isSubmitting ? (
-                    <span>
-                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                      {editingId ? "Updating..." : "Creating..."}
-                    </span>
+              <div className="modal-body p-4">
+                {recruitmentModalTab === 'details' ? (
+                  <>
+                    {/* Title */}
+                    <div className="mb-3">
+                      <label className="form-label text-secondary small fw-bold text-uppercase">
+                        Title <span className="required-asterisk">*</span>
+                      </label>
+                      <input
+                        className={`form-control form-control-glass ${validationErrors.title ? 'is-invalid' : ''}`}
+                        value={form.title}
+                        onChange={(e) => {
+                          setForm({ ...form, title: e.target.value });
+                          setValidationErrors({ ...validationErrors, title: validateTitle(e.target.value) });
+                        }}
+                        maxLength={100}
+                      />
+                      {validationErrors.title && (
+                        <div className="invalid-feedback-custom">
+                          {validationErrors.title}
+                        </div>
+                      )}
+                      <div className={`character-counter ${form.title.length > 90 ? 'warning' : ''} ${form.title.length >= 100 ? 'danger' : ''}`}>
+                        {form.title.length} / 100
+                      </div>
+                    </div>
+
+                    {/* Role */}
+                    <div className="mb-3">
+                      <label className="form-label text-secondary small fw-bold text-uppercase">
+                        Role / Position <span className="required-asterisk">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        className={`form-control form-control-glass ${validationErrors.role ? 'is-invalid' : ''}`}
+                        value={form.role}
+                        onChange={(e) => {
+                          setForm({ ...form, role: e.target.value });
+                          setValidationErrors({ ...validationErrors, role: validateRole(e.target.value) });
+                        }}
+                        maxLength={50}
+                      />
+                      {validationErrors.role && (
+                        <div className="invalid-feedback-custom">
+                          {validationErrors.role}
+                        </div>
+                      )}
+                      <div className={`character-counter ${form.role.length > 45 ? 'warning' : ''} ${form.role.length >= 50 ? 'danger' : ''}`}>
+                        {form.role.length} / 50
+                      </div>
+                    </div>
+
+                    {/* Description */}
+                    <div className="mb-3">
+                      <label className="form-label text-secondary small fw-bold text-uppercase">
+                        Description
+                      </label>
+                      <textarea
+                        className={`form-control form-control-glass ${validationErrors.description ? 'is-invalid' : ''}`}
+                        rows={3}
+                        value={form.description}
+                        onChange={(e) => {
+                          setForm({ ...form, description: e.target.value });
+                          setValidationErrors({ ...validationErrors, description: validateDescription(e.target.value) });
+                        }}
+                        maxLength={500}
+                      />
+                      {validationErrors.description && (
+                        <div className="invalid-feedback-custom">
+                          {validationErrors.description}
+                        </div>
+                      )}
+                      <div className={`character-counter ${form.description.length > 450 ? 'warning' : ''} ${form.description.length >= 500 ? 'danger' : ''}`}>
+                        {form.description.length} / 500
+                      </div>
+                    </div>
+
+                    {/* Dates */}
+                    <div className="row g-3 mb-4">
+                      <div className="col-6">
+                        <label className="form-label text-secondary small fw-bold text-uppercase">
+                          Start Date <span className="required-asterisk">*</span>
+                        </label>
+                        <input
+                          type="date"
+                          className={`form-control form-control-glass ${validationErrors.startDate || validationErrors.dateRange ? 'is-invalid' : ''}`}
+                          value={form.startDate}
+                          min={getTodayDate()}
+                          onChange={(e) => {
+                            const newStartDate = e.target.value;
+                            setForm({ ...form, startDate: newStartDate });
+
+                            if (form.endDate && new Date(newStartDate) >= new Date(form.endDate)) {
+                              setForm(prev => ({ ...prev, endDate: "" }));
+                            }
+
+                            const errors = { ...validationErrors };
+                            errors.startDate = validateStartDate(newStartDate);
+                            errors.endDate = validateEndDate(form.endDate, newStartDate);
+                            errors.dateRange = validateDateRange(newStartDate, form.endDate);
+                            setValidationErrors(errors);
+                          }}
+                          onClick={(e) => (e.target as any).showPicker && (e.target as any).showPicker()}
+                        />
+                        {validationErrors.startDate && (
+                          <div className="invalid-feedback-custom">
+                            {validationErrors.startDate}
+                          </div>
+                        )}
+                      </div>
+                      <div className="col-6">
+                        <label className="form-label text-secondary small fw-bold text-uppercase">
+                          End Date <span className="required-asterisk">*</span>
+                        </label>
+                        <input
+                          type="date"
+                          className={`form-control form-control-glass ${validationErrors.endDate || validationErrors.dateRange ? 'is-invalid' : ''}`}
+                          value={form.endDate}
+                          min={getMinEndDate()}
+                          onChange={(e) => {
+                            const newEndDate = e.target.value;
+                            setForm({ ...form, endDate: newEndDate });
+
+                            const errors = { ...validationErrors };
+                            errors.endDate = validateEndDate(newEndDate, form.startDate);
+                            errors.dateRange = validateDateRange(form.startDate, newEndDate);
+                            setValidationErrors(errors);
+                          }}
+                          onClick={(e) => (e.target as any).showPicker && (e.target as any).showPicker()}
+                        />
+                        {validationErrors.endDate && (
+                          <div className="invalid-feedback-custom">
+                            {validationErrors.endDate}
+                          </div>
+                        )}
+                      </div>
+
+                      {validationErrors.dateRange && (
+                        <div className="col-12">
+                          <div className="invalid-feedback-custom">
+                            {validationErrors.dateRange}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Open Applications Toggle */}
+                    <div className="form-check form-switch p-3 bg-dark bg-opacity-50 rounded-3 border border-secondary border-opacity-25 d-flex align-items-center justify-content-between">
+                      <label className="form-check-label text-white fw-medium mb-0 ms-1">
+                        Immediately Open Applications?
+                      </label>
+                      <input
+                        className="form-check-input m-0"
+                        type="checkbox"
+                        style={{ width: '3em', height: '1.5em', cursor: 'pointer' }}
+                        checked={form.isOpen}
+                        onChange={(e) => setForm({ ...form, isOpen: e.target.checked })}
+                      />
+                    </div>
+                  </>
+                ) : (
+                  /* Tab 2: Form Builder */
+                  <div className="py-2">
+                    <div className="alert alert-info border-0 bg-opacity-10 bg-info d-flex align-items-center gap-2 mb-3">
+                      <i className="bi bi-info-circle-fill text-info fs-5"></i>
+                      <span className="small text-light">
+                        Build your application form with custom questions, input types, and validations. Changes are saved with the recruitment drive.
+                      </span>
+                    </div>
+                    <FormBuilder
+                      questions={(form.questions as IQuestion[]) || []}
+                      onChange={(questions) =>
+                        setForm({
+                          ...form,
+                          questions: questions as unknown as Question[],
+                        })
+                      }
+                      formTitle={form.title || "Recruitment Application"}
+                      formDescription={form.description || "Please fill in the details below to apply for this position."}
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="modal-footer border-top border-secondary border-opacity-25 p-4 d-flex justify-content-between">
+                <div>
+                  {recruitmentModalTab === 'details' ? (
+                    <button
+                      type="button"
+                      className="btn btn-outline-info rounded-pill px-3"
+                      onClick={() => setRecruitmentModalTab('form')}
+                    >
+                      <i className="bi bi-arrow-right me-1"></i>Next: Application Form ({form.questions?.length || 0})
+                    </button>
                   ) : (
-                    editingId ? "Update Drive" : "Create Drive"
+                    <button
+                      type="button"
+                      className="btn btn-outline-secondary rounded-pill px-3"
+                      onClick={() => setRecruitmentModalTab('details')}
+                    >
+                      <i className="bi bi-arrow-left me-1"></i>Back: Drive Details
+                    </button>
                   )}
-                </button>
+                </div>
+                <div className="d-flex gap-2">
+                  <button className="btn btn-outline-light rounded-pill px-4" onClick={() => {
+                    setShowModal(false);
+                    setValidationErrors({});
+                    setShowQuestionBuilder(false);
+                    resetQuestionForm();
+                    setRecruitmentModalTab('details');
+                  }}>Cancel</button>
+                  <button
+                    className="btn btn-primary rounded-pill px-5 fw-bold"
+                    onClick={handleSave}
+                    disabled={hasValidationErrors || isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <span>
+                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        {editingId ? "Updating..." : "Creating..."}
+                      </span>
+                    ) : (
+                      editingId ? "Update Drive" : "Create Drive"
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Question Builder Modal */}
-      {showQuestionBuilder && (
+      {/* Legacy Question Builder Modal - replaced by FormBuilder in Tab 2 */}
+      {false && showQuestionBuilder && (
         <div className="modal fade show d-block" style={{ backgroundColor: "rgba(0,0,0,0.8)", backdropFilter: 'blur(4px)' }}>
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content modal-content-glass rounded-4 overflow-hidden text-light">

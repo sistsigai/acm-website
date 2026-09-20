@@ -74,3 +74,24 @@ export const adminLogin = async (
     }
   }
 };
+
+export const adminLogout = async (): Promise<{ success: boolean; message: string }> => {
+  try {
+    const res = await axiosInstance.post("/admin/auth/logout");
+    return res.data;
+  } catch (error: any) {
+    return {
+      success: false,
+      message: error?.response?.data?.message || "Logout failed"
+    };
+  }
+};
+
+export const getCurrentAdmin = async (): Promise<{ success: boolean; user?: any }> => {
+  try {
+    const res = await axiosInstance.get("/admin/auth/me");
+    return res.data;
+  } catch (error) {
+    return { success: false };
+  }
+};

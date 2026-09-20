@@ -257,6 +257,7 @@ export const addEvent = async (req: Request, res: Response): Promise<Response> =
       description,
       contactPersons,
       registrationQuestions,
+      customQuestions,
       whatsappGroupLink,
     } = req.body;
 
@@ -301,6 +302,7 @@ export const addEvent = async (req: Request, res: Response): Promise<Response> =
       description: (description || '').trim(),
       contactPersons: formattedContactPersons,
       registrationQuestions: finalRegistrationQuestions,
+      customQuestions: Array.isArray(customQuestions) ? customQuestions : [],
       whatsappGroupLink: whatsappGroupLink?.trim() || null,
       display: true
     });
@@ -396,6 +398,7 @@ export const updateEvent = async (req: Request, res: Response) => {
       description,
       contactPersons,
       registrationQuestions,
+      customQuestions,
       whatsappGroupLink,
       display
     } = req.body;
@@ -467,6 +470,10 @@ export const updateEvent = async (req: Request, res: Response) => {
       }
       
       event.registrationQuestions = registrationQuestions;
+    }
+
+    if (customQuestions !== undefined) {
+      event.customQuestions = Array.isArray(customQuestions) ? customQuestions : [];
     }
 
     if (whatsappGroupLink !== undefined) {

@@ -1,4 +1,5 @@
 import axiosInstance from "../axiosInstance";
+import { IQuestion } from "../../types/formBuilder";
 
 /* Types */
 interface ContactPerson {
@@ -14,6 +15,7 @@ export interface CreateEventPayload {
   description: string;
   contactPersons: ContactPerson[];
   registrationQuestions: string[];
+  customQuestions?: IQuestion[];
   whatsappGroupLink?: string;
 }
 

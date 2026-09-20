@@ -1,0 +1,200 @@
+/* ==========================================================================
+   Google Forms-Style Form Builder Styles
+   ========================================================================== */
+
+.form-builder-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  width: 100%;
+}
+
+/* ---------------- QUESTION CARD ---------------- */
+.question-card {
+  position: relative;
+  background: rgba(17, 24, 39, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-left: 5px solid transparent;
+  border-radius: 14px;
+  padding: 1.5rem;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.question-card:hover {
+  border-color: rgba(99, 102, 241, 0.35);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.35);
+}
+
+.question-card.active-card {
+  border-left: 5px solid #6366f1;
+  border-color: rgba(99, 102, 241, 0.45);
+  box-shadow: 0 10px 30px rgba(99, 102, 241, 0.15), 0 4px 20px rgba(0, 0, 0, 0.4);
+  background: rgba(22, 30, 49, 0.95);
+}
+
+/* ---------------- CARD HEADER / TYPE SELECTOR ---------------- */
+.question-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.question-input-title {
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 0 !important;
+  color: #f3f4f6 !important;
+  font-size: 1.1rem !important;
+  font-weight: 600 !important;
+  padding: 0.5rem 0.25rem !important;
+  transition: all 0.2s ease !important;
+  flex: 1;
+}
+
+.question-input-title:focus {
+  border-bottom-color: #6366f1 !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.question-type-select {
+  min-width: 190px;
+  background: rgba(15, 23, 42, 0.8) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  color: #f3f4f6 !important;
+  border-radius: 10px !important;
+  font-size: 0.9rem !important;
+  padding: 0.5rem 0.75rem !important;
+}
+
+/* ---------------- OPTIONS LIST ---------------- */
+.option-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.65rem;
+}
+
+.option-input {
+  background: rgba(15, 23, 42, 0.5) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 8px !important;
+  color: #f3f4f6 !important;
+  font-size: 0.9rem !important;
+  padding: 0.4rem 0.75rem !important;
+  flex: 1;
+}
+
+.option-input:focus {
+  border-color: #6366f1 !important;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2) !important;
+}
+
+.option-delete-btn {
+  background: transparent;
+  border: none;
+  color: rgba(239, 68, 68, 0.7);
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.option-delete-btn:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.add-option-btn {
+  background: transparent;
+  border: 1px dashed rgba(99, 102, 241, 0.4);
+  color: #818cf8;
+  border-radius: 8px;
+  padding: 0.4rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.add-option-btn:hover {
+  background: rgba(99, 102, 241, 0.12);
+  border-color: #6366f1;
+  color: #a5b4fc;
+}
+
+/* ---------------- CARD FOOTER TOOLBAR ---------------- */
+.question-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.card-action-btn {
+  background: transparent;
+  border: none;
+  color: rgba(156, 163, 175, 0.8);
+  font-size: 1.1rem;
+  padding: 0.35rem 0.6rem;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card-action-btn:hover {
+  color: #f3f4f6;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.card-action-btn.delete-btn:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.15);
+}
+
+/* ---------------- FLOATING / STICKY TOOLBAR ---------------- */
+.form-builder-toolbar {
+  position: sticky;
+  top: 1rem;
+  z-index: 20;
+  background: rgba(17, 24, 39, 0.9);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  padding: 0.75rem 1.25rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+/* ---------------- PREVIEW CONTAINER ---------------- */
+.preview-form-wrapper {
+  background: #0f172a;
+  border-radius: 16px;
+  padding: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.preview-question-card {
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+}

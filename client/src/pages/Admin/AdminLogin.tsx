@@ -1,15 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import Loader from "../../components/Loader";
 import Message from "../../components/Message";
 import logo from "../../assets/acm-logo.png";
-import { adminLogin } from "../../services/admin/authService";
-import { clearAuthToken, getAuthToken } from "../../utils/authToken";
-
-const SESSION_TIMEOUT = 30 * 60 * 1000;
-const WARNING_TIME = 5 * 60 * 1000;
+import { useAuth } from "../../context/AuthContext";
 
 const sanitizeInput = (input: string): string => {
     return input
@@ -24,94 +20,17 @@ const validateEmail = (email: string): boolean => {
     return emailRegex.test(email);
 };
 
-const validatePasswordStrength = (password: string): string[] => {
-    const errors: string[] = [];
-
-    if (password.length < 8) errors.push("At least 8 characters");
-    if (!/[A-Z]/.test(password)) errors.push("One uppercase letter");
-    if (!/[a-z]/.test(password)) errors.push("One lowercase letter");
-    if (!/\d/.test(password)) errors.push("One number");
-    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) errors.push("One special character");
-
-    return errors;
-};
-
 const AdminLogin = () => {
     const navigate = useNavigate();
+    const { login } = useAuth();
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState<{ variant: "success" | "error"; text: string } | null>(null);
     const [showPassword, setShowPassword] = useState(false);
-    const [inactivityTimer, setInactivityTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
-    const [warningTimer, setWarningTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
-    const [showTimeoutWarning, setShowTimeoutWarning] = useState(false);
-    const [timeLeft, setTimeLeft] = useState(SESSION_TIMEOUT);
 
     const [errors, setErrors] = useState({ username: "", password: "" });
     const [touched, setTouched] = useState({ username: false, password: false });
-
-    const resetInactivityTimer = () => {
-        if (inactivityTimer) clearTimeout(inactivityTimer);
-        if (warningTimer) clearTimeout(warningTimer);
-        setShowTimeoutWarning(false);
-        setTimeLeft(SESSION_TIMEOUT);
-
-        const warningTimeout = setTimeout(() => {
-            setShowTimeoutWarning(true);
-            let remaining = WARNING_TIME;
-            const countdown = setInterval(() => {
-                remaining -= 1000;
-                setTimeLeft(remaining);
-                if (remaining <= 0) {
-                    clearInterval(countdown);
-                }
-            }, 1000);
-        }, SESSION_TIMEOUT - WARNING_TIME);
-
-        const logoutTimeout = setTimeout(() => {
-            handleAutoLogout();
-        }, SESSION_TIMEOUT);
-
-        setWarningTimer(warningTimeout);
-        setInactivityTimer(logoutTimeout);
-    };
-
-    const handleAutoLogout = () => {
-        clearAuthToken();
-        setMessage({
-            variant: "error",
-            text: "Session expired due to inactivity. Please login again."
-        });
-        navigate("/admin/login");
-    };
-
-    const extendSession = () => {
-        setShowTimeoutWarning(false);
-        resetInactivityTimer();
-    };
-
-    useEffect(() => {
-        const events = ['mousedown', 'keydown', 'scroll', 'touchstart'];
-
-        const handleActivity = () => {
-            if (getAuthToken()) {
-                resetInactivityTimer();
-            }
-        };
-
-        events.forEach(event => {
-            document.addEventListener(event, handleActivity);
-        });
-
-        return () => {
-            events.forEach(event => {
-                document.removeEventListener(event, handleActivity);
-            });
-            if (inactivityTimer) clearTimeout(inactivityTimer);
-            if (warningTimer) clearTimeout(warningTimer);
-        };
-    }, []);
 
     const validateField = (name: string, value: string) => {
         let error = "";
@@ -123,24 +42,13 @@ const AdminLogin = () => {
                     error = "Username is required";
                 } else if (sanitizedValue.length < 3) {
                     error = "Min 3 characters";
-                } else if (!/^[a-zA-Z0-9_.-]+$/.test(sanitizedValue)) {
-                    if (sanitizedValue.includes('@')) {
-                        if (!validateEmail(sanitizedValue)) {
-                            error = "Invalid email format";
-                        }
-                    } else {
-                        error = "Only letters, numbers, dots, hyphens, underscores allowed";
-                    }
                 }
                 break;
             case "password":
                 if (!value) {
                     error = "Password is required";
-                } else {
-                    const strengthErrors = validatePasswordStrength(value);
-                    if (strengthErrors.length > 0) {
-                        error = `Password must contain: ${strengthErrors.join(', ')}`;
-                    }
+                } else if (value.length < 6) {
+                    error = "Password must be at least 6 characters";
                 }
                 break;
             default: break;
@@ -189,19 +97,16 @@ const AdminLogin = () => {
 
         try {
             setLoading(true);
-            const res = await adminLogin({
+            const res = await login({
                 username: sanitizedUsername,
                 password: sanitizedPassword
             });
 
-            if (res.success && res.token) {
-
+            if (res.success) {
                 setMessage({
                     variant: "success",
                     text: res.message || "Login successful!"
                 });
-
-                resetInactivityTimer();
 
                 setTimeout(() => {
                     navigate("/admin/dashboard");
@@ -241,12 +146,6 @@ const AdminLogin = () => {
         } finally {
             setLoading(false);
         }
-    };
-
-    const formatTime = (ms: number) => {
-        const minutes = Math.floor(ms / 60000);
-        const seconds = Math.floor((ms % 60000) / 1000);
-        return `${minutes}:${seconds.toString().padStart(2, '0')}`;
     };
 
     return (
@@ -543,31 +442,6 @@ const AdminLogin = () => {
                     cursor: not-allowed;
                 }
             `}</style>
-
-            {showTimeoutWarning && (
-                <div className="timeout-warning">
-                    <div className="timeout-content">
-                        <h4 className="text-white mb-2">Session About to Expire</h4>
-                        <p className="text-white-50">
-                            Your session will expire due to inactivity in:
-                        </p>
-                        <div className="timeout-timer">
-                            {formatTime(timeLeft)}
-                        </div>
-                        <p className="text-white-50 small mb-3">
-                            Click "Extend Session" to continue working
-                        </p>
-                        <div className="timeout-buttons">
-                            <button className="extend-btn" onClick={extendSession}>
-                                Extend Session
-                            </button>
-                            <button className="logout-btn" onClick={handleAutoLogout}>
-                                Log Out Now
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
 
             <Loader loading={loading} />
 

@@ -5,6 +5,27 @@ export interface ContactPerson {
   phone: string;
 }
 
+export interface IQuestionOption {
+  id: string;
+  label: string;
+}
+
+export interface IQuestion {
+  id: string;
+  type: 'text' | 'textarea' | 'multiple-choice' | 'checkbox' | 'dropdown' | 'yes-no' | 'file' | 'date' | 'time';
+  question: string;
+  required: boolean;
+  description?: string;
+  placeholder?: string;
+  maxLength?: number;
+  options?: IQuestionOption[];
+  minSelections?: number;
+  maxSelections?: number;
+  allowedFormats?: string[];
+  maxFileSize?: number;
+  maxFiles?: number;
+}
+
 export interface EventDocument extends Document {
   name: string;
   date: string;
@@ -13,6 +34,7 @@ export interface EventDocument extends Document {
   description: string;
   contactPersons: ContactPerson[];
   registrationQuestions: string[];
+  customQuestions?: IQuestion[];
   whatsappGroupLink?: string | null;
   isClosed: boolean;
   display: boolean;
@@ -27,6 +49,31 @@ const ContactPersonSchema = new Schema<ContactPerson>(
   },
   { _id: false }
 );
+
+const QuestionOptionSchema = new Schema({
+  id: { type: String, required: true },
+  label: { type: String, required: true }
+}, { _id: false });
+
+const QuestionSchema = new Schema({
+  id: { type: String, required: true },
+  type: { 
+    type: String, 
+    required: true,
+    enum: ['text', 'textarea', 'multiple-choice', 'checkbox', 'dropdown', 'yes-no', 'file', 'date', 'time']
+  },
+  question: { type: String, required: true },
+  required: { type: Boolean, default: false },
+  description: { type: String },
+  placeholder: { type: String },
+  maxLength: { type: Number },
+  options: [QuestionOptionSchema],
+  minSelections: { type: Number },
+  maxSelections: { type: Number },
+  allowedFormats: [{ type: String }],
+  maxFileSize: { type: Number },
+  maxFiles: { type: Number }
+}, { _id: false });
 
 const EventSchema = new Schema<EventDocument>(
   {
@@ -43,6 +90,11 @@ const EventSchema = new Schema<EventDocument>(
 
     registrationQuestions: {
       type: [String],
+      default: [],
+    },
+
+    customQuestions: {
+      type: [QuestionSchema],
       default: [],
     },
 

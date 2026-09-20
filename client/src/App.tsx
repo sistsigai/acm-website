@@ -1,6 +1,9 @@
-import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { AuthProvider } from "./context/AuthContext";
+import { ToastProvider } from "./context/ToastContext";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 /* ---------------- ADMIN PAGES ---------------- */
 import Dashboard from "./pages/Admin/Dashboard";
@@ -73,13 +76,64 @@ function App() {
     return (
       <Routes location={location} key={location.pathname}>
         <Route path="/admin/login" element={<AdminLogin />} />
-        <Route path="/admin/dashboard" element={<Dashboard />} />
-        <Route path="/admin/members" element={<Members />} />
-        <Route path="/admin/eventmanager" element={<EventManager />} />
-        <Route path="/admin/recruitments" element={<Recruitments />} />
-        <Route path="/admin/recruitments/:recruitmentId/applications" element={<RecruitmentApplications />} />
-        <Route path="/admin/query" element={<Query />} />
-        <Route path="/admin/settings" element={<AdminSettings />} />
+        <Route
+          path="/admin/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/members"
+          element={
+            <ProtectedRoute>
+              <Members />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/eventmanager"
+          element={
+            <ProtectedRoute>
+              <EventManager />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/recruitments"
+          element={
+            <ProtectedRoute>
+              <Recruitments />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/recruitments/:recruitmentId/applications"
+          element={
+            <ProtectedRoute>
+              <RecruitmentApplications />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/query"
+          element={
+            <ProtectedRoute>
+              <Query />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/settings"
+          element={
+            <ProtectedRoute>
+              <AdminSettings />
+            </ProtectedRoute>
+          }
+        />
+        {/* Admin Catch-All */}
+        <Route path="/admin/*" element={<Navigate to="/admin/dashboard" replace />} />
       </Routes>
     );
   }
@@ -134,8 +188,12 @@ function App() {
 function Root() {
   return (
     <Router>
-      <ScrollToTop />
-      <App />
+      <AuthProvider>
+        <ToastProvider>
+          <ScrollToTop />
+          <App />
+        </ToastProvider>
+      </AuthProvider>
     </Router>
   );
 }
