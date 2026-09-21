@@ -1,5 +1,5 @@
 import axiosInstance from "../axiosInstance";
-import { IQuestion } from "../../types/formBuilder";
+import type { IQuestion } from "../../types/formBuilder";
 
 /* Types */
 interface ContactPerson {

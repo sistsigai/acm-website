@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { IQuestion, QuestionType, ACM_STANDARD_STUDENT_QUESTIONS } from "../../types/formBuilder";
+import { type IQuestion, type QuestionType, ACM_STANDARD_STUDENT_QUESTIONS } from "../../types/formBuilder";
 import QuestionCard from "./QuestionCard";
 import FormPreviewModal from "./FormPreviewModal";
 import "./formBuilder.css";

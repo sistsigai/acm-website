@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { getCurrentAdmin, adminLogin, adminLogout, AdminLoginPayload, AdminLoginResponse } from "../services/admin/authService";
+import { getCurrentAdmin, adminLogin, adminLogout, type AdminLoginPayload, type AdminLoginResponse } from "../services/admin/authService";
 import { clearAuthToken } from "../utils/authToken";
 
 export interface AdminUser {

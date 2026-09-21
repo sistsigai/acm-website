@@ -697,44 +697,45 @@ const Members = () => {
     .expandable-inner { overflow: hidden; opacity: 0; transform: translateY(-10px); transition: all 0.3s ease 0.1s; }
     .expandable-wrapper.open .expandable-inner { opacity: 1; transform: translateY(0); }
 
-    /* Inputs */
-    .form-control-glass {
-      background: rgba(0, 0, 0, 0.3);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      color: white;
-      border-radius: 50px; /* Pill shape */
-      padding: 0.5rem 1rem;
-      transition: all 0.2s;
+    /* Inputs & Selects */
+    .form-control-glass, .form-select-glass {
+      background: rgba(0, 0, 0, 0.3) !important;
+      border: 1px solid rgba(255, 255, 255, 0.12) !important;
+      color: #ffffff !important;
+      border-radius: 10px;
+      padding: 0.55rem 0.85rem;
+      transition: all 0.2s ease;
     }
-    .form-control-glass:focus {
-      background: rgba(0, 0, 0, 0.5);
-      border-color: #3b82f6;
-      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
-      color: white;
+    .form-control-glass:focus, .form-select-glass:focus {
+      background: rgba(0, 0, 0, 0.5) !important;
+      border-color: #3b82f6 !important;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2) !important;
+      color: #ffffff !important;
     }
-    .form-control-glass.is-invalid {
-      border-color: #dc3545;
-      background: rgba(220, 53, 69, 0.1);
+    .input-group > .form-control-glass,
+    .input-group > .form-select-glass {
+      border-top-left-radius: 0 !important;
+      border-bottom-left-radius: 0 !important;
     }
-    .form-control-glass.is-invalid:focus {
-      border-color: #dc3545;
-      box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.1);
+    .input-group > .input-group-text {
+      border-top-left-radius: 10px !important;
+      border-bottom-left-radius: 10px !important;
     }
-    .form-select-glass {
-      background-color: rgba(0, 0, 0, 0.3);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      color: white;
-      border-radius: 50px;
+    .input-group > .btn {
+      border-top-right-radius: 10px !important;
+      border-bottom-right-radius: 10px !important;
     }
-    .form-select-glass:focus {
-      background-color: #1f2937;
-      border-color: #3b82f6;
-      color: white;
-      box-shadow: none;
+    .form-select-glass option {
+      background-color: #111827;
+      color: #ffffff;
     }
-    .form-select-glass.is-invalid {
-      border-color: #dc3545;
-      background: rgba(220, 53, 69, 0.1);
+    .form-control-glass.is-invalid, .form-select-glass.is-invalid {
+      border-color: #dc3545 !important;
+      background: rgba(220, 53, 69, 0.1) !important;
+    }
+    .form-control-glass.is-invalid:focus, .form-select-glass.is-invalid:focus {
+      border-color: #dc3545 !important;
+      box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.2) !important;
     }
 
     /* Social Icons */
@@ -1094,40 +1095,113 @@ const Members = () => {
                 </div>
             </div>
 
-            {/* --- ADD / EDIT MODAL (Reusable Layout) --- */}
+            {/* --- ADD / EDIT MODAL (Modern User-Friendly Layout) --- */}
             {(showModal || showEditModal) && (
-                <div className="modal fade show d-block" style={{ background: 'rgba(0,0,0,0.7)' }}>
-                    <div className="modal-dialog modal-lg modal-dialog-centered">
-                        <div className="modal-content modal-content-glass text-light rounded-4 overflow-hidden">
-                            <div className="modal-header border-bottom border-secondary border-opacity-25 p-4">
-                                <h5 className="modal-title fw-bold">{showEditModal ? 'Edit Member' : 'Add New Member'}</h5>
-                                <button
-                                    type="button"
-                                    className="btn-close btn-close-white"
-                                    onClick={() => {
-                                        setShowModal(false);
-                                        setShowEditModal(false);
-                                        setValidationErrors({});
-                                        setEditValidationErrors({});
+                <div className="admin-modal-overlay">
+                    <div className="admin-modal-container p-4 m-2" style={{ maxWidth: '980px', width: '100%' }}>
+                        {/* Modal Header */}
+                        <div className="d-flex justify-content-between align-items-center mb-3 border-bottom border-secondary border-opacity-25 pb-3">
+                            <div className="d-flex align-items-center gap-3">
+                                <div
+                                    className="rounded-circle d-flex align-items-center justify-content-center shadow-sm"
+                                    style={{
+                                        width: 44,
+                                        height: 44,
+                                        background: 'rgba(59, 130, 246, 0.15)',
+                                        border: '1px solid rgba(59, 130, 246, 0.3)'
                                     }}
-                                ></button>
+                                >
+                                    <i className={`bi ${showEditModal ? 'bi-person-gear text-primary' : 'bi-person-plus-fill text-primary'} fs-5`}></i>
+                                </div>
+                                <div>
+                                    <h4 className="m-0 fw-bold text-white">
+                                        {showEditModal ? 'Edit Member Profile' : 'Add New Member'}
+                                    </h4>
+                                    <p className="text-secondary small mb-0 mt-1">
+                                        Configure identity, roles, batch year, and public social accounts
+                                    </p>
+                                </div>
                             </div>
-                            <div className="modal-body p-4">
-                                <div className="row g-4">
-                                    {/* Left: Image */}
-                                    <div className="col-md-4 text-center">
-                                        <div className="position-relative d-inline-block group">
-                                            <div className="rounded-4 overflow-hidden shadow-lg border border-secondary" style={{ width: 160, height: 200 }}>
-                                                <img
-                                                    src={showEditModal ? (editImagePreview || editMember?.profilePic || "https://via.placeholder.com/150") : (imagePreview || "https://via.placeholder.com/150")}
-                                                    alt="Preview"
-                                                    className="w-100 h-100 object-fit-cover"
-                                                />
+                            <button
+                                type="button"
+                                className="btn btn-link text-secondary text-decoration-none fs-4 p-0"
+                                style={{ lineHeight: 1 }}
+                                onClick={() => {
+                                    setShowModal(false);
+                                    setShowEditModal(false);
+                                    setValidationErrors({});
+                                    setEditValidationErrors({});
+                                }}
+                            >
+                                <i className="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+
+                        {/* Modal Body */}
+                        <div className="modal-body p-0">
+                            <div className="row g-4 align-items-stretch">
+                                {/* Left Column: Visual Profile & Avatar */}
+                                <div className="col-lg-4 d-flex flex-column">
+                                    <div
+                                        className="h-100 p-3 rounded-4 d-flex flex-column align-items-center justify-content-between text-center"
+                                        style={{
+                                            background: 'rgba(255, 255, 255, 0.02)',
+                                            border: '1px solid rgba(255, 255, 255, 0.08)'
+                                        }}
+                                    >
+                                        <div className="w-100">
+                                            <span className="text-secondary small text-uppercase fw-bold d-block mb-3">
+                                                <i className="bi bi-camera me-1"></i> Profile Photo
+                                            </span>
+
+                                            {/* Avatar Preview */}
+                                            <div className="position-relative d-inline-block mx-auto mb-3">
+                                                <div
+                                                    className="rounded-circle overflow-hidden shadow-lg mx-auto position-relative"
+                                                    style={{
+                                                        width: 130,
+                                                        height: 130,
+                                                        border: '3px solid rgba(59, 130, 246, 0.5)',
+                                                        boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)',
+                                                        background: 'rgba(15, 23, 42, 0.8)'
+                                                    }}
+                                                >
+                                                    <img
+                                                        src={showEditModal ? (editImagePreview || editMember?.profilePic || "https://via.placeholder.com/150") : (imagePreview || "https://via.placeholder.com/150")}
+                                                        alt="Profile Preview"
+                                                        className="w-100 h-100 object-fit-cover"
+                                                    />
+                                                </div>
+
+                                                {/* Upload Trigger Camera Badge */}
+                                                <label
+                                                    className="position-absolute bottom-0 end-0 bg-primary text-white rounded-circle d-flex align-items-center justify-content-center shadow-lg cursor-pointer"
+                                                    style={{
+                                                        width: 38,
+                                                        height: 38,
+                                                        cursor: 'pointer',
+                                                        border: '2px solid #111827',
+                                                        transition: 'transform 0.2s ease',
+                                                    }}
+                                                    title="Upload / Change Photo"
+                                                    onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
+                                                    onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                                                >
+                                                    <i className="bi bi-camera-fill fs-6"></i>
+                                                    <input
+                                                        type="file"
+                                                        className="d-none"
+                                                        accept="image/jpeg,image/jpg,image/png,image/webp"
+                                                        onChange={(e) => handleImageUpload(e, showEditModal)}
+                                                    />
+                                                </label>
                                             </div>
-                                            <div className="d-flex gap-2 justify-content-center mt-3">
-                                                {/* Change Image */}
-                                                <label className="btn btn-sm btn-primary rounded-pill shadow">
-                                                    <i className="bi bi-camera me-1"></i> Change
+
+                                            {/* Upload / Remove Actions */}
+                                            <div className="d-flex gap-2 justify-content-center mb-2">
+                                                <label className="btn btn-sm btn-outline-primary rounded-pill px-3 shadow-sm mb-0">
+                                                    <i className="bi bi-upload me-1"></i>
+                                                    {(showEditModal ? (editImagePreview || editMember?.profilePic) : imagePreview) ? 'Change Photo' : 'Upload Photo'}
                                                     <input
                                                         type="file"
                                                         className="d-none"
@@ -1136,64 +1210,105 @@ const Members = () => {
                                                     />
                                                 </label>
 
-                                                {/* Remove Image */}
-                                                {(showEditModal ? editImagePreview : imagePreview) && (
+                                                {(showEditModal ? (editImagePreview || editMember?.profilePic) : imagePreview) && (
                                                     <button
                                                         type="button"
-                                                        className="btn btn-sm btn-outline-danger rounded-pill shadow"
+                                                        className="btn btn-sm btn-outline-danger rounded-pill px-3 shadow-sm"
                                                         onClick={handleRemoveImage}
+                                                        title="Remove Photo"
                                                     >
-                                                        <i className="bi bi-trash me-1"></i> Remove
+                                                        <i className="bi bi-trash"></i>
                                                     </button>
                                                 )}
                                             </div>
+
+                                            <div className="text-secondary small mt-1" style={{ fontSize: '0.75rem' }}>
+                                                JPG, PNG, WebP • Max 2MB
+                                            </div>
+
+                                            {(showEditModal ? editValidationErrors.profilePic : validationErrors.profilePic) && (
+                                                <div className="invalid-feedback-custom mt-2">
+                                                    {showEditModal ? editValidationErrors.profilePic : validationErrors.profilePic}
+                                                </div>
+                                            )}
                                         </div>
-                                        {(showEditModal ? editValidationErrors.profilePic : validationErrors.profilePic) && (
-                                            <div className="invalid-feedback-custom mt-2">
-                                                {showEditModal ? editValidationErrors.profilePic : validationErrors.profilePic}
+
+                                        {/* Live Preview Card */}
+                                        <div
+                                            className="w-100 p-2 rounded-3 mt-3 text-start"
+                                            style={{
+                                                background: 'rgba(0, 0, 0, 0.25)',
+                                                border: '1px solid rgba(255, 255, 255, 0.05)'
+                                            }}
+                                        >
+                                            <div className="text-secondary small fw-bold text-uppercase mb-1" style={{ fontSize: '0.68rem' }}>
+                                                Live Preview
+                                            </div>
+                                            <div className="text-white fw-semibold small text-truncate">
+                                                {(showEditModal ? editMember?.name : newMember.name) || "Member Name"}
+                                            </div>
+                                            <div className="d-flex flex-wrap gap-1 mt-1">
+                                                <span className="badge bg-primary bg-opacity-20 text-primary-subtle fw-normal" style={{ fontSize: '0.7rem' }}>
+                                                    {(showEditModal ? editMember?.designation : newMember.designation) || "No Designation"}
+                                                </span>
+                                                <span className="badge bg-secondary bg-opacity-25 text-light fw-normal" style={{ fontSize: '0.7rem' }}>
+                                                    {(showEditModal ? editMember?.batch : newMember.batch) || "No Batch"}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Right Column: Details & Social Media */}
+                                <div className="col-lg-8 d-flex flex-column gap-3">
+                                    {/* Full Name */}
+                                    <div>
+                                        <label className="form-label text-secondary small text-uppercase fw-bold mb-1">
+                                            Full Name <span className="text-danger">*</span>
+                                        </label>
+                                        <div className="input-group">
+                                            <span className="input-group-text bg-dark bg-opacity-50 border-secondary border-opacity-50 text-secondary">
+                                                <i className="bi bi-person"></i>
+                                            </span>
+                                            <input
+                                                type="text"
+                                                className={`form-control form-control-glass ${(showEditModal ? editValidationErrors.name : validationErrors.name) ? 'is-invalid' : ''}`}
+                                                placeholder="e.g. Alex Morgan"
+                                                value={showEditModal ? (editMember?.name || "") : newMember.name}
+                                                onChange={e => {
+                                                    const value = e.target.value;
+                                                    if (showEditModal && editMember) {
+                                                        setEditMember({ ...editMember, name: value });
+                                                        handleNameChange(value, true);
+                                                    } else {
+                                                        setNewMember({ ...newMember, name: value });
+                                                        handleNameChange(value, false);
+                                                    }
+                                                }}
+                                                maxLength={50}
+                                            />
+                                        </div>
+                                        {(showEditModal ? editValidationErrors.name : validationErrors.name) && (
+                                            <div className="invalid-feedback-custom">
+                                                {showEditModal ? editValidationErrors.name : validationErrors.name}
                                             </div>
                                         )}
+                                        <div className={`character-counter ${currentNameLength > 45 ? 'warning' : ''} ${currentNameLength >= 50 ? 'danger' : ''}`}>
+                                            {currentNameLength} / 50
+                                        </div>
                                     </div>
 
-                                    {/* Right: Form */}
-                                    <div className="col-md-8">
-                                        <div className="row g-3">
-                                            {/* Name Field */}
-                                            <div className="col-12">
-                                                <label className="form-label text-secondary small text-uppercase fw-bold">
-                                                    Full Name <span className="text-danger">*</span>
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    className={`form-control form-control-glass ${(showEditModal ? editValidationErrors.name : validationErrors.name) ? 'is-invalid' : ''}`}
-                                                    value={showEditModal ? (editMember?.name || "") : newMember.name}
-                                                    onChange={e => {
-                                                        const value = e.target.value;
-                                                        if (showEditModal && editMember) {
-                                                            setEditMember({ ...editMember, name: value });
-                                                            handleNameChange(value, true);
-                                                        } else {
-                                                            setNewMember({ ...newMember, name: value });
-                                                            handleNameChange(value, false);
-                                                        }
-                                                    }}
-                                                    maxLength={50}
-                                                />
-                                                {(showEditModal ? editValidationErrors.name : validationErrors.name) && (
-                                                    <div className="invalid-feedback-custom">
-                                                        {showEditModal ? editValidationErrors.name : validationErrors.name}
-                                                    </div>
-                                                )}
-                                                <div className={`character-counter ${currentNameLength > 45 ? 'warning' : ''} ${currentNameLength >= 50 ? 'danger' : ''}`}>
-                                                    {currentNameLength} / 50
-                                                </div>
-                                            </div>
-
-                                            {/* Designation Field */}
-                                            <div className="col-12 col-md-6">
-                                                <label className="form-label text-secondary small text-uppercase fw-bold">
-                                                    Designation <span className="text-danger">*</span>
-                                                </label>
+                                    {/* Designation & Batch in 2 Columns */}
+                                    <div className="row g-3">
+                                        {/* Designation */}
+                                        <div className="col-12 col-md-6">
+                                            <label className="form-label text-secondary small text-uppercase fw-bold mb-1">
+                                                Designation <span className="text-danger">*</span>
+                                            </label>
+                                            <div className="input-group">
+                                                <span className="input-group-text bg-dark bg-opacity-50 border-secondary border-opacity-50 text-info">
+                                                    <i className="bi bi-award"></i>
+                                                </span>
                                                 <select
                                                     className={`form-select form-select-glass ${(showEditModal ? editValidationErrors.designation : validationErrors.designation) ? 'is-invalid' : ''}`}
                                                     value={showEditModal ? (editMember?.designation || "") : newMember.designation}
@@ -1208,7 +1323,7 @@ const Members = () => {
                                                         }
                                                     }}
                                                 >
-                                                    <option value="" disabled>Select...</option>
+                                                    <option value="" disabled>Select Designation...</option>
                                                     <option value="Chairperson">Chairperson</option>
                                                     <option value="Vice Chairperson">Vice Chairperson</option>
                                                     <option value="Treasurer">Treasurer</option>
@@ -1220,18 +1335,23 @@ const Members = () => {
                                                     <option value="Media Unit">Media Unit</option>
                                                     <option value="Volunteer Unit">Volunteer Unit</option>
                                                 </select>
-                                                {(showEditModal ? editValidationErrors.designation : validationErrors.designation) && (
-                                                    <div className="invalid-feedback-custom">
-                                                        {showEditModal ? editValidationErrors.designation : validationErrors.designation}
-                                                    </div>
-                                                )}
                                             </div>
+                                            {(showEditModal ? editValidationErrors.designation : validationErrors.designation) && (
+                                                <div className="invalid-feedback-custom">
+                                                    {showEditModal ? editValidationErrors.designation : validationErrors.designation}
+                                                </div>
+                                            )}
+                                        </div>
 
-                                            {/* Batch Field */}
-                                            <div className="col-12 col-md-6">
-                                                <label className="form-label text-secondary small text-uppercase fw-bold">
-                                                    Batch <span className="text-danger">*</span>
-                                                </label>
+                                        {/* Batch */}
+                                        <div className="col-12 col-md-6">
+                                            <label className="form-label text-secondary small text-uppercase fw-bold mb-1">
+                                                Batch Year <span className="text-danger">*</span>
+                                            </label>
+                                            <div className="input-group">
+                                                <span className="input-group-text bg-dark bg-opacity-50 border-secondary border-opacity-50 text-warning">
+                                                    <i className="bi bi-mortarboard"></i>
+                                                </span>
                                                 <select
                                                     className={`form-select form-select-glass ${(showEditModal ? editValidationErrors.batch : validationErrors.batch) ? 'is-invalid' : ''}`}
                                                     value={showEditModal ? (editMember?.batch || "") : newMember.batch}
@@ -1246,44 +1366,46 @@ const Members = () => {
                                                         }
                                                     }}
                                                 >
-                                                    <option value="" disabled>Select...</option>
+                                                    <option value="" disabled>Select Batch...</option>
                                                     <option value="2024–2025">2024–2025</option>
                                                     <option value="2025–2026">2025–2026</option>
                                                 </select>
-                                                {(showEditModal ? editValidationErrors.batch : validationErrors.batch) && (
-                                                    <div className="invalid-feedback-custom">
-                                                        {showEditModal ? editValidationErrors.batch : validationErrors.batch}
-                                                    </div>
-                                                )}
                                             </div>
+                                            {(showEditModal ? editValidationErrors.batch : validationErrors.batch) && (
+                                                <div className="invalid-feedback-custom">
+                                                    {showEditModal ? editValidationErrors.batch : validationErrors.batch}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
 
-                                            {/* Social Media Section */}
-                                            <div className="col-12 mt-4">
-                                                <label className="form-label text-secondary small text-uppercase fw-bold border-bottom border-secondary w-100 pb-1 mb-3">
-                                                    Social Media (Optional)
-                                                </label>
+                                    {/* Social Media Section */}
+                                    <div className="mt-1">
+                                        <div className="d-flex align-items-center justify-content-between mb-2">
+                                            <label className="form-label text-secondary small text-uppercase fw-bold mb-0">
+                                                <i className="bi bi-share-fill text-primary me-1"></i>
+                                                Social Profiles <span className="text-secondary opacity-75 fw-normal text-none text-lowercase">(Optional)</span>
+                                            </label>
+                                        </div>
 
-                                                {/* LinkedIn */}
-                                                <div className="input-group mb-2">
-                                                    <span className="input-group-text bg-transparent border-secondary text-info">
+                                        <div className="d-flex flex-column gap-2">
+                                            {/* LinkedIn */}
+                                            <div>
+                                                <div className="input-group input-group-sm">
+                                                    <span
+                                                        className="input-group-text border-0 text-white"
+                                                        style={{ background: '#0a66c2', minWidth: '40px', justifyContent: 'center' }}
+                                                        title="LinkedIn"
+                                                    >
                                                         <i className="bi bi-linkedin"></i>
                                                     </span>
-
                                                     <input
                                                         type="url"
-                                                        className={`form-control bg-transparent border-secondary text-light ${(showEditModal ? editValidationErrors.linkedin : validationErrors.linkedin)
-                                                            ? "is-invalid"
-                                                            : ""
-                                                            }`}
+                                                        className={`form-control form-control-glass ${(showEditModal ? editValidationErrors.linkedin : validationErrors.linkedin) ? "is-invalid" : ""}`}
                                                         placeholder="https://linkedin.com/in/username"
-                                                        value={
-                                                            showEditModal
-                                                                ? editMember?.social.linkedin || ""
-                                                                : newMember.social.linkedin || ""
-                                                        }
+                                                        value={showEditModal ? (editMember?.social.linkedin || "") : (newMember.social.linkedin || "")}
                                                         onChange={(e) => {
                                                             const value = e.target.value;
-
                                                             if (showEditModal && editMember) {
                                                                 setEditMember({
                                                                     ...editMember,
@@ -1299,47 +1421,57 @@ const Members = () => {
                                                             }
                                                         }}
                                                     />
-
-                                                    {/* DELETE BUTTON (EDIT MODE ONLY) */}
-                                                    {showEditModal && editMember?.social.linkedin && (
+                                                    {(showEditModal ? editMember?.social.linkedin : newMember.social.linkedin) && (
                                                         <button
                                                             type="button"
-                                                            className="btn btn-outline-danger"
-                                                            title="Remove LinkedIn"
-                                                            onClick={() => handleDeleteSocial("linkedin")}
+                                                            className="btn btn-outline-danger btn-sm"
+                                                            title="Clear LinkedIn"
+                                                            onClick={() => {
+                                                                if (showEditModal && editMember) {
+                                                                    if (editMember._id) {
+                                                                        handleDeleteSocial("linkedin");
+                                                                    } else {
+                                                                        setEditMember({ ...editMember, social: { ...editMember.social, linkedin: "" } });
+                                                                        handleLinkedInChange("", true);
+                                                                    }
+                                                                } else {
+                                                                    setNewMember({ ...newMember, social: { ...newMember.social, linkedin: "" } });
+                                                                    handleLinkedInChange("", false);
+                                                                }
+                                                            }}
                                                         >
                                                             <i className="bi bi-trash"></i>
                                                         </button>
                                                     )}
                                                 </div>
-
                                                 {(showEditModal ? editValidationErrors.linkedin : validationErrors.linkedin) && (
-                                                    <div className="invalid-feedback-custom mb-3">
+                                                    <div className="invalid-feedback-custom">
                                                         {showEditModal ? editValidationErrors.linkedin : validationErrors.linkedin}
                                                     </div>
                                                 )}
+                                            </div>
 
-                                                {/* Instagram */}
-                                                <div className="input-group mb-2">
-                                                    <span className="input-group-text bg-transparent border-secondary text-danger">
+                                            {/* Instagram */}
+                                            <div>
+                                                <div className="input-group input-group-sm">
+                                                    <span
+                                                        className="input-group-text border-0 text-white"
+                                                        style={{
+                                                            background: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
+                                                            minWidth: '40px',
+                                                            justifyContent: 'center'
+                                                        }}
+                                                        title="Instagram"
+                                                    >
                                                         <i className="bi bi-instagram"></i>
                                                     </span>
-
                                                     <input
                                                         type="url"
-                                                        className={`form-control bg-transparent border-secondary text-light ${(showEditModal ? editValidationErrors.instagram : validationErrors.instagram)
-                                                            ? "is-invalid"
-                                                            : ""
-                                                            }`}
+                                                        className={`form-control form-control-glass ${(showEditModal ? editValidationErrors.instagram : validationErrors.instagram) ? "is-invalid" : ""}`}
                                                         placeholder="https://instagram.com/username"
-                                                        value={
-                                                            showEditModal
-                                                                ? editMember?.social.instagram || ""
-                                                                : newMember.social.instagram || ""
-                                                        }
+                                                        value={showEditModal ? (editMember?.social.instagram || "") : (newMember.social.instagram || "")}
                                                         onChange={(e) => {
                                                             const value = e.target.value;
-
                                                             if (showEditModal && editMember) {
                                                                 setEditMember({
                                                                     ...editMember,
@@ -1355,47 +1487,53 @@ const Members = () => {
                                                             }
                                                         }}
                                                     />
-
-                                                    {/* DELETE BUTTON */}
-                                                    {showEditModal && editMember?.social.instagram && (
+                                                    {(showEditModal ? editMember?.social.instagram : newMember.social.instagram) && (
                                                         <button
                                                             type="button"
-                                                            className="btn btn-outline-danger"
-                                                            title="Remove Instagram"
-                                                            onClick={() => handleDeleteSocial("instagram")}
+                                                            className="btn btn-outline-danger btn-sm"
+                                                            title="Clear Instagram"
+                                                            onClick={() => {
+                                                                if (showEditModal && editMember) {
+                                                                    if (editMember._id) {
+                                                                        handleDeleteSocial("instagram");
+                                                                    } else {
+                                                                        setEditMember({ ...editMember, social: { ...editMember.social, instagram: "" } });
+                                                                        handleInstagramChange("", true);
+                                                                    }
+                                                                } else {
+                                                                    setNewMember({ ...newMember, social: { ...newMember.social, instagram: "" } });
+                                                                    handleInstagramChange("", false);
+                                                                }
+                                                            }}
                                                         >
                                                             <i className="bi bi-trash"></i>
                                                         </button>
                                                     )}
                                                 </div>
-
                                                 {(showEditModal ? editValidationErrors.instagram : validationErrors.instagram) && (
-                                                    <div className="invalid-feedback-custom mb-3">
+                                                    <div className="invalid-feedback-custom">
                                                         {showEditModal ? editValidationErrors.instagram : validationErrors.instagram}
                                                     </div>
                                                 )}
+                                            </div>
 
-                                                {/* Facebook */}
-                                                <div className="input-group">
-                                                    <span className="input-group-text bg-transparent border-secondary text-primary">
+                                            {/* Facebook */}
+                                            <div>
+                                                <div className="input-group input-group-sm">
+                                                    <span
+                                                        className="input-group-text border-0 text-white"
+                                                        style={{ background: '#1877f2', minWidth: '40px', justifyContent: 'center' }}
+                                                        title="Facebook"
+                                                    >
                                                         <i className="bi bi-facebook"></i>
                                                     </span>
-
                                                     <input
                                                         type="url"
-                                                        className={`form-control bg-transparent border-secondary text-light ${(showEditModal ? editValidationErrors.facebook : validationErrors.facebook)
-                                                            ? "is-invalid"
-                                                            : ""
-                                                            }`}
+                                                        className={`form-control form-control-glass ${(showEditModal ? editValidationErrors.facebook : validationErrors.facebook) ? "is-invalid" : ""}`}
                                                         placeholder="https://facebook.com/username"
-                                                        value={
-                                                            showEditModal
-                                                                ? editMember?.social.facebook || ""
-                                                                : newMember.social.facebook || ""
-                                                        }
+                                                        value={showEditModal ? (editMember?.social.facebook || "") : (newMember.social.facebook || "")}
                                                         onChange={(e) => {
                                                             const value = e.target.value;
-
                                                             if (showEditModal && editMember) {
                                                                 setEditMember({
                                                                     ...editMember,
@@ -1411,64 +1549,75 @@ const Members = () => {
                                                             }
                                                         }}
                                                     />
-
-                                                    {/* DELETE BUTTON */}
-                                                    {showEditModal && editMember?.social.facebook && (
+                                                    {(showEditModal ? editMember?.social.facebook : newMember.social.facebook) && (
                                                         <button
                                                             type="button"
-                                                            className="btn btn-outline-danger"
-                                                            title="Remove Facebook"
-                                                            onClick={() => handleDeleteSocial("facebook")}
+                                                            className="btn btn-outline-danger btn-sm"
+                                                            title="Clear Facebook"
+                                                            onClick={() => {
+                                                                if (showEditModal && editMember) {
+                                                                    if (editMember._id) {
+                                                                        handleDeleteSocial("facebook");
+                                                                    } else {
+                                                                        setEditMember({ ...editMember, social: { ...editMember.social, facebook: "" } });
+                                                                        handleFacebookChange("", true);
+                                                                    }
+                                                                } else {
+                                                                    setNewMember({ ...newMember, social: { ...newMember.social, facebook: "" } });
+                                                                    handleFacebookChange("", false);
+                                                                }
+                                                            }}
                                                         >
                                                             <i className="bi bi-trash"></i>
                                                         </button>
                                                     )}
                                                 </div>
-
                                                 {(showEditModal ? editValidationErrors.facebook : validationErrors.facebook) && (
                                                     <div className="invalid-feedback-custom">
                                                         {showEditModal ? editValidationErrors.facebook : validationErrors.facebook}
                                                     </div>
                                                 )}
                                             </div>
-
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            <div className="modal-footer border-top border-secondary border-opacity-25 p-4">
-                                <button
-                                    type="button"
-                                    className="btn btn-outline-light rounded-pill px-4"
-                                    onClick={() => {
-                                        setShowModal(false);
-                                        setShowEditModal(false);
-                                        setValidationErrors({});
-                                        setEditValidationErrors({});
-                                    }}
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="button"
-                                    className="btn btn-primary rounded-pill px-5 fw-bold"
-                                    onClick={showEditModal ? handleUpdateMember : handleAddMember}
-                                    disabled={showEditModal ? (hasEditValidationErrors || isSubmitting || !editMember) : (hasValidationErrors || isSubmitting)}
-                                >
-                                    {isSubmitting ? (
-                                        <span>
-                                            <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                            {showEditModal ? 'Saving...' : 'Adding...'}
-                                        </span>
-                                    ) : (
-                                        showEditModal ? 'Save Changes' : 'Add Member'
-                                    )}
-                                </button>
-                            </div>
+                        </div>
+
+                        {/* Modal Footer */}
+                        <div className="d-flex justify-content-end gap-2 pt-3 border-top border-secondary border-opacity-25 mt-3">
+                            <button
+                                type="button"
+                                className="btn btn-outline-light rounded-pill px-4"
+                                onClick={() => {
+                                    setShowModal(false);
+                                    setShowEditModal(false);
+                                    setValidationErrors({});
+                                    setEditValidationErrors({});
+                                }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                className="btn btn-primary rounded-pill px-5 fw-bold shadow"
+                                onClick={showEditModal ? handleUpdateMember : handleAddMember}
+                                disabled={showEditModal ? (hasEditValidationErrors || isSubmitting || !editMember) : (hasValidationErrors || isSubmitting)}
+                            >
+                                {isSubmitting ? (
+                                    <span>
+                                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                        {showEditModal ? 'Saving...' : 'Adding...'}
+                                    </span>
+                                ) : (
+                                    showEditModal ? 'Save Changes' : 'Add Member'
+                                )}
+                            </button>
                         </div>
                     </div>
                 </div>
             )}
+
 
             {/* --- CROP MODAL --- */}
             <div className={`modal fade ${showCropModal ? "show d-block" : ""}`} style={{ backgroundColor: "rgba(0,0,0,0.9)" }}>

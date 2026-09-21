@@ -9,7 +9,7 @@ import {
 } from "../../services/admin/recruitmentService";
 import { useNavigate } from "react-router-dom";
 import FormBuilder from "../../components/FormBuilder/FormBuilder";
-import { IQuestion, ACM_STANDARD_STUDENT_QUESTIONS } from "../../types/formBuilder";
+import type { IQuestion } from "../../types/formBuilder";
 
 /* ---------------- TYPES ---------------- */
 interface QuestionOption {
@@ -114,8 +114,6 @@ const Recruitments: React.FC = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [recruitmentToDelete, setRecruitmentToDelete] = useState<Recruitment | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showQuestionBuilder, setShowQuestionBuilder] = useState(false);
-  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
   const [recruitmentModalTab, setRecruitmentModalTab] = useState<'details' | 'form'>('details');
 
   const navigate = useNavigate();
@@ -136,33 +134,6 @@ const Recruitments: React.FC = () => {
     questions: [],
   });
 
-  // Question builder state - using a more specific type
-  const [questionForm, setQuestionForm] = useState<{
-    type: 'text' | 'textarea' | 'multiple-choice' | 'checkbox' | 'dropdown' | 'yes-no' | 'file';
-    question: string;
-    required: boolean;
-    placeholder?: string;
-    description?: string;
-    maxLength?: number;
-    options?: QuestionOption[];
-    minSelections?: number;
-    maxSelections?: number;
-    allowedFormats?: string[];
-    maxFileSize?: number;
-    maxFiles?: number;
-  }>({
-    type: 'text',
-    question: '',
-    required: false,
-    placeholder: '',
-    description: '',
-    maxLength: 100,
-    options: [{ id: '1', label: '' }, { id: '2', label: '' }],
-    allowedFormats: [],
-    maxFileSize: 10,
-    maxFiles: 1,
-  });
-
   // Validation state
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
 
@@ -180,337 +151,6 @@ const Recruitments: React.FC = () => {
   const formatInputDate = (date: string) => {
     if (!date) return "";
     return new Date(date).toISOString().split("T")[0];
-  };
-
-  // Common file formats
-  const commonFileFormats = [
-    { id: 'pdf', label: 'PDF (.pdf)', ext: 'pdf' },
-    { id: 'doc', label: 'Word (.doc, .docx)', ext: 'doc,docx' },
-    { id: 'txt', label: 'Text (.txt)', ext: 'txt' },
-    { id: 'jpg', label: 'Image (.jpg, .jpeg)', ext: 'jpg,jpeg' },
-    { id: 'png', label: 'Image (.png)', ext: 'png' },
-    { id: 'xls', label: 'Excel (.xls, .xlsx)', ext: 'xls,xlsx' },
-    { id: 'ppt', label: 'PowerPoint (.ppt, .pptx)', ext: 'ppt,pptx' },
-  ];
-
-  // --- QUESTION UTILITIES ---
-  const generateId = () => {
-    return Math.random().toString(36).substring(2, 9);
-  };
-
-  const addQuestion = () => {
-    if (!questionForm.question.trim()) {
-      setToast({
-        show: true,
-        variant: "error",
-        message: "Question text is required"
-      });
-      return;
-    }
-
-    let newQuestion: Question;
-
-    // Create question based on type
-    switch (questionForm.type) {
-      case 'text':
-      case 'textarea':
-        newQuestion = {
-          id: editingQuestionId || generateId(),
-          type: questionForm.type,
-          question: questionForm.question.trim(),
-          required: questionForm.required,
-          description: questionForm.description?.trim() || undefined,
-          placeholder: questionForm.placeholder?.trim() || undefined,
-          maxLength: questionForm.maxLength,
-        } as TextQuestion;
-        break;
-
-      case 'multiple-choice':
-      case 'dropdown':
-      case 'yes-no':
-        // Filter out empty options
-        const filteredOptions = questionForm.options?.filter(opt => opt.label.trim() !== '');
-        if (!filteredOptions || filteredOptions.length === 0) {
-          setToast({
-            show: true,
-            variant: "error",
-            message: "At least one option is required for this question type"
-          });
-          return;
-        }
-
-        if (questionForm.type === 'yes-no') {
-          newQuestion = {
-            id: editingQuestionId || generateId(),
-            type: 'yes-no',
-            question: questionForm.question.trim(),
-            required: questionForm.required,
-            description: questionForm.description?.trim() || undefined,
-            options: [
-              { id: '1', label: 'Yes' },
-              { id: '2', label: 'No' }
-            ]
-          } as YesNoQuestion;
-        } else if (questionForm.type === 'multiple-choice') {
-          newQuestion = {
-            id: editingQuestionId || generateId(),
-            type: 'multiple-choice',
-            question: questionForm.question.trim(),
-            required: questionForm.required,
-            description: questionForm.description?.trim() || undefined,
-            options: filteredOptions
-          } as MultipleChoiceQuestion;
-        } else {
-          newQuestion = {
-            id: editingQuestionId || generateId(),
-            type: 'dropdown',
-            question: questionForm.question.trim(),
-            required: questionForm.required,
-            description: questionForm.description?.trim() || undefined,
-            options: filteredOptions
-          } as DropdownQuestion;
-        }
-        break;
-
-      case 'checkbox':
-        // Filter out empty options
-        const checkboxOptions = questionForm.options?.filter(opt => opt.label.trim() !== '');
-        if (!checkboxOptions || checkboxOptions.length === 0) {
-          setToast({
-            show: true,
-            variant: "error",
-            message: "At least one option is required for checkboxes"
-          });
-          return;
-        }
-
-        newQuestion = {
-          id: editingQuestionId || generateId(),
-          type: 'checkbox',
-          question: questionForm.question.trim(),
-          required: questionForm.required,
-          description: questionForm.description?.trim() || undefined,
-          options: checkboxOptions,
-          minSelections: questionForm.minSelections || 0,
-          maxSelections: questionForm.maxSelections || checkboxOptions.length
-        } as CheckboxQuestion;
-        break;
-
-      case 'file':
-        // Validate file question
-        if (!questionForm.allowedFormats || questionForm.allowedFormats.length === 0) {
-          setToast({
-            show: true,
-            variant: "error",
-            message: "At least one file format must be selected"
-          });
-          return;
-        }
-
-        if (!questionForm.maxFileSize || questionForm.maxFileSize < 1 || questionForm.maxFileSize > 100) {
-          setToast({
-            show: true,
-            variant: "error",
-            message: "Max file size must be between 1 and 100 MB"
-          });
-          return;
-        }
-
-        if (!questionForm.maxFiles || questionForm.maxFiles < 1 || questionForm.maxFiles > 10) {
-          setToast({
-            show: true,
-            variant: "error",
-            message: "Max files must be between 1 and 10"
-          });
-          return;
-        }
-
-        newQuestion = {
-          id: editingQuestionId || generateId(),
-          type: 'file',
-          question: questionForm.question.trim(),
-          required: questionForm.required,
-          description: questionForm.description?.trim() || undefined,
-          allowedFormats: questionForm.allowedFormats,
-          maxFileSize: questionForm.maxFileSize,
-          maxFiles: questionForm.maxFiles,
-        } as FileQuestion;
-        break;
-
-      default:
-        return;
-    }
-
-    if (editingQuestionId) {
-      // Update existing question
-      setForm(prev => ({
-        ...prev,
-        questions: prev.questions?.map(q =>
-          q.id === editingQuestionId ? newQuestion : q
-        ) || []
-      }));
-    } else {
-      // Add new question
-      setForm(prev => ({
-        ...prev,
-        questions: [...(prev.questions || []), newQuestion]
-      }));
-    }
-
-    resetQuestionForm();
-    setShowQuestionBuilder(false);
-  };
-
-  const editQuestion = (question: Question) => {
-    const baseFields = {
-      type: question.type,
-      question: question.question,
-      required: question.required,
-      description: question.description || '',
-      placeholder: '',
-      maxLength: 100,
-    };
-
-    switch (question.type) {
-      case 'text':
-      case 'textarea':
-        setQuestionForm({
-          ...baseFields,
-          placeholder: (question as TextQuestion).placeholder || '',
-          maxLength: (question as TextQuestion).maxLength || 100,
-        });
-        break;
-
-      case 'multiple-choice':
-      case 'dropdown':
-        setQuestionForm({
-          ...baseFields,
-          options: question.options?.length ? [...question.options] : [{ id: '1', label: '' }, { id: '2', label: '' }],
-        });
-        break;
-
-      case 'checkbox':
-        setQuestionForm({
-          ...baseFields,
-          options: question.options?.length ? [...question.options] : [{ id: '1', label: '' }, { id: '2', label: '' }],
-          minSelections: (question as CheckboxQuestion).minSelections || 0,
-          maxSelections: (question as CheckboxQuestion).maxSelections || 1,
-        });
-        break;
-
-      case 'yes-no':
-        setQuestionForm({
-          ...baseFields,
-          options: [
-            { id: '1', label: 'Yes' },
-            { id: '2', label: 'No' }
-          ],
-        });
-        break;
-
-      case 'file':
-        const fileQuestion = question as FileQuestion;
-        setQuestionForm({
-          ...baseFields,
-          allowedFormats: fileQuestion.allowedFormats || [],
-          maxFileSize: fileQuestion.maxFileSize || 10,
-          maxFiles: fileQuestion.maxFiles || 1,
-        });
-        break;
-    }
-
-    setEditingQuestionId(question.id);
-    setShowQuestionBuilder(true);
-  };
-
-  const deleteQuestion = (id: string) => {
-    setForm(prev => ({
-      ...prev,
-      questions: prev.questions?.filter(q => q.id !== id) || []
-    }));
-  };
-
-  const resetQuestionForm = () => {
-    setQuestionForm({
-      type: 'text',
-      question: '',
-      required: false,
-      placeholder: '',
-      description: '',
-      maxLength: 100,
-      options: [{ id: '1', label: '' }, { id: '2', label: '' }],
-      allowedFormats: [],
-      maxFileSize: 10,
-      maxFiles: 1,
-    });
-    setEditingQuestionId(null);
-  };
-
-  const addOption = () => {
-    setQuestionForm(prev => ({
-      ...prev,
-      options: [...(prev.options || []), { id: generateId(), label: '' }]
-    }));
-  };
-
-  const updateOption = (id: string, label: string) => {
-    setQuestionForm(prev => ({
-      ...prev,
-      options: prev.options?.map(opt =>
-        opt.id === id ? { ...opt, label } : opt
-      )
-    }));
-  };
-
-  const removeOption = (id: string) => {
-    if (questionForm.options && questionForm.options.length > 2) {
-      setQuestionForm(prev => ({
-        ...prev,
-        options: prev.options?.filter(opt => opt.id !== id)
-      }));
-    }
-  };
-
-  const toggleFileFormat = (ext: string) => {
-    setQuestionForm(prev => {
-      const currentFormats = prev.allowedFormats || [];
-      const formatsArray = ext.split(',');
-
-      let newFormats = [...currentFormats];
-
-      formatsArray.forEach(format => {
-        if (newFormats.includes(format)) {
-          newFormats = newFormats.filter(f => f !== format);
-        } else {
-          newFormats.push(format);
-        }
-      });
-
-      return {
-        ...prev,
-        allowedFormats: newFormats
-      };
-    });
-  };
-
-  const moveQuestion = (fromIndex: number, toIndex: number) => {
-    if (!form.questions) return;
-
-    const newQuestions = [...form.questions];
-    const [movedQuestion] = newQuestions.splice(fromIndex, 1);
-    newQuestions.splice(toIndex, 0, movedQuestion);
-
-    setForm(prev => ({
-      ...prev,
-      questions: newQuestions
-    }));
-  };
-
-  const clearAllQuestions = () => {
-    setForm(prev => ({
-      ...prev,
-      questions: []
-    }));
   };
 
   // --- VALIDATION UTILITIES ---
@@ -854,34 +494,48 @@ const Recruitments: React.FC = () => {
 
     /* --- Inputs & Selects --- */
     .form-control-glass, .form-select-glass {
-      background: rgba(0, 0, 0, 0.3);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      color: white;
-      border-radius: 8px;
-      padding: 10px 12px;
-      transition: all 0.2s;
+      background: rgba(0, 0, 0, 0.3) !important;
+      border: 1px solid rgba(255, 255, 255, 0.12) !important;
+      color: #ffffff !important;
+      border-radius: 10px;
+      padding: 0.55rem 0.85rem;
+      transition: all 0.2s ease;
     }
     
     .form-control-glass:focus, .form-select-glass:focus {
-      background: rgba(0, 0, 0, 0.5);
-      border-color: #3b82f6;
-      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
-      color: white;
+      background: rgba(0, 0, 0, 0.5) !important;
+      border-color: #3b82f6 !important;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2) !important;
+      color: #ffffff !important;
     }
     
-    .form-control-glass.is-invalid {
-      border-color: #dc3545;
-      background: rgba(220, 53, 69, 0.1);
+    .input-group > .form-control-glass,
+    .input-group > .form-select-glass {
+      border-top-left-radius: 0 !important;
+      border-bottom-left-radius: 0 !important;
+    }
+    .input-group > .input-group-text {
+      border-top-left-radius: 10px !important;
+      border-bottom-left-radius: 10px !important;
+    }
+    .input-group > .btn {
+      border-top-right-radius: 10px !important;
+      border-bottom-right-radius: 10px !important;
+    }
+
+    .form-control-glass.is-invalid, .form-select-glass.is-invalid {
+      border-color: #dc3545 !important;
+      background: rgba(220, 53, 69, 0.1) !important;
     }
     
-    .form-control-glass.is-invalid:focus {
-      border-color: #dc3545;
-      box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.15);
+    .form-control-glass.is-invalid:focus, .form-select-glass.is-invalid:focus {
+      border-color: #dc3545 !important;
+      box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.2) !important;
     }
 
     /* Fix for Select Options Visibility */
     .form-select-glass option {
-      background-color: #1f2937; /* Dark background for options */
+      background-color: #111827; /* Dark background for options */
       color: #ffffff; /* White text for options */
     }
 
@@ -946,72 +600,6 @@ const Recruitments: React.FC = () => {
       margin-left: 2px;
     }
 
-    /* --- Question Builder Styles --- */
-    .question-builder {
-      background: rgba(17, 24, 39, 0.95);
-      border: 1px solid rgba(59, 130, 246, 0.3);
-      border-radius: 12px;
-      transition: all 0.3s ease;
-    }
-    
-    .question-type-badge {
-      font-size: 0.7rem;
-      padding: 4px 8px;
-      border-radius: 6px;
-      font-weight: 600;
-    }
-    
-    .question-type-text { background: rgba(59, 130, 246, 0.15); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.3); }
-    .question-type-textarea { background: rgba(34, 197, 94, 0.15); color: #86efac; border: 1px solid rgba(34, 197, 94, 0.3); }
-    .question-type-multiple-choice { background: rgba(168, 85, 247, 0.15); color: #d8b4fe; border: 1px solid rgba(168, 85, 247, 0.3); }
-    .question-type-checkbox { background: rgba(245, 158, 11, 0.15); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.3); }
-    .question-type-dropdown { background: rgba(236, 72, 153, 0.15); color: #f9a8d4; border: 1px solid rgba(236, 72, 153, 0.3); }
-    .question-type-yes-no { background: rgba(14, 165, 233, 0.15); color: #7dd3fc; border: 1px solid rgba(14, 165, 233, 0.3); }
-    .question-type-file { background: rgba(139, 92, 246, 0.15); color: #c4b5fd; border: 1px solid rgba(139, 92, 246, 0.3); }
-    
-    .drag-handle {
-      cursor: grab;
-      transition: color 0.2s;
-      color: #9ca3af;
-    }
-    
-    .drag-handle:hover {
-      color: #d1d5db;
-    }
-    
-    .drag-handle:active {
-      cursor: grabbing;
-    }
-    
-    .option-item {
-      transition: all 0.2s;
-      background: rgba(31, 41, 55, 0.5);
-    }
-    
-    .option-item:hover {
-      background: rgba(55, 65, 81, 0.5);
-    }
-    
-    .preview-question {
-      background: rgba(31, 41, 55, 0.4);
-      border-left: 3px solid #3b82f6;
-    }
-    
-    .file-format-checkbox {
-      transition: all 0.2s;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-    
-    .file-format-checkbox:hover {
-      border-color: #3b82f6;
-      background: rgba(59, 130, 246, 0.1);
-    }
-    
-    .file-format-checkbox.selected {
-      background: rgba(59, 130, 246, 0.2);
-      border-color: #3b82f6;
-    }
-    
     /* --- MOBILE RESPONSIVENESS (< 768px) --- */
     @media (max-width: 768px) {
         /* 1. Add offset for floating navbar */
@@ -1032,20 +620,6 @@ const Recruitments: React.FC = () => {
         .display-4 {
             font-size: 2.5rem; /* Smaller icon on empty state */
         }
-        
-        /* 4. Question builder adjustments */
-        .question-actions {
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-        
-        .question-actions .btn {
-            width: 100%;
-        }
-        
-        .file-formats-grid {
-            grid-template-columns: repeat(2, 1fr) !important;
-        }
     }
         /* --- Placeholder Text Color (GLOBAL FIX) --- */
 ::placeholder {
@@ -1064,26 +638,6 @@ const Recruitments: React.FC = () => {
 ::-ms-input-placeholder {
   color: rgba(255, 255, 255, 0.75) !important;
 }
-  /* --- FIX: Preview input visibility --- */
-.preview-question .form-control-glass {
-  opacity: 1 !important;                 /* cancel disabled fade */
-  color: #ffffff !important;             /* text clearly visible */
-  background: rgba(0, 0, 0, 0.45) !important;
-  border-color: rgba(255, 255, 255, 0.2);
-  cursor: not-allowed;
-}
-
-/* Placeholder clarity */
-.preview-question .form-control-glass::placeholder {
-  color: rgba(255, 255, 255, 0.8) !important;
-}
-
-/* Disabled textarea fix */
-.preview-question textarea.form-control-glass {
-  opacity: 1 !important;
-}
-
-
   `;
 
   /* ---------------- RENDER ---------------- */
@@ -1241,222 +795,324 @@ const Recruitments: React.FC = () => {
 
       {/* Create/Edit Modal */}
       {showModal && (
-        <div className="modal fade show d-block" style={{ backgroundColor: "rgba(0,0,0,0.7)", backdropFilter: 'blur(4px)' }}>
-          <div className="modal-dialog modal-dialog-centered modal-lg" style={{ maxWidth: recruitmentModalTab === 'form' ? '940px' : undefined, transition: 'max-width 0.3s ease' }}>
-            <div className="modal-content modal-content-glass rounded-4 overflow-hidden text-light">
+        <div className="admin-modal-overlay">
+          <div className="admin-modal-container p-4 m-2" style={{ maxWidth: '1050px', width: '100%' }}>
 
-              <div className="modal-header border-bottom border-secondary border-opacity-25 p-4">
-                <div>
-                  <h5 className="modal-title fw-bold mb-1">
-                    {editingId ? "Edit Recruitment" : "Create New Drive"}
-                  </h5>
-                  <p className="text-secondary small mb-0">Configure drive details and application form</p>
+            {/* Modal Header */}
+            <div className="d-flex justify-content-between align-items-center mb-3 border-bottom border-secondary border-opacity-25 pb-3">
+              <div className="d-flex align-items-center gap-3">
+                <div
+                  className="rounded-circle d-flex align-items-center justify-content-center shadow-sm"
+                  style={{
+                    width: 44,
+                    height: 44,
+                    background: 'rgba(59, 130, 246, 0.15)',
+                    border: '1px solid rgba(59, 130, 246, 0.3)'
+                  }}
+                >
+                  <i className={`bi ${editingId ? 'bi-briefcase-fill text-primary' : 'bi-plus-circle-fill text-primary'} fs-5`}></i>
                 </div>
-                <button type="button" className="btn-close btn-close-white" onClick={() => {
+                <div>
+                  <h4 className="m-0 fw-bold text-white">
+                    {editingId ? "Edit Recruitment Drive" : "Create New Drive"}
+                  </h4>
+                  <p className="text-secondary small mb-0 mt-1">Configure drive details, eligibility timeline, and application form</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="btn btn-link text-secondary text-decoration-none fs-4 p-0"
+                style={{ lineHeight: 1 }}
+                onClick={() => {
                   setShowModal(false);
                   setValidationErrors({});
-                  setShowQuestionBuilder(false);
-                  resetQuestionForm();
                   setRecruitmentModalTab('details');
-                }}></button>
-              </div>
+                }}
+              >
+                <i className="bi bi-x-lg"></i>
+              </button>
+            </div>
 
-              {/* Modal Tabs */}
-              <div className="d-flex gap-2 mx-4 mt-3 p-1 bg-dark bg-opacity-50 rounded-3 border border-secondary border-opacity-25">
-                <button
-                  type="button"
-                  className={`btn flex-fill py-2 rounded-2 fw-semibold d-flex align-items-center justify-content-center gap-2 ${
-                    recruitmentModalTab === 'details'
-                      ? 'btn-primary text-white shadow'
-                      : 'text-secondary btn-link text-decoration-none'
+            {/* Modal Tabs with Sliding Active Pill */}
+            <div
+              className="position-relative d-flex mb-3 p-1 bg-dark bg-opacity-75 rounded-3 border border-secondary border-opacity-25 overflow-hidden"
+              style={{ minHeight: '46px' }}
+            >
+              {/* Smooth Sliding Pill Indicator */}
+              <div
+                className="position-absolute rounded-2 shadow"
+                style={{
+                  top: '4px',
+                  bottom: '4px',
+                  left: '4px',
+                  width: 'calc(50% - 4px)',
+                  background: 'linear-gradient(135deg, #2563eb, #3b82f6)',
+                  boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)',
+                  transform: recruitmentModalTab === 'details' ? 'translateX(0%)' : 'translateX(100%)',
+                  transition: 'transform 0.32s cubic-bezier(0.4, 0, 0.2, 1)',
+                  zIndex: 1,
+                  pointerEvents: 'none'
+                }}
+              />
+
+              {/* Tab 1: Drive Details */}
+              <button
+                type="button"
+                className={`btn flex-fill py-2 rounded-2 fw-semibold d-flex align-items-center justify-content-center gap-2 border-0 position-relative ${
+                  recruitmentModalTab === 'details' ? 'text-white' : 'text-secondary'
+                }`}
+                style={{ zIndex: 2, transition: 'color 0.25s ease', background: 'transparent' }}
+                onClick={() => setRecruitmentModalTab('details')}
+              >
+                <i className="bi bi-briefcase"></i>
+                <span>1. Drive Details</span>
+              </button>
+
+              {/* Tab 2: Application Form */}
+              <button
+                type="button"
+                className={`btn flex-fill py-2 rounded-2 fw-semibold d-flex align-items-center justify-content-center gap-2 border-0 position-relative ${
+                  recruitmentModalTab === 'form' ? 'text-white' : 'text-secondary'
+                }`}
+                style={{ zIndex: 2, transition: 'color 0.25s ease', background: 'transparent' }}
+                onClick={() => setRecruitmentModalTab('form')}
+              >
+                <i className="bi bi-ui-checks-grid"></i>
+                <span>2. Application Form</span>
+                <span
+                  className={`badge rounded-pill px-2 ${
+                    recruitmentModalTab === 'form' ? 'bg-white bg-opacity-25 text-white' : 'bg-secondary bg-opacity-50 text-light'
                   }`}
-                  onClick={() => setRecruitmentModalTab('details')}
+                  style={{ transition: 'all 0.25s ease' }}
                 >
-                  <i className="bi bi-briefcase"></i>
-                  <span>1. Drive Details</span>
-                </button>
-                <button
-                  type="button"
-                  className={`btn flex-fill py-2 rounded-2 fw-semibold d-flex align-items-center justify-content-center gap-2 ${
-                    recruitmentModalTab === 'form'
-                      ? 'btn-primary text-white shadow'
-                      : 'text-secondary btn-link text-decoration-none'
-                  }`}
-                  onClick={() => setRecruitmentModalTab('form')}
-                >
-                  <i className="bi bi-ui-checks-grid"></i>
-                  <span>2. Application Form</span>
-                  <span className="badge bg-secondary bg-opacity-50 text-light rounded-pill px-2">
-                    {form.questions?.length || 0}
-                  </span>
-                </button>
-              </div>
+                  {form.questions?.length || 0}
+                </span>
+              </button>
+            </div>
 
-              <div className="modal-body p-4">
-                {recruitmentModalTab === 'details' ? (
-                  <>
-                    {/* Title */}
-                    <div className="mb-3">
-                      <label className="form-label text-secondary small fw-bold text-uppercase">
-                        Title <span className="required-asterisk">*</span>
-                      </label>
-                      <input
-                        className={`form-control form-control-glass ${validationErrors.title ? 'is-invalid' : ''}`}
-                        value={form.title}
-                        onChange={(e) => {
-                          setForm({ ...form, title: e.target.value });
-                          setValidationErrors({ ...validationErrors, title: validateTitle(e.target.value) });
-                        }}
-                        maxLength={100}
-                      />
-                      {validationErrors.title && (
-                        <div className="invalid-feedback-custom">
-                          {validationErrors.title}
-                        </div>
-                      )}
-                      <div className={`character-counter ${form.title.length > 90 ? 'warning' : ''} ${form.title.length >= 100 ? 'danger' : ''}`}>
-                        {form.title.length} / 100
-                      </div>
-                    </div>
-
-                    {/* Role */}
-                    <div className="mb-3">
-                      <label className="form-label text-secondary small fw-bold text-uppercase">
-                        Role / Position <span className="required-asterisk">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        className={`form-control form-control-glass ${validationErrors.role ? 'is-invalid' : ''}`}
-                        value={form.role}
-                        onChange={(e) => {
-                          setForm({ ...form, role: e.target.value });
-                          setValidationErrors({ ...validationErrors, role: validateRole(e.target.value) });
-                        }}
-                        maxLength={50}
-                      />
-                      {validationErrors.role && (
-                        <div className="invalid-feedback-custom">
-                          {validationErrors.role}
-                        </div>
-                      )}
-                      <div className={`character-counter ${form.role.length > 45 ? 'warning' : ''} ${form.role.length >= 50 ? 'danger' : ''}`}>
-                        {form.role.length} / 50
-                      </div>
-                    </div>
-
-                    {/* Description */}
-                    <div className="mb-3">
-                      <label className="form-label text-secondary small fw-bold text-uppercase">
-                        Description
-                      </label>
-                      <textarea
-                        className={`form-control form-control-glass ${validationErrors.description ? 'is-invalid' : ''}`}
-                        rows={3}
-                        value={form.description}
-                        onChange={(e) => {
-                          setForm({ ...form, description: e.target.value });
-                          setValidationErrors({ ...validationErrors, description: validateDescription(e.target.value) });
-                        }}
-                        maxLength={500}
-                      />
-                      {validationErrors.description && (
-                        <div className="invalid-feedback-custom">
-                          {validationErrors.description}
-                        </div>
-                      )}
-                      <div className={`character-counter ${form.description.length > 450 ? 'warning' : ''} ${form.description.length >= 500 ? 'danger' : ''}`}>
-                        {form.description.length} / 500
-                      </div>
-                    </div>
-
-                    {/* Dates */}
-                    <div className="row g-3 mb-4">
-                      <div className="col-6">
-                        <label className="form-label text-secondary small fw-bold text-uppercase">
-                          Start Date <span className="required-asterisk">*</span>
+            {/* Modal Body with Smooth Sliding Tabs */}
+            <div className="tab-slider-wrapper">
+              <div
+                className="tab-slider-track"
+                style={{
+                  transform: recruitmentModalTab === 'details' ? 'translateX(0%)' : 'translateX(-50%)'
+                }}
+              >
+                {/* Slide 1: Drive Details (2-Column Non-Scrollable Layout) */}
+                <div className="tab-slide px-1">
+                  <div className="row g-3">
+                    {/* Left Column */}
+                    <div className="col-lg-6 d-flex flex-column gap-3">
+                      {/* Title */}
+                      <div>
+                        <label className="form-label text-secondary small fw-bold mb-1">
+                          Drive Title <span className="required-asterisk">*</span>
                         </label>
-                        <input
-                          type="date"
-                          className={`form-control form-control-glass ${validationErrors.startDate || validationErrors.dateRange ? 'is-invalid' : ''}`}
-                          value={form.startDate}
-                          min={getTodayDate()}
-                          onChange={(e) => {
-                            const newStartDate = e.target.value;
-                            setForm({ ...form, startDate: newStartDate });
-
-                            if (form.endDate && new Date(newStartDate) >= new Date(form.endDate)) {
-                              setForm(prev => ({ ...prev, endDate: "" }));
-                            }
-
-                            const errors = { ...validationErrors };
-                            errors.startDate = validateStartDate(newStartDate);
-                            errors.endDate = validateEndDate(form.endDate, newStartDate);
-                            errors.dateRange = validateDateRange(newStartDate, form.endDate);
-                            setValidationErrors(errors);
-                          }}
-                          onClick={(e) => (e.target as any).showPicker && (e.target as any).showPicker()}
-                        />
-                        {validationErrors.startDate && (
+                        <div className="input-group">
+                          <span className="input-group-text bg-dark bg-opacity-50 border-secondary border-opacity-50 text-primary">
+                            <i className="bi bi-card-heading"></i>
+                          </span>
+                          <input
+                            className={`form-control form-control-glass ${validationErrors.title ? 'is-invalid' : ''}`}
+                            placeholder="e.g. Core Team Recruitment 2026"
+                            value={form.title}
+                            onChange={(e) => {
+                              setForm({ ...form, title: e.target.value });
+                              setValidationErrors({ ...validationErrors, title: validateTitle(e.target.value) });
+                            }}
+                            maxLength={100}
+                          />
+                        </div>
+                        {validationErrors.title && (
                           <div className="invalid-feedback-custom">
-                            {validationErrors.startDate}
+                            {validationErrors.title}
+                          </div>
+                        )}
+                        <div className={`character-counter ${form.title.length > 90 ? 'warning' : ''} ${form.title.length >= 100 ? 'danger' : ''}`}>
+                          {form.title.length} / 100
+                        </div>
+                      </div>
+
+                      {/* Role */}
+                      <div>
+                        <label className="form-label text-secondary small fw-bold mb-1">
+                          Role / Position Title <span className="required-asterisk">*</span>
+                        </label>
+                        <div className="input-group">
+                          <span className="input-group-text bg-dark bg-opacity-50 border-secondary border-opacity-50 text-info">
+                            <i className="bi bi-person-badge"></i>
+                          </span>
+                          <input
+                            type="text"
+                            className={`form-control form-control-glass ${validationErrors.role ? 'is-invalid' : ''}`}
+                            placeholder="e.g. Technical Lead / Creative Designer"
+                            value={form.role}
+                            onChange={(e) => {
+                              setForm({ ...form, role: e.target.value });
+                              setValidationErrors({ ...validationErrors, role: validateRole(e.target.value) });
+                            }}
+                            maxLength={50}
+                          />
+                        </div>
+                        {validationErrors.role && (
+                          <div className="invalid-feedback-custom">
+                            {validationErrors.role}
+                          </div>
+                        )}
+                        <div className={`character-counter ${form.role.length > 45 ? 'warning' : ''} ${form.role.length >= 50 ? 'danger' : ''}`}>
+                          {form.role.length} / 50
+                        </div>
+                      </div>
+
+                      {/* Dates in 1 row */}
+                      <div className="row g-2">
+                        <div className="col-6">
+                          <label className="form-label text-secondary small fw-bold mb-1">
+                            Start Date <span className="required-asterisk">*</span>
+                          </label>
+                          <div className="input-group">
+                            <span className="input-group-text bg-dark bg-opacity-50 border-secondary border-opacity-50 text-success">
+                              <i className="bi bi-calendar-check"></i>
+                            </span>
+                            <input
+                              type="date"
+                              className={`form-control form-control-glass ${validationErrors.startDate || validationErrors.dateRange ? 'is-invalid' : ''}`}
+                              value={form.startDate}
+                              min={getTodayDate()}
+                              onChange={(e) => {
+                                const newStartDate = e.target.value;
+                                setForm({ ...form, startDate: newStartDate });
+
+                                if (form.endDate && new Date(newStartDate) >= new Date(form.endDate)) {
+                                  setForm(prev => ({ ...prev, endDate: "" }));
+                                }
+
+                                const errors = { ...validationErrors };
+                                errors.startDate = validateStartDate(newStartDate);
+                                errors.endDate = validateEndDate(form.endDate, newStartDate);
+                                errors.dateRange = validateDateRange(newStartDate, form.endDate);
+                                setValidationErrors(errors);
+                              }}
+                              onClick={(e) => (e.target as any).showPicker && (e.target as any).showPicker()}
+                            />
+                          </div>
+                          {validationErrors.startDate && (
+                            <div className="invalid-feedback-custom">
+                              {validationErrors.startDate}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="col-6">
+                          <label className="form-label text-secondary small fw-bold mb-1">
+                            End Date <span className="required-asterisk">*</span>
+                          </label>
+                          <div className="input-group">
+                            <span className="input-group-text bg-dark bg-opacity-50 border-secondary border-opacity-50 text-danger">
+                              <i className="bi bi-calendar-x"></i>
+                            </span>
+                            <input
+                              type="date"
+                              className={`form-control form-control-glass ${validationErrors.endDate || validationErrors.dateRange ? 'is-invalid' : ''}`}
+                              value={form.endDate}
+                              min={getMinEndDate()}
+                              onChange={(e) => {
+                                const newEndDate = e.target.value;
+                                setForm({ ...form, endDate: newEndDate });
+
+                                const errors = { ...validationErrors };
+                                errors.endDate = validateEndDate(newEndDate, form.startDate);
+                                errors.dateRange = validateDateRange(form.startDate, newEndDate);
+                                setValidationErrors(errors);
+                              }}
+                              onClick={(e) => (e.target as any).showPicker && (e.target as any).showPicker()}
+                            />
+                          </div>
+                          {validationErrors.endDate && (
+                            <div className="invalid-feedback-custom">
+                              {validationErrors.endDate}
+                            </div>
+                          )}
+                        </div>
+
+                        {validationErrors.dateRange && (
+                          <div className="col-12">
+                            <div className="invalid-feedback-custom">
+                              {validationErrors.dateRange}
+                            </div>
                           </div>
                         )}
                       </div>
-                      <div className="col-6">
-                        <label className="form-label text-secondary small fw-bold text-uppercase">
-                          End Date <span className="required-asterisk">*</span>
-                        </label>
-                        <input
-                          type="date"
-                          className={`form-control form-control-glass ${validationErrors.endDate || validationErrors.dateRange ? 'is-invalid' : ''}`}
-                          value={form.endDate}
-                          min={getMinEndDate()}
-                          onChange={(e) => {
-                            const newEndDate = e.target.value;
-                            setForm({ ...form, endDate: newEndDate });
 
-                            const errors = { ...validationErrors };
-                            errors.endDate = validateEndDate(newEndDate, form.startDate);
-                            errors.dateRange = validateDateRange(form.startDate, newEndDate);
-                            setValidationErrors(errors);
-                          }}
-                          onClick={(e) => (e.target as any).showPicker && (e.target as any).showPicker()}
+                      {/* Open Applications Toggle */}
+                      <div className="form-check form-switch p-3 rounded-3 d-flex align-items-center justify-content-between" style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                        <div>
+                          <div className="text-white fw-semibold small mb-1">
+                            Accepting Applications?
+                          </div>
+                          <span className={`badge ${form.isOpen ? 'bg-success bg-opacity-20 text-success' : 'bg-secondary bg-opacity-25 text-secondary'} rounded-pill px-2 py-1`} style={{ fontSize: '0.72rem' }}>
+                            <i className={`bi ${form.isOpen ? 'bi-check-circle-fill' : 'bi-dash-circle'} me-1`}></i>
+                            {form.isOpen ? 'Open & Accepting' : 'Closed / Draft'}
+                          </span>
+                        </div>
+                        <input
+                          className="form-check-input m-0 cursor-pointer"
+                          type="checkbox"
+                          style={{ width: '2.8em', height: '1.4em', cursor: 'pointer' }}
+                          checked={form.isOpen}
+                          onChange={(e) => setForm({ ...form, isOpen: e.target.checked })}
                         />
-                        {validationErrors.endDate && (
+                      </div>
+                    </div>
+
+                    {/* Right Column */}
+                    <div className="col-lg-6 d-flex flex-column gap-3">
+                      {/* Description */}
+                      <div>
+                        <label className="form-label text-secondary small fw-bold mb-1">
+                          Drive Description
+                        </label>
+                        <textarea
+                          className={`form-control form-control-glass ${validationErrors.description ? 'is-invalid' : ''}`}
+                          rows={4}
+                          placeholder="Describe the recruitment drive, eligibility criteria, and expectations..."
+                          value={form.description}
+                          onChange={(e) => {
+                            setForm({ ...form, description: e.target.value });
+                            setValidationErrors({ ...validationErrors, description: validateDescription(e.target.value) });
+                          }}
+                          maxLength={500}
+                          style={{ resize: 'none' }}
+                        />
+                        {validationErrors.description && (
                           <div className="invalid-feedback-custom">
-                            {validationErrors.endDate}
+                            {validationErrors.description}
                           </div>
                         )}
+                        <div className={`character-counter ${form.description.length > 450 ? 'warning' : ''} ${form.description.length >= 500 ? 'danger' : ''}`}>
+                          {form.description.length} / 500
+                        </div>
                       </div>
 
-                      {validationErrors.dateRange && (
-                        <div className="col-12">
-                          <div className="invalid-feedback-custom">
-                            {validationErrors.dateRange}
-                          </div>
+                      {/* Guidelines Card */}
+                      <div className="p-3 rounded-3 d-flex flex-column gap-2" style={{ background: 'rgba(59, 130, 246, 0.06)', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+                        <div className="d-flex align-items-center gap-2 text-primary fw-bold small">
+                          <i className="bi bi-lightbulb-fill"></i>
+                          <span>Application Form Builder</span>
                         </div>
-                      )}
+                        <p className="text-secondary small mb-0" style={{ lineHeight: 1.5 }}>
+                          Use the <strong>Application Form</strong> tab to configure custom questions, portfolio uploads, and short answers. Applicants will fill out your customized form directly.
+                        </p>
+                      </div>
                     </div>
+                  </div>
+                </div>
 
-                    {/* Open Applications Toggle */}
-                    <div className="form-check form-switch p-3 bg-dark bg-opacity-50 rounded-3 border border-secondary border-opacity-25 d-flex align-items-center justify-content-between">
-                      <label className="form-check-label text-white fw-medium mb-0 ms-1">
-                        Immediately Open Applications?
-                      </label>
-                      <input
-                        className="form-check-input m-0"
-                        type="checkbox"
-                        style={{ width: '3em', height: '1.5em', cursor: 'pointer' }}
-                        checked={form.isOpen}
-                        onChange={(e) => setForm({ ...form, isOpen: e.target.checked })}
-                      />
-                    </div>
-                  </>
-                ) : (
-                  /* Tab 2: Form Builder */
-                  <div className="py-2">
-                    <div className="alert alert-info border-0 bg-opacity-10 bg-info d-flex align-items-center gap-2 mb-3">
-                      <i className="bi bi-info-circle-fill text-info fs-5"></i>
+                {/* Slide 2: Form Builder */}
+                <div className="tab-slide px-1">
+                  <div style={{ maxHeight: 'calc(75vh - 180px)', overflowY: 'auto' }} className="pe-1">
+                    <div className="alert alert-info border-0 bg-opacity-10 bg-info d-flex align-items-center gap-2 mb-3 py-2 px-3">
+                      <i className="bi bi-info-circle-fill text-info fs-6"></i>
                       <span className="small text-light">
                         Build your application form with custom questions, input types, and validations. Changes are saved with the recruitment drive.
                       </span>
@@ -1473,479 +1129,54 @@ const Recruitments: React.FC = () => {
                       formDescription={form.description || "Please fill in the details below to apply for this position."}
                     />
                   </div>
-                )}
-              </div>
-
-              <div className="modal-footer border-top border-secondary border-opacity-25 p-4 d-flex justify-content-between">
-                <div>
-                  {recruitmentModalTab === 'details' ? (
-                    <button
-                      type="button"
-                      className="btn btn-outline-info rounded-pill px-3"
-                      onClick={() => setRecruitmentModalTab('form')}
-                    >
-                      <i className="bi bi-arrow-right me-1"></i>Next: Application Form ({form.questions?.length || 0})
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      className="btn btn-outline-secondary rounded-pill px-3"
-                      onClick={() => setRecruitmentModalTab('details')}
-                    >
-                      <i className="bi bi-arrow-left me-1"></i>Back: Drive Details
-                    </button>
-                  )}
                 </div>
-                <div className="d-flex gap-2">
-                  <button className="btn btn-outline-light rounded-pill px-4" onClick={() => {
-                    setShowModal(false);
-                    setValidationErrors({});
-                    setShowQuestionBuilder(false);
-                    resetQuestionForm();
-                    setRecruitmentModalTab('details');
-                  }}>Cancel</button>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="d-flex justify-content-between align-items-center pt-3 border-top border-secondary border-opacity-25 mt-3">
+              <div>
+                {recruitmentModalTab === 'details' ? (
                   <button
-                    className="btn btn-primary rounded-pill px-5 fw-bold"
-                    onClick={handleSave}
-                    disabled={hasValidationErrors || isSubmitting}
+                    type="button"
+                    className="btn btn-outline-info rounded-pill px-3"
+                    onClick={() => setRecruitmentModalTab('form')}
                   >
-                    {isSubmitting ? (
-                      <span>
-                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                        {editingId ? "Updating..." : "Creating..."}
-                      </span>
-                    ) : (
-                      editingId ? "Update Drive" : "Create Drive"
-                    )}
+                    <i className="bi bi-arrow-right me-1"></i>Next: Application Form ({form.questions?.length || 0})
                   </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Legacy Question Builder Modal - replaced by FormBuilder in Tab 2 */}
-      {false && showQuestionBuilder && (
-        <div className="modal fade show d-block" style={{ backgroundColor: "rgba(0,0,0,0.8)", backdropFilter: 'blur(4px)' }}>
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content modal-content-glass rounded-4 overflow-hidden text-light">
-              <div className="modal-header border-bottom border-secondary border-opacity-25 p-4">
-                <h5 className="modal-title fw-bold">
-                  {editingQuestionId ? "Edit Question" : "Add New Question"}
-                </h5>
-                <button type="button" className="btn-close btn-close-white" onClick={() => {
-                  setShowQuestionBuilder(false);
-                  resetQuestionForm();
-                }}></button>
-              </div>
-
-              <div className="modal-body p-4">
-                {/* Question Type */}
-                <div className="mb-3">
-                  <label className="form-label text-secondary small fw-bold text-uppercase">
-                    Question Type
-                  </label>
-                  <select
-                    className="form-select form-select-glass"
-                    value={questionForm.type}
-                    onChange={(e) => {
-                      const newType = e.target.value as any;
-                      setQuestionForm({
-                        ...questionForm,
-                        type: newType,
-                        // Reset options based on type
-                        options: newType === 'yes-no' ? [
-                          { id: '1', label: 'Yes' },
-                          { id: '2', label: 'No' }
-                        ] : newType === 'text' || newType === 'textarea' || newType === 'file' ? undefined : [{ id: '1', label: '' }, { id: '2', label: '' }],
-                        // Clear min/max selections if not checkbox
-                        ...(newType !== 'checkbox' && {
-                          minSelections: undefined,
-                          maxSelections: undefined
-                        }),
-                        // Clear file formats if not file type
-                        ...(newType !== 'file' && {
-                          allowedFormats: [],
-                          maxFileSize: 10,
-                          maxFiles: 1
-                        })
-                      });
-                    }}
+                ) : (
+                  <button
+                    type="button"
+                    className="btn btn-outline-secondary rounded-pill px-3"
+                    onClick={() => setRecruitmentModalTab('details')}
                   >
-                    <option value="text">Short Text Answer</option>
-                    <option value="textarea">Long Text Answer</option>
-                    <option value="multiple-choice">Multiple Choice</option>
-                    <option value="checkbox">Checkboxes</option>
-                    <option value="dropdown">Dropdown</option>
-                    <option value="yes-no">Yes/No</option>
-                    <option value="file">File Upload</option>
-                  </select>
-                </div>
-
-                {/* Question Text */}
-                <div className="mb-3">
-                  <label className="form-label text-secondary small fw-bold text-uppercase">
-                    Question Text <span className="required-asterisk">*</span>
-                  </label>
-                  <input
-                    className="form-control form-control-glass"
-                    value={questionForm.question}
-                    onChange={(e) => setQuestionForm({ ...questionForm, question: e.target.value })}
-                    placeholder="Enter your question here"
-                  />
-                </div>
-
-                {/* Description */}
-                <div className="mb-3">
-                  <label className="form-label text-secondary small fw-bold text-uppercase">
-                    Description (Optional)
-                  </label>
-                  <textarea
-                    className="form-control form-control-glass"
-                    rows={2}
-                    value={questionForm.description}
-                    onChange={(e) => setQuestionForm({ ...questionForm, description: e.target.value })}
-                    placeholder="Add additional instructions or context"
-                  />
-                </div>
-
-                {/* Placeholder for text inputs */}
-                {(questionForm.type === 'text' || questionForm.type === 'textarea') && (
-                  <div className="mb-3">
-                    <label className="form-label text-secondary small fw-bold text-uppercase">
-                      Placeholder Text (Optional)
-                    </label>
-                    <input
-                      className="form-control form-control-glass"
-                      value={questionForm.placeholder}
-                      onChange={(e) => setQuestionForm({ ...questionForm, placeholder: e.target.value })}
-                      placeholder="e.g., Enter your answer here"
-                    />
-                  </div>
+                    <i className="bi bi-arrow-left me-1"></i>Back: Drive Details
+                  </button>
                 )}
-
-                {/* Max length for text inputs */}
-                {(questionForm.type === 'text' || questionForm.type === 'textarea') && (
-                  <div className="mb-3">
-                    <label className="form-label text-secondary small fw-bold text-uppercase">
-                      Maximum Characters
-                    </label>
-                    <input
-                      type="number"
-                      className="form-control form-control-glass"
-                      value={questionForm.maxLength}
-                      onChange={(e) => setQuestionForm({ ...questionForm, maxLength: parseInt(e.target.value) || 100 })}
-                      min="1"
-                      max="5000"
-                    />
-                  </div>
-                )}
-
-                {/* Options for multiple choice, checkbox, dropdown */}
-                {(questionForm.type === 'multiple-choice' || questionForm.type === 'checkbox' || questionForm.type === 'dropdown') && (
-                  <div className="mb-3">
-                    <label className="form-label text-secondary small fw-bold text-uppercase mb-2">
-                      Options
-                    </label>
-                    <div className="list-group">
-                      {questionForm.options?.map((option, index) => (
-                        <div key={option.id} className="option-item list-group-item bg-transparent border border-secondary border-opacity-25 rounded mb-2 p-2">
-                          <div className="d-flex align-items-center gap-2">
-                            <span className="text-secondary small">{index + 1}.</span>
-                            <input
-                              className="form-control form-control-glass border-0"
-                              value={option.label}
-                              onChange={(e) => updateOption(option.id, e.target.value)}
-                              placeholder={`Option ${index + 1}`}
-                            />
-                            <button
-                              className="btn btn-sm btn-outline-danger"
-                              onClick={() => removeOption(option.id)}
-                              disabled={questionForm.options && questionForm.options.length <= 2}
-                            >
-                              <i className="bi bi-x"></i>
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <button
-                      className="btn btn-outline-secondary btn-sm mt-2"
-                      onClick={addOption}
-                    >
-                      <i className="bi bi-plus me-1"></i> Add Option
-                    </button>
-                  </div>
-                )}
-
-                {/* Min/Max selections for checkboxes */}
-                {questionForm.type === 'checkbox' && (
-                  <div className="row g-3 mb-3">
-                    <div className="col-6">
-                      <label className="form-label text-secondary small fw-bold text-uppercase">
-                        Minimum Selections
-                      </label>
-                      <input
-                        type="number"
-                        className="form-control form-control-glass"
-                        value={questionForm.minSelections || 0}
-                        onChange={(e) => setQuestionForm({
-                          ...questionForm,
-                          minSelections: parseInt(e.target.value) || 0
-                        })}
-                        min="0"
-                        max={questionForm.options?.length || 1}
-                      />
-                    </div>
-                    <div className="col-6">
-                      <label className="form-label text-secondary small fw-bold text-uppercase">
-                        Maximum Selections
-                      </label>
-                      <input
-                        type="number"
-                        className="form-control form-control-glass"
-                        value={questionForm.maxSelections || 1}
-                        onChange={(e) => setQuestionForm({
-                          ...questionForm,
-                          maxSelections: parseInt(e.target.value) || 1
-                        })}
-                        min="1"
-                        max={questionForm.options?.length || 1}
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* File upload specific fields */}
-                {questionForm.type === 'file' && (
-                  <>
-                    {/* Allowed File Formats */}
-                    <div className="mb-3">
-                      <label className="form-label text-secondary small fw-bold text-uppercase mb-2">
-                        Allowed File Formats
-                      </label>
-                      <div className="file-formats-grid" style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(3, 1fr)',
-                        gap: '0.5rem'
-                      }}>
-                        {commonFileFormats.map(format => {
-                          const isSelected = questionForm.allowedFormats?.some(f =>
-                            format.ext.split(',').includes(f)
-                          );
-                          return (
-                            <div
-                              key={format.id}
-                              className={`file-format-checkbox p-2 rounded cursor-pointer ${isSelected ? 'selected' : ''}`}
-                              onClick={() => toggleFileFormat(format.ext)}
-                            >
-                              <div className="form-check mb-0">
-                                <input
-                                  type="checkbox"
-                                  className="form-check-input"
-                                  checked={isSelected}
-                                  onChange={() => { }}
-                                  style={{ cursor: 'pointer' }}
-                                />
-                                <label className="form-check-label small ms-2" style={{ cursor: 'pointer' }}>
-                                  {format.label}
-                                </label>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                      <div className="text-secondary small mt-2">
-                        <i className="bi bi-info-circle me-1"></i>
-                        Selected: {questionForm.allowedFormats?.join(', ') || 'None'}
-                      </div>
-                    </div>
-
-                    {/* Max File Size */}
-                    <div className="mb-3">
-                      <label className="form-label text-secondary small fw-bold text-uppercase">
-                        Maximum File Size (MB)
-                      </label>
-                      <input
-                        type="number"
-                        className="form-control form-control-glass"
-                        value={questionForm.maxFileSize}
-                        onChange={(e) => setQuestionForm({
-                          ...questionForm,
-                          maxFileSize: parseInt(e.target.value) || 10
-                        })}
-                        min="1"
-                        max="100"
-                      />
-                      <div className="text-secondary small mt-1">
-                        <i className="bi bi-info-circle me-1"></i>
-                        Maximum allowed file size in megabytes (1-100 MB)
-                      </div>
-                    </div>
-
-                    {/* Max Number of Files */}
-                    <div className="mb-3">
-                      <label className="form-label text-secondary small fw-bold text-uppercase">
-                        Maximum Number of Files
-                      </label>
-                      <input
-                        type="number"
-                        className="form-control form-control-glass"
-                        value={questionForm.maxFiles}
-                        onChange={(e) => setQuestionForm({
-                          ...questionForm,
-                          maxFiles: parseInt(e.target.value) || 1
-                        })}
-                        min="1"
-                        max="10"
-                      />
-                      <div className="text-secondary small mt-1">
-                        <i className="bi bi-info-circle me-1"></i>
-                        Maximum number of files user can upload (1-10)
-                      </div>
-                    </div>
-                  </>
-                )}
-
-                {/* Required Toggle */}
-                <div className="form-check form-switch p-3 bg-dark bg-opacity-50 rounded-3 border border-secondary border-opacity-25 d-flex align-items-center justify-content-between mb-4">
-                  <label className="form-check-label text-white fw-medium mb-0 ms-1">
-                    Required Question
-                  </label>
-                  <input
-                    className="form-check-input m-0"
-                    type="checkbox"
-                    style={{ width: '3em', height: '1.5em', cursor: 'pointer' }}
-                    checked={questionForm.required}
-                    onChange={(e) => setQuestionForm({ ...questionForm, required: e.target.checked })}
-                  />
-                </div>
-
-                {/* Preview */}
-                <div className="preview-question p-3 rounded mb-3">
-                  <h6 className="text-secondary small fw-bold text-uppercase mb-2">Preview</h6>
-                  <p className="text-white mb-2">
-                    {questionForm.question || "Sample Question"}
-                    {questionForm.required && <span className="text-danger ms-1">*</span>}
-                  </p>
-                  {questionForm.description && (
-                    <p className="text-secondary small mb-2">{questionForm.description}</p>
-                  )}
-
-                  {questionForm.type === 'text' && (
-                    <input
-                      className="form-control form-control-glass"
-                      placeholder={questionForm.placeholder || "Your answer..."}
-                      disabled
-                    />
-                  )}
-
-                  {questionForm.type === 'textarea' && (
-                    <textarea
-                      className="form-control form-control-glass"
-                      rows={3}
-                      placeholder={questionForm.placeholder || "Your answer..."}
-                      disabled
-                    />
-                  )}
-
-                  {questionForm.type === 'multiple-choice' && questionForm.options && (
-                    <div>
-                      {questionForm.options.map(opt => (
-                        <div key={opt.id} className="form-check mb-1">
-                          <input className="form-check-input" type="radio" disabled />
-                          <label className="form-check-label text-secondary">
-                            {opt.label || "Option"}
-                          </label>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {questionForm.type === 'checkbox' && questionForm.options && (
-                    <div>
-                      {questionForm.options.map(opt => (
-                        <div key={opt.id} className="form-check mb-1">
-                          <input className="form-check-input" type="checkbox" disabled />
-                          <label className="form-check-label text-secondary">
-                            {opt.label || "Option"}
-                          </label>
-                        </div>
-                      ))}
-                      {questionForm.type === 'checkbox' && (
-                        <div className="mt-2 text-secondary small">
-                          <i className="bi bi-info-circle me-1"></i>
-                          Select between {questionForm.minSelections || 0} and {questionForm.maxSelections || questionForm.options.length} options
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {questionForm.type === 'dropdown' && questionForm.options && (
-                    <select className="form-select-glass" disabled>
-                      <option>Select an option</option>
-                      {questionForm.options.map(opt => (
-                        <option key={opt.id}>{opt.label || "Option"}</option>
-                      ))}
-                    </select>
-                  )}
-
-                  {questionForm.type === 'yes-no' && (
-                    <div className="d-flex gap-3">
-                      <div className="form-check">
-                        <input className="form-check-input" type="radio" disabled />
-                        <label className="form-check-label text-secondary">Yes</label>
-                      </div>
-                      <div className="form-check">
-                        <input className="form-check-input" type="radio" disabled />
-                        <label className="form-check-label text-secondary">No</label>
-                      </div>
-                    </div>
-                  )}
-
-                  {questionForm.type === 'file' && (
-                    <div className="border border-secondary border-opacity-25 rounded p-3 bg-dark bg-opacity-25">
-                      <div className="d-flex align-items-center gap-2 mb-3">
-                        <i className="bi bi-cloud-upload fs-4 text-info"></i>
-                        <div className="flex-grow-1">
-                          <div className="text-white small">Choose file{questionForm.maxFiles && questionForm.maxFiles > 1 ? 's' : ''}</div>
-                          <div className="text-secondary small">
-                            {questionForm.allowedFormats && questionForm.allowedFormats.length > 0
-                              ? `${questionForm.allowedFormats.join(', ')} files`
-                              : 'All files'}
-                            {questionForm.maxFileSize && ` • Max ${questionForm.maxFileSize}MB`}
-                            {questionForm.maxFiles && questionForm.maxFiles > 1 && ` • Max ${questionForm.maxFiles} files`}
-                          </div>
-                        </div>
-                        <button className="btn btn-sm btn-outline-info" disabled>
-                          Browse
-                        </button>
-                      </div>
-                      <div className="text-secondary small">
-                        <i className="bi bi-info-circle me-1"></i>
-                        No file chosen
-                      </div>
-                    </div>
-                  )}
-                </div>
               </div>
-
-              <div className="modal-footer border-top border-secondary border-opacity-25 p-4">
+              <div className="d-flex gap-2">
                 <button className="btn btn-outline-light rounded-pill px-4" onClick={() => {
-                  setShowQuestionBuilder(false);
-                  resetQuestionForm();
-                }}>
-                  Cancel
-                </button>
+                  setShowModal(false);
+                  setValidationErrors({});
+                  setRecruitmentModalTab('details');
+                }}>Cancel</button>
                 <button
-                  className="btn btn-primary rounded-pill px-5 fw-bold"
-                  onClick={addQuestion}
+                  className="btn btn-primary rounded-pill px-5 fw-bold shadow"
+                  onClick={handleSave}
+                  disabled={hasValidationErrors || isSubmitting}
                 >
-                  {editingQuestionId ? "Update Question" : "Add Question"}
+                  {isSubmitting ? (
+                    <span>
+                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                      {editingId ? "Updating..." : "Creating..."}
+                    </span>
+                  ) : (
+                    editingId ? "Save Changes" : "Create Drive"
+                  )}
                 </button>
               </div>
             </div>
+
           </div>
         </div>
       )}

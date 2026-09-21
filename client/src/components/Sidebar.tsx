@@ -16,6 +16,7 @@ const sidebarStyles = `
   .custom-sidebar {
     width: 280px;
     min-width: 280px;
+    flex-shrink: 0;
     height: 100vh;
     background: var(--glass-bg);
     backdrop-filter: blur(12px);

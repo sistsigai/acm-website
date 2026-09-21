@@ -1,5 +1,5 @@
 import React from "react";
-import { IQuestion, QuestionType, IQuestionOption } from "../../types/formBuilder";
+import type { IQuestion, QuestionType, IQuestionOption } from "../../types/formBuilder";
 
 interface QuestionCardProps {
   question: IQuestion;

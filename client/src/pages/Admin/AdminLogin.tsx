@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
@@ -15,14 +15,9 @@ const sanitizeInput = (input: string): string => {
         .trim();
 };
 
-const validateEmail = (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-};
-
 const AdminLogin = () => {
     const navigate = useNavigate();
-    const { login } = useAuth();
+    const { login, isAuthenticated } = useAuth();
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
@@ -31,6 +26,27 @@ const AdminLogin = () => {
 
     const [errors, setErrors] = useState({ username: "", password: "" });
     const [touched, setTouched] = useState({ username: false, password: false });
+
+    // Clean all input state and error messages when entering or reloading the login page
+    useEffect(() => {
+        setUsername("");
+        setPassword("");
+        setErrors({ username: "", password: "" });
+        setTouched({ username: false, password: false });
+        setMessage(null);
+
+        if (isAuthenticated) {
+            navigate("/admin/dashboard", { replace: true });
+        }
+    }, [isAuthenticated, navigate]);
+
+    const handleClearForm = () => {
+        setUsername("");
+        setPassword("");
+        setErrors({ username: "", password: "" });
+        setTouched({ username: false, password: false });
+        setMessage(null);
+    };
 
     const validateField = (name: string, value: string) => {
         let error = "";
@@ -108,11 +124,17 @@ const AdminLogin = () => {
                     text: res.message || "Login successful!"
                 });
 
+                // Clear sensitive password from state immediately
+                setPassword("");
+
                 setTimeout(() => {
+                    handleClearForm();
                     navigate("/admin/dashboard");
-                }, 1000);
+                }, 800);
 
             } else {
+                // Clear password on login failure for security and clear state
+                setPassword("");
                 setMessage({
                     variant: "error",
                     text: res.message || "Login failed. Please try again."
@@ -131,6 +153,7 @@ const AdminLogin = () => {
             }
         } catch (err: any) {
             console.error("Login error:", err);
+            setPassword("");
 
             if (err.message && err.message.includes("Network Error")) {
                 setMessage({

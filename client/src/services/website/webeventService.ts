@@ -1,6 +1,6 @@
 import axiosInstance from "../axiosInstance";
 import axios from "axios";
-import { IQuestion } from "../../types/formBuilder";
+import type { IQuestion } from "../../types/formBuilder";
 
 interface ContactPerson {
   name: string;

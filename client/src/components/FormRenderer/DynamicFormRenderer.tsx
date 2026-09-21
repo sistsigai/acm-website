@@ -1,5 +1,5 @@
 import React from "react";
-import { IQuestion } from "../../types/formBuilder";
+import type { IQuestion } from "../../types/formBuilder";
 
 interface DynamicFormRendererProps {
   questions: IQuestion[];

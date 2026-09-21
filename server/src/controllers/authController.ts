@@ -125,24 +125,12 @@ export const adminLogin = async (req: Request, res: Response) => {
 
     /* ---------- PASSWORD CHECK & BCRYPT VERIFICATION ---------- */
 
-    let isPasswordValid = false;
-    const isBcryptHash = /^\$2[aby]\$\d{2}\$/.test(admin.password);
+    const isPasswordValid = await admin.comparePassword(password);
 
-    if (isBcryptHash) {
-      isPasswordValid = await bcrypt.compare(password, admin.password);
-    } else {
-      // Legacy plaintext password check
-      if (admin.password === password) {
-        isPasswordValid = true;
-        // Automatically upgrade legacy plaintext password to secure bcrypt hash
-        try {
-          const hashedPassword = await bcrypt.hash(password, 12);
-          admin.password = hashedPassword;
-          await admin.save();
-        } catch (migrateErr) {
-          console.error("Failed to migrate admin password to bcrypt hash:", migrateErr);
-        }
-      }
+    if (isPasswordValid && !/^\$2[aby]\$\d{2}\$/.test(admin.password)) {
+      // If legacy plaintext, trigger model pre-save hook to hash
+      admin.password = password;
+      await admin.save();
     }
 
     if (!isPasswordValid) {

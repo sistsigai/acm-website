@@ -31,18 +31,18 @@ const containerVariants: Variants = {
 };
 
 const itemVariants = (direction: "left" | "right"): Variants => ({
-  hidden: { 
-    opacity: 0, 
-    y: 50, 
-    x: direction === "left" ? -50 : 50 
+  hidden: {
+    opacity: 0,
+    y: 50,
+    x: direction === "left" ? -50 : 50
   },
-  show: { 
-    opacity: 1, 
-    y: 0, 
+  show: {
+    opacity: 1,
+    y: 0,
     x: 0,
-    transition: { 
-      type: "spring", 
-      stiffness: 50, 
+    transition: {
+      type: "spring",
+      stiffness: 50,
       damping: 14,
       mass: 1
     }
@@ -294,76 +294,76 @@ const styles = `
 `;
 
 const Ourroots = () => {
-    const navigate = useNavigate();
-    const ref = useRef(null);
+  const navigate = useNavigate();
+  const ref = useRef(null);
 
-    const handleVisitClick = (link: To) => {
-        navigate(link);
-    };
+  const handleVisitClick = (link: To) => {
+    navigate(link);
+  };
 
-    return (
-        <>
-            <style>{styles}</style>
+  return (
+    <>
+      <style>{styles}</style>
 
-            <div className='timeline-page' ref={ref}>
-                {/* Title Section */}
-                <m.h1
-                    initial={{ opacity: 0, y: -30 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8, ease: "easeOut" }}
-                    viewport={{ once: true }}
-                    className='timeline-main-title'
-                >
-                    Our Journey & <span className="highlight-text">Batches</span>
-                </m.h1>
+      <div className='timeline-page' ref={ref}>
+        {/* Title Section */}
+        <m.h1
+          initial={{ opacity: 0, y: -30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          viewport={{ once: true }}
+          className='timeline-main-title'
+        >
+          Our Journey & <span className="highlight-text">Batches</span>
+        </m.h1>
 
-                {/* Timeline Wrapper */}
-                <m.div 
-                    className="timeline-container"
-                    variants={containerVariants}
-                    initial="hidden"
-                    whileInView="show"
-                    viewport={{ once: true, margin: "-100px" }}
-                >
-                    {/* The Center Gradient Line */}
-                    <m.div 
-                        className="timeline-line"
-                        initial={{ scaleY: 0 }}
-                        whileInView={{ scaleY: 1 }}
-                        transition={{ duration: 1.5, ease: "easeInOut" }}
-                        viewport={{ once: true }}
-                    />
+        {/* Timeline Wrapper */}
+        <m.div
+          className="timeline-container"
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, margin: "-100px" }}
+        >
+          {/* The Center Gradient Line */}
+          <m.div
+            className="timeline-line"
+            initial={{ scaleY: 0 }}
+            whileInView={{ scaleY: 1 }}
+            transition={{ duration: 1.5, ease: "easeInOut" }}
+            viewport={{ once: true }}
+          />
 
-                    {timelineData.map((item, index) => {
-                        const direction = index % 2 === 0 ? 'left' : 'right';
-                        
-                        return (
-                            <m.div
-                                key={index}
-                                className="timeline-item"
-                                variants={itemVariants(direction)}
-                            >
-                                <div className="timeline-dot"></div>
-                                
-                                <div className="timeline-content">
-                                    <span className="timeline-year">{item.year}</span>
-                                    <h2>{item.title}</h2>
-                                    <p>{item.description}</p>
+          {timelineData.map((item, index) => {
+            const direction = index % 2 === 0 ? 'left' : 'right';
 
-                                    <button
-                                        onClick={() => handleVisitClick(item.link)}
-                                        className="timeline-visit-button"
-                                    >
-                                        View Batch
-                                    </button>
-                                </div>
-                            </m.div>
-                        );
-                    })}
-                </m.div>
-            </div>
-        </>
-    );
+            return (
+              <m.div
+                key={index}
+                className="timeline-item"
+                variants={itemVariants(direction)}
+              >
+                <div className="timeline-dot"></div>
+
+                <div className="timeline-content">
+                  <span className="timeline-year">{item.year}</span>
+                  <h2>{item.title}</h2>
+                  <p>{item.description}</p>
+
+                  <button
+                    onClick={() => handleVisitClick(item.link)}
+                    className="timeline-visit-button"
+                  >
+                    View Batch
+                  </button>
+                </div>
+              </m.div>
+            );
+          })}
+        </m.div>
+      </div>
+    </>
+  );
 };
 
 export default Ourroots;

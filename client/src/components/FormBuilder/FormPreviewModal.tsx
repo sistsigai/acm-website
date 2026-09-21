@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { IQuestion } from "../../types/formBuilder";
+import type { IQuestion } from "../../types/formBuilder";
 
 interface FormPreviewModalProps {
   title: string;

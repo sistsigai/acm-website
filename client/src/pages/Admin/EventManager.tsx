@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import AdminLayout from "../../components/AdminLayout";
 import { createEvent, deleteEvent, getAllEvents, toggleEventDisplay, updateEvent } from "../../services/admin/eventService";
 import FormBuilder from "../../components/FormBuilder/FormBuilder";
-import { IQuestion, ACM_STANDARD_STUDENT_QUESTIONS } from "../../types/formBuilder";
+import { type IQuestion, ACM_STANDARD_STUDENT_QUESTIONS } from "../../types/formBuilder";
 
 // --- CSS Styles for Animation & Design ---
 const styles = `
@@ -137,6 +137,47 @@ const styles = `
   .custom-modal-content::-webkit-scrollbar { width: 8px; }
   .custom-modal-content::-webkit-scrollbar-track { background: transparent; }
   .custom-modal-content::-webkit-scrollbar-thumb { background-color: rgba(255, 255, 255, 0.2); border-radius: 4px; }
+
+  /* --- Inputs & Selects Glassmorphism --- */
+  .form-control-glass, .form-select-glass {
+    background: rgba(0, 0, 0, 0.3) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    color: #ffffff !important;
+    border-radius: 10px;
+    padding: 0.55rem 0.85rem;
+    transition: all 0.2s ease;
+  }
+  .form-control-glass:focus, .form-select-glass:focus {
+    background: rgba(0, 0, 0, 0.5) !important;
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2) !important;
+    color: #ffffff !important;
+  }
+  .input-group > .form-control-glass,
+  .input-group > .form-select-glass {
+    border-top-left-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+  }
+  .input-group > .input-group-text {
+    border-top-left-radius: 10px !important;
+    border-bottom-left-radius: 10px !important;
+  }
+  .input-group > .btn {
+    border-top-right-radius: 10px !important;
+    border-bottom-right-radius: 10px !important;
+  }
+  .form-select-glass option {
+    background-color: #111827;
+    color: #ffffff;
+  }
+  .form-control-glass.is-invalid, .form-select-glass.is-invalid {
+    border-color: #dc3545 !important;
+    background: rgba(220, 53, 69, 0.1) !important;
+  }
+  .form-control-glass.is-invalid:focus, .form-select-glass.is-invalid:focus {
+    border-color: #dc3545 !important;
+    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.2) !important;
+  }
 
   .form-control-dark {
     background-color: #374151;
@@ -836,23 +877,6 @@ const EventManager: React.FC = () => {
     }
   };
 
-  const handleCustomQuestionChange = (value: string, index: number) => {
-    // Adjust index for required questions
-    const actualIndex = REQUIRED_REGISTRATION_QUESTIONS.length + index;
-
-    const list = [...form.registrationQuestions];
-    list[actualIndex] = value;
-    setForm({ ...form, registrationQuestions: list });
-
-    // Validate question
-    const error = validateRegistrationQuestion(value, actualIndex);
-    if (validationErrors.registrationQuestions) {
-      const newErrors = [...validationErrors.registrationQuestions];
-      newErrors[actualIndex] = error;
-      setValidationErrors({ ...validationErrors, registrationQuestions: newErrors });
-    }
-  };
-
   const { hour, minute, meridian } = parseTime(form.time);
 
   return (
@@ -1000,16 +1024,29 @@ const EventManager: React.FC = () => {
 
       {/* --- Unified Modal (Create & Edit) --- */}
       {showModal && (
-        <div className={`custom-modal-overlay ${isClosing ? 'closing' : ''}`}>
-          <div className="custom-modal-content p-4 m-3" style={{ maxWidth: eventModalTab === 'form' ? '940px' : '800px', width: '100%', transition: 'max-width 0.3s ease' }}>
+        <div className={`admin-modal-overlay ${isClosing ? 'closing' : ''}`}>
+          <div className="admin-modal-container p-4 m-2" style={{ maxWidth: '1050px', width: '100%' }}>
 
             {/* Modal Header */}
             <div className="d-flex justify-content-between align-items-center mb-3 border-bottom border-secondary border-opacity-25 pb-3">
-              <div>
-                <h4 className="m-0 fw-bold text-white">
-                  {editingId ? "Edit Event" : "Create New Event"}
-                </h4>
-                <p className="text-secondary small mb-0 mt-1">Configure event details and custom registration form</p>
+              <div className="d-flex align-items-center gap-3">
+                <div
+                  className="rounded-circle d-flex align-items-center justify-content-center shadow-sm"
+                  style={{
+                    width: 44,
+                    height: 44,
+                    background: 'rgba(59, 130, 246, 0.15)',
+                    border: '1px solid rgba(59, 130, 246, 0.3)'
+                  }}
+                >
+                  <i className={`bi ${editingId ? 'bi-calendar-check text-primary' : 'bi-calendar-plus text-primary'} fs-5`}></i>
+                </div>
+                <div>
+                  <h4 className="m-0 fw-bold text-white">
+                    {editingId ? "Edit Event Details" : "Create New Event"}
+                  </h4>
+                  <p className="text-secondary small mb-0 mt-1">Configure event details, schedule, contact info, and registration form</p>
+                </div>
               </div>
               <button
                 onClick={closeModal}
@@ -1020,334 +1057,383 @@ const EventManager: React.FC = () => {
               </button>
             </div>
 
-            {/* Modal Tabs */}
-            <div className="d-flex gap-2 mb-4 p-1 bg-dark bg-opacity-50 rounded-3 border border-secondary border-opacity-25">
+            {/* Modal Tabs with Sliding Active Pill */}
+            <div
+              className="position-relative d-flex mb-3 p-1 bg-dark bg-opacity-75 rounded-3 border border-secondary border-opacity-25 overflow-hidden"
+              style={{ minHeight: '46px' }}
+            >
+              {/* Smooth Sliding Pill Indicator */}
+              <div
+                className="position-absolute rounded-2 shadow"
+                style={{
+                  top: '4px',
+                  bottom: '4px',
+                  left: '4px',
+                  width: 'calc(50% - 4px)',
+                  background: 'linear-gradient(135deg, #2563eb, #3b82f6)',
+                  boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)',
+                  transform: eventModalTab === 'details' ? 'translateX(0%)' : 'translateX(100%)',
+                  transition: 'transform 0.32s cubic-bezier(0.4, 0, 0.2, 1)',
+                  zIndex: 1,
+                  pointerEvents: 'none'
+                }}
+              />
+
+              {/* Tab 1: Details */}
               <button
                 type="button"
-                className={`btn flex-fill py-2 rounded-2 fw-semibold d-flex align-items-center justify-content-center gap-2 transition-all ${
-                  eventModalTab === 'details'
-                    ? 'btn-primary text-white shadow'
-                    : 'text-secondary btn-link text-decoration-none'
+                className={`btn flex-fill py-2 rounded-2 fw-semibold d-flex align-items-center justify-content-center gap-2 border-0 position-relative ${
+                  eventModalTab === 'details' ? 'text-white' : 'text-secondary'
                 }`}
+                style={{ zIndex: 2, transition: 'color 0.25s ease', background: 'transparent' }}
                 onClick={() => setEventModalTab('details')}
               >
                 <i className="bi bi-calendar-event"></i>
                 <span>1. Event Details</span>
               </button>
+
+              {/* Tab 2: Form Builder */}
               <button
                 type="button"
-                className={`btn flex-fill py-2 rounded-2 fw-semibold d-flex align-items-center justify-content-center gap-2 transition-all ${
-                  eventModalTab === 'form'
-                    ? 'btn-primary text-white shadow'
-                    : 'text-secondary btn-link text-decoration-none'
+                className={`btn flex-fill py-2 rounded-2 fw-semibold d-flex align-items-center justify-content-center gap-2 border-0 position-relative ${
+                  eventModalTab === 'form' ? 'text-white' : 'text-secondary'
                 }`}
+                style={{ zIndex: 2, transition: 'color 0.25s ease', background: 'transparent' }}
                 onClick={() => setEventModalTab('form')}
               >
                 <i className="bi bi-ui-checks-grid"></i>
                 <span>2. Registration Form Builder</span>
-                <span className="badge bg-secondary bg-opacity-50 text-light rounded-pill px-2">
+                <span
+                  className={`badge rounded-pill px-2 ${
+                    eventModalTab === 'form' ? 'bg-white bg-opacity-25 text-white' : 'bg-secondary bg-opacity-50 text-light'
+                  }`}
+                  style={{ transition: 'all 0.25s ease' }}
+                >
                   {form.customQuestions?.length || 0}
                 </span>
               </button>
             </div>
 
-            {/* Modal Body */}
-            <div className="modal-body-custom">
-              {eventModalTab === 'details' ? (
-                <>
-                  {/* Event Name */}
-                  <div className="mb-4">
-                    <label className="form-label text-secondary small fw-bold">
-                      Event Name <span className="required-asterisk">*</span>
-                    </label>
-                    <input
-                      className={`form-control form-control-dark mb-2 p-3 ${validationErrors.name ? 'is-invalid' : ''}`}
-                      placeholder="Enter event name"
-                      value={form.name}
-                      onChange={(e) => {
-                        setForm({ ...form, name: e.target.value });
-                        setValidationErrors({ ...validationErrors, name: validateName(e.target.value) });
-                      }}
-                      maxLength={100}
-                    />
-                    {validationErrors.name && (
-                      <div className="invalid-feedback-custom">
-                        {validationErrors.name}
-                      </div>
-                    )}
-                    <div className={`character-counter ${form.name.length > 90 ? 'warning' : ''} ${form.name.length >= 100 ? 'danger' : ''}`}>
-                      {form.name.length} / 100
-                    </div>
-                  </div>
-
-                  {/* Date & Time */}
-                  <div className="row g-3 mb-4">
-                    <div className="col-md-6">
-                      <label className="form-label text-secondary small fw-bold">
-                        Event Date <span className="required-asterisk">*</span>
-                      </label>
-                      <input
-                        type="date"
-                        className={`form-control form-control-dark ${validationErrors.date ? 'is-invalid' : ''}`}
-                        value={form.date}
-                        min={getMinDate()}
-                        onChange={(e) => {
-                          setForm({ ...form, date: e.target.value });
-                          setValidationErrors({ ...validationErrors, date: validateDate(e.target.value) });
-                        }}
-                      />
-                      {validationErrors.date && (
-                        <div className="invalid-feedback-custom">
-                          {validationErrors.date}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="col-md-6">
-                      <label className="form-label text-secondary small fw-bold">
-                        Event Time <span className="required-asterisk">*</span>
-                      </label>
-                      <div className="d-flex gap-2">
-                        {/* Hours */}
-                        <select
-                          className={`form-control form-control-dark ${validationErrors.time ? 'is-invalid' : ''}`}
-                          value={hour}
-                          onChange={(e) => {
-                            const newTime = `${e.target.value || "01"}:${minute || "00"} ${meridian || "AM"}`;
-                            setForm({ ...form, time: newTime });
-                            setValidationErrors({ ...validationErrors, time: validateTime(newTime) });
-                          }}
-                        >
-                          <option value="">HH</option>
-                          {Array.from({ length: 12 }, (_, i) => {
-                            const h = String(i + 1).padStart(2, "0");
-                            return (
-                              <option key={h} value={h}>
-                                {h}
-                              </option>
-                            );
-                          })}
-                        </select>
-
-                        {/* Minutes */}
-                        <select
-                          className={`form-control form-control-dark ${validationErrors.time ? 'is-invalid' : ''}`}
-                          value={minute}
-                          onChange={(e) => {
-                            const newTime = `${hour || "01"}:${e.target.value || "00"} ${meridian || "AM"}`;
-                            setForm({ ...form, time: newTime });
-                            setValidationErrors({ ...validationErrors, time: validateTime(newTime) });
-                          }}
-                        >
-                          <option value="">MM</option>
-                          {["00", "15", "30", "45"].map((m) => (
-                            <option key={m} value={m}>
-                              {m}
-                            </option>
-                          ))}
-                        </select>
-
-                        {/* AM / PM */}
-                        <select
-                          className={`form-control form-control-dark ${validationErrors.time ? 'is-invalid' : ''}`}
-                          value={meridian}
-                          onChange={(e) => {
-                            const newTime = `${hour || "01"}:${minute || "00"} ${e.target.value || "AM"}`;
-                            setForm({ ...form, time: newTime });
-                            setValidationErrors({ ...validationErrors, time: validateTime(newTime) });
-                          }}
-                        >
-                          <option value="">AM/PM</option>
-                          <option value="AM">AM</option>
-                          <option value="PM">PM</option>
-                        </select>
-                      </div>
-                      {validationErrors.time && (
-                        <div className="invalid-feedback-custom">
-                          {validationErrors.time}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Venue */}
-                  <div className="mb-4">
-                    <label className="form-label text-secondary small fw-bold">
-                      Venue <span className="required-asterisk">*</span>
-                    </label>
-                    <div className="input-group">
-                      <span className="input-group-text bg-dark border-secondary text-light">
-                        <i className="bi bi-geo-alt"></i>
-                      </span>
-                      <input
-                        className={`form-control form-control-dark ${validationErrors.venue ? 'is-invalid' : ''}`}
-                        placeholder="Venue location"
-                        value={form.venue}
-                        onChange={(e) => {
-                          setForm({ ...form, venue: e.target.value });
-                          setValidationErrors({ ...validationErrors, venue: validateVenue(e.target.value) });
-                        }}
-                        maxLength={200}
-                      />
-                    </div>
-                    {validationErrors.venue && (
-                      <div className="invalid-feedback-custom">
-                        {validationErrors.venue}
-                      </div>
-                    )}
-                    <div className={`character-counter ${form.venue.length > 180 ? 'warning' : ''} ${form.venue.length >= 200 ? 'danger' : ''}`}>
-                      {form.venue.length} / 200
-                    </div>
-                  </div>
-
-                  {/* Description */}
-                  <div className="mb-4">
-                    <label className="form-label text-secondary small fw-bold">
-                      Event Description
-                    </label>
-                    <textarea
-                      className={`form-control form-control-dark ${validationErrors.description ? 'is-invalid' : ''}`}
-                      rows={3}
-                      placeholder="Describe the event..."
-                      value={form.description}
-                      onChange={(e) => {
-                        setForm({ ...form, description: e.target.value });
-                        setValidationErrors({ ...validationErrors, description: validateDescription(e.target.value) });
-                      }}
-                      maxLength={500}
-                    />
-                    {validationErrors.description && (
-                      <div className="invalid-feedback-custom">
-                        {validationErrors.description}
-                      </div>
-                    )}
-                    <div className={`character-counter ${form.description.length > 450 ? 'warning' : ''} ${form.description.length >= 500 ? 'danger' : ''}`}>
-                      {form.description.length} / 500
-                    </div>
-                  </div>
-
-                  {/* Contact Persons */}
-                  <div className="form-section mb-4">
-                    <div className="d-flex justify-content-between align-items-center mb-3">
-                      <h6 className="m-0 text-info">
-                        <i className="bi bi-person-lines-fill me-2"></i>
-                        Contact Persons <span className="required-asterisk">*</span>
-                      </h6>
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-outline-info"
-                        onClick={() => setForm({ ...form, contactPersons: [...form.contactPersons, { name: "", phone: "" }] })}
-                      >
-                        <i className="bi bi-plus-lg me-1"></i>Add
-                      </button>
-                    </div>
-
-                    {form.contactPersons.map((cp, i) => (
-                      <div key={i} className="row g-2 align-items-end mb-2">
-                        <div className="col-md-5">
-                          <label className="form-label text-secondary small">
-                            Name <span className="required-asterisk">*</span>
-                          </label>
+            {/* Modal Body with Smooth Sliding Tabs */}
+            <div className="tab-slider-wrapper">
+              <div
+                className="tab-slider-track"
+                style={{
+                  transform: eventModalTab === 'details' ? 'translateX(0%)' : 'translateX(-50%)'
+                }}
+              >
+                {/* Slide 1: Event Details (2-Column Non-Scrollable Layout) */}
+                <div className="tab-slide px-1">
+                  <div className="row g-3">
+                    {/* Left Column */}
+                    <div className="col-lg-6 d-flex flex-column gap-3">
+                      {/* Event Name */}
+                      <div>
+                        <label className="form-label text-secondary small fw-bold mb-1">
+                          Event Name <span className="required-asterisk">*</span>
+                        </label>
+                        <div className="input-group">
+                          <span className="input-group-text bg-dark bg-opacity-50 border-secondary border-opacity-50 text-primary">
+                            <i className="bi bi-card-heading"></i>
+                          </span>
                           <input
-                            className={`form-control form-control-dark form-control-sm ${validationErrors.contactPersons?.[i] ? 'is-invalid' : ''}`}
-                            value={cp.name}
-                            onChange={(e) => handleContactNameChange(e.target.value, i)}
-                            maxLength={50}
+                            className={`form-control form-control-glass ${validationErrors.name ? 'is-invalid' : ''}`}
+                            placeholder="Enter event name"
+                            value={form.name}
+                            onChange={(e) => {
+                              setForm({ ...form, name: e.target.value });
+                              setValidationErrors({ ...validationErrors, name: validateName(e.target.value) });
+                            }}
+                            maxLength={100}
                           />
                         </div>
-                        <div className="col-md-5">
-                          <label className="form-label text-secondary small">
-                            Phone <span className="required-asterisk">*</span>
+                        {validationErrors.name && (
+                          <div className="invalid-feedback-custom">
+                            {validationErrors.name}
+                          </div>
+                        )}
+                        <div className={`character-counter ${form.name.length > 90 ? 'warning' : ''} ${form.name.length >= 100 ? 'danger' : ''}`}>
+                          {form.name.length} / 100
+                        </div>
+                      </div>
+
+                      {/* Date & Time */}
+                      <div className="row g-2">
+                        <div className="col-6">
+                          <label className="form-label text-secondary small fw-bold mb-1">
+                            Event Date <span className="required-asterisk">*</span>
                           </label>
-                          <div className="d-flex phone-input-group">
-                            <span className="phone-prefix">+91</span>
+                          <div className="input-group">
+                            <span className="input-group-text bg-dark bg-opacity-50 border-secondary border-opacity-50 text-info">
+                              <i className="bi bi-calendar3"></i>
+                            </span>
                             <input
-                              className={`form-control form-control-dark form-control-sm phone-input ${validationErrors.contactPersons?.[i] ? 'is-invalid' : ''}`}
-                              value={cp.phone}
-                              onChange={(e) => handlePhoneChange(e.target.value, i)}
-                              placeholder="9876543210"
-                              maxLength={10}
+                              type="date"
+                              className={`form-control form-control-glass ${validationErrors.date ? 'is-invalid' : ''}`}
+                              value={form.date}
+                              min={getMinDate()}
+                              onChange={(e) => {
+                                setForm({ ...form, date: e.target.value });
+                                setValidationErrors({ ...validationErrors, date: validateDate(e.target.value) });
+                              }}
                             />
                           </div>
-                        </div>
-                        <div className="col-md-2 col-auto">
-                          <button
-                            type="button"
-                            className="btn btn-outline-danger btn-sm w-100"
-                            disabled={form.contactPersons.length === 1}
-                            onClick={() => {
-                              const list = form.contactPersons.filter((_, index) => index !== i);
-                              setForm({ ...form, contactPersons: list });
-                              if (validationErrors.contactPersons) {
-                                const newErrors = validationErrors.contactPersons.filter((_, index) => index !== i);
-                                setValidationErrors({ ...validationErrors, contactPersons: newErrors });
-                              }
-                            }}
-                            title="Remove Contact"
-                          >
-                            <i className="bi bi-trash"></i>
-                          </button>
-                        </div>
-                        {validationErrors.contactPersons?.[i] && (
-                          <div className="col-12">
+                          {validationErrors.date && (
                             <div className="invalid-feedback-custom">
-                              {validationErrors.contactPersons[i]}
+                              {validationErrors.date}
                             </div>
+                          )}
+                        </div>
+
+                        <div className="col-6">
+                          <label className="form-label text-secondary small fw-bold mb-1">
+                            Event Time <span className="required-asterisk">*</span>
+                          </label>
+                          <div className="input-group">
+                            <span className="input-group-text bg-dark bg-opacity-50 border-secondary border-opacity-50 text-warning">
+                              <i className="bi bi-clock"></i>
+                            </span>
+                            <select
+                              className={`form-select form-select-glass p-1 text-center ${validationErrors.time ? 'is-invalid' : ''}`}
+                              value={hour}
+                              onChange={(e) => {
+                                const newTime = `${e.target.value || "01"}:${minute || "00"} ${meridian || "AM"}`;
+                                setForm({ ...form, time: newTime });
+                                setValidationErrors({ ...validationErrors, time: validateTime(newTime) });
+                              }}
+                            >
+                              <option value="">HH</option>
+                              {Array.from({ length: 12 }, (_, i) => {
+                                const h = String(i + 1).padStart(2, "0");
+                                return (
+                                  <option key={h} value={h}>
+                                    {h}
+                                  </option>
+                                );
+                              })}
+                            </select>
+
+                            <select
+                              className={`form-select form-select-glass p-1 text-center ${validationErrors.time ? 'is-invalid' : ''}`}
+                              value={minute}
+                              onChange={(e) => {
+                                const newTime = `${hour || "01"}:${e.target.value || "00"} ${meridian || "AM"}`;
+                                setForm({ ...form, time: newTime });
+                                setValidationErrors({ ...validationErrors, time: validateTime(newTime) });
+                              }}
+                            >
+                              <option value="">MM</option>
+                              {["00", "15", "30", "45"].map((m) => (
+                                <option key={m} value={m}>
+                                  {m}
+                                </option>
+                              ))}
+                            </select>
+
+                            <select
+                              className={`form-select form-select-glass p-1 text-center ${validationErrors.time ? 'is-invalid' : ''}`}
+                              value={meridian}
+                              onChange={(e) => {
+                                const newTime = `${hour || "01"}:${minute || "00"} ${e.target.value || "AM"}`;
+                                setForm({ ...form, time: newTime });
+                                setValidationErrors({ ...validationErrors, time: validateTime(newTime) });
+                              }}
+                            >
+                              <option value="AM">AM</option>
+                              <option value="PM">PM</option>
+                            </select>
+                          </div>
+                          {validationErrors.time && (
+                            <div className="invalid-feedback-custom">
+                              {validationErrors.time}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Venue */}
+                      <div>
+                        <label className="form-label text-secondary small fw-bold mb-1">
+                          Venue <span className="required-asterisk">*</span>
+                        </label>
+                        <div className="input-group">
+                          <span className="input-group-text bg-dark bg-opacity-50 border-secondary border-opacity-50 text-danger">
+                            <i className="bi bi-geo-alt-fill"></i>
+                          </span>
+                          <input
+                            className={`form-control form-control-glass ${validationErrors.venue ? 'is-invalid' : ''}`}
+                            placeholder="Venue location (e.g. Auditorium 1)"
+                            value={form.venue}
+                            onChange={(e) => {
+                              setForm({ ...form, venue: e.target.value });
+                              setValidationErrors({ ...validationErrors, venue: validateVenue(e.target.value) });
+                            }}
+                            maxLength={200}
+                          />
+                        </div>
+                        {validationErrors.venue && (
+                          <div className="invalid-feedback-custom">
+                            {validationErrors.venue}
+                          </div>
+                        )}
+                        <div className={`character-counter ${form.venue.length > 180 ? 'warning' : ''} ${form.venue.length >= 200 ? 'danger' : ''}`}>
+                          {form.venue.length} / 200
+                        </div>
+                      </div>
+
+                      {/* WhatsApp */}
+                      <div>
+                        <label className="form-label text-secondary small fw-bold mb-1">
+                          WhatsApp Group Link <span className="text-secondary opacity-75 fw-normal">(Optional)</span>
+                        </label>
+                        <div className="input-group">
+                          <span className="input-group-text bg-dark bg-opacity-50 border-secondary border-opacity-50 text-success">
+                            <i className="bi bi-whatsapp"></i>
+                          </span>
+                          <input
+                            className={`form-control form-control-glass ${validationErrors.whatsappGroupLink ? 'is-invalid' : ''}`}
+                            placeholder="https://chat.whatsapp.com/..."
+                            value={form.whatsappGroupLink || ""}
+                            onChange={(e) => {
+                              setForm({ ...form, whatsappGroupLink: e.target.value });
+                              setValidationErrors({ ...validationErrors, whatsappGroupLink: validateWhatsAppUrl(e.target.value) });
+                            }}
+                          />
+                        </div>
+                        {validationErrors.whatsappGroupLink && (
+                          <div className="invalid-feedback-custom">
+                            {validationErrors.whatsappGroupLink}
                           </div>
                         )}
                       </div>
-                    ))}
-                  </div>
-
-                  {/* WhatsApp */}
-                  <div className="mb-4">
-                    <label className="form-label text-secondary small fw-bold">
-                      WhatsApp Group Link
-                    </label>
-                    <div className="input-group">
-                      <span className="input-group-text bg-dark border-secondary text-success">
-                        <i className="bi bi-whatsapp"></i>
-                      </span>
-                      <input
-                        className={`form-control form-control-dark ${validationErrors.whatsappGroupLink ? 'is-invalid' : ''}`}
-                        placeholder="https://chat.whatsapp.com/..."
-                        value={form.whatsappGroupLink || ""}
-                        onChange={(e) => {
-                          setForm({ ...form, whatsappGroupLink: e.target.value });
-                          setValidationErrors({ ...validationErrors, whatsappGroupLink: validateWhatsAppUrl(e.target.value) });
-                        }}
-                      />
                     </div>
-                    {validationErrors.whatsappGroupLink && (
-                      <div className="invalid-feedback-custom">
-                        {validationErrors.whatsappGroupLink}
+
+                    {/* Right Column */}
+                    <div className="col-lg-6 d-flex flex-column gap-3">
+                      {/* Description */}
+                      <div>
+                        <label className="form-label text-secondary small fw-bold mb-1">
+                          Event Description
+                        </label>
+                        <textarea
+                          className={`form-control form-control-glass ${validationErrors.description ? 'is-invalid' : ''}`}
+                          rows={3}
+                          placeholder="Describe the event, objectives, and highlights..."
+                          value={form.description}
+                          onChange={(e) => {
+                            setForm({ ...form, description: e.target.value });
+                            setValidationErrors({ ...validationErrors, description: validateDescription(e.target.value) });
+                          }}
+                          maxLength={500}
+                          style={{ resize: 'none' }}
+                        />
+                        {validationErrors.description && (
+                          <div className="invalid-feedback-custom">
+                            {validationErrors.description}
+                          </div>
+                        )}
+                        <div className={`character-counter ${form.description.length > 450 ? 'warning' : ''} ${form.description.length >= 500 ? 'danger' : ''}`}>
+                          {form.description.length} / 500
+                        </div>
                       </div>
-                    )}
+
+                      {/* Contact Persons */}
+                      <div className="form-section p-3 rounded-3" style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                        <div className="d-flex justify-content-between align-items-center mb-2">
+                          <h6 className="m-0 text-info small fw-bold">
+                            <i className="bi bi-person-lines-fill me-1"></i> Contact Persons <span className="required-asterisk">*</span>
+                          </h6>
+                          <button
+                            type="button"
+                            className="btn btn-xs btn-outline-info rounded-pill py-1 px-3"
+                            style={{ fontSize: '0.75rem' }}
+                            onClick={() => setForm({ ...form, contactPersons: [...form.contactPersons, { name: "", phone: "" }] })}
+                          >
+                            <i className="bi bi-plus-lg me-1"></i>Add Contact
+                          </button>
+                        </div>
+
+                        <div style={{ maxHeight: '135px', overflowY: 'auto' }} className="d-flex flex-column gap-2 pe-1">
+                          {form.contactPersons.map((cp, i) => (
+                            <div key={i} className="row g-2 align-items-center">
+                              <div className="col-5">
+                                <div className="input-group input-group-sm">
+                                  <span className="input-group-text bg-dark bg-opacity-50 border-secondary border-opacity-50 text-secondary">
+                                    <i className="bi bi-person"></i>
+                                  </span>
+                                  <input
+                                    className={`form-control form-control-glass form-control-sm ${validationErrors.contactPersons?.[i] ? 'is-invalid' : ''}`}
+                                    placeholder="Name"
+                                    value={cp.name}
+                                    onChange={(e) => handleContactNameChange(e.target.value, i)}
+                                    maxLength={50}
+                                  />
+                                </div>
+                              </div>
+                              <div className="col-5">
+                                <div className="input-group input-group-sm">
+                                  <span className="input-group-text bg-dark bg-opacity-50 border-secondary border-opacity-50 text-secondary">
+                                    <i className="bi bi-telephone"></i>
+                                  </span>
+                                  <input
+                                    className={`form-control form-control-glass form-control-sm ${validationErrors.contactPersons?.[i] ? 'is-invalid' : ''}`}
+                                    placeholder="10-digit Phone"
+                                    value={cp.phone}
+                                    onChange={(e) => handlePhoneChange(e.target.value, i)}
+                                    maxLength={10}
+                                  />
+                                </div>
+                              </div>
+                              <div className="col-2">
+                                <button
+                                  type="button"
+                                  className="btn btn-outline-danger btn-sm p-1 w-100"
+                                  disabled={form.contactPersons.length === 1}
+                                  onClick={() => {
+                                    const list = form.contactPersons.filter((_, index) => index !== i);
+                                    setForm({ ...form, contactPersons: list });
+                                    if (validationErrors.contactPersons) {
+                                      const newErrors = validationErrors.contactPersons.filter((_, index) => index !== i);
+                                      setValidationErrors({ ...validationErrors, contactPersons: newErrors });
+                                    }
+                                  }}
+                                  title="Remove Contact"
+                                >
+                                  <i className="bi bi-trash small"></i>
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </>
-              ) : (
-                /* Tab 2: Form Builder */
-                <div className="py-2">
-                  <div className="alert alert-info border-0 bg-opacity-10 bg-info d-flex align-items-center gap-2 mb-3">
-                    <i className="bi bi-info-circle-fill text-info fs-5"></i>
-                    <span className="small text-light">
-                      Customize registration questions, input types, and required validations just like Google Forms. Changes are saved with the event.
-                    </span>
-                  </div>
-                  <FormBuilder
-                    questions={form.customQuestions || []}
-                    onChange={(questions) =>
-                      setForm({
-                        ...form,
-                        customQuestions: questions,
-                        registrationQuestions: questions.map((q) => q.question),
-                      })
-                    }
-                    formTitle={form.name || "Event Registration"}
-                    formDescription={form.description || "Please fill in the details below to register for this event."}
-                  />
                 </div>
-              )}
+
+                {/* Slide 2: Form Builder */}
+                <div className="tab-slide px-1">
+                  <div style={{ maxHeight: 'calc(75vh - 180px)', overflowY: 'auto' }} className="pe-1">
+                    <div className="alert alert-info border-0 bg-opacity-10 bg-info d-flex align-items-center gap-2 mb-3 py-2 px-3">
+                      <i className="bi bi-info-circle-fill text-info fs-6"></i>
+                      <span className="small text-light">
+                        Customize registration questions, input types, and required validations just like Google Forms. Changes are saved with the event.
+                      </span>
+                    </div>
+                    <FormBuilder
+                      questions={form.customQuestions || []}
+                      onChange={(questions) =>
+                        setForm({
+                          ...form,
+                          customQuestions: questions,
+                          registrationQuestions: questions.map((q) => q.question),
+                        })
+                      }
+                      formTitle={form.name || "Event Registration"}
+                      formDescription={form.description || "Please fill in the details below to register for this event."}
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Modal Footer */}
@@ -1377,7 +1463,7 @@ const EventManager: React.FC = () => {
                 </button>
                 <button
                   type="button"
-                  className="btn btn-success px-4 rounded-pill fw-bold"
+                  className="btn btn-primary px-5 rounded-pill fw-bold shadow"
                   onClick={handleSaveEvent}
                   disabled={hasValidationErrors || isSubmitting}
                 >
@@ -1387,7 +1473,7 @@ const EventManager: React.FC = () => {
                       {editingId ? 'Updating...' : 'Saving...'}
                     </span>
                   ) : (
-                    editingId ? "Update Event" : "Save Event"
+                    editingId ? "Save Changes" : "Create Event"
                   )}
                 </button>
               </div>

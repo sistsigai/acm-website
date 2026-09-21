@@ -109,11 +109,11 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
 
   return (
     <div
-      className="d-flex vh-100"
+      className="d-flex vh-100 w-100"
       style={{
         background: "#111827",
         color: "#e5e7eb",
-        overflow: "visible",
+        overflow: "hidden",
       }}
     >
       {/* Sidebar */}
@@ -192,7 +192,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
       )}
 
       {/* Page Content */}
-      <div className="flex-grow-1 p-4 p-md-5 mobile-offset" style={{ overflowY: "auto" }}>
+      <div className="flex-grow-1 p-3 p-md-4 p-lg-5" style={{ overflowY: "auto", minWidth: 0 }}>
         {children}
       </div>
     </div>
