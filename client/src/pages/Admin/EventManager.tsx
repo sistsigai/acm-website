@@ -3,6 +3,8 @@ import AdminLayout from "../../components/AdminLayout";
 import { createEvent, deleteEvent, getAllEvents, toggleEventDisplay, updateEvent } from "../../services/admin/eventService";
 import FormBuilder from "../../components/FormBuilder/FormBuilder";
 import { type IQuestion, ACM_STANDARD_STUDENT_QUESTIONS } from "../../types/formBuilder";
+import Cropper from "react-easy-crop";
+import type { Area, Point } from "react-easy-crop";
 
 // --- CSS Styles for Animation & Design ---
 const styles = `
@@ -113,135 +115,229 @@ const styles = `
     transform: translateX(22px);
   }
 
-  /* --- Modal & Form (Preserved) --- */
-  .custom-modal-overlay {
-    background: rgba(0, 0, 0, 0.8);
+  /* --- ADMIN MODAL OVERLAY & STUDIO MODAL STYLES --- */
+  .admin-modal-overlay {
+    background: rgba(0, 0, 0, 0.75);
     backdrop-filter: blur(8px);
     position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    width: 100vw; height: 100vh;
     z-index: 1050;
     display: flex; align-items: center; justify-content: center;
-    animation: fadeIn 0.3s ease-out;
+    padding: 1.25rem;
+    overflow-y: auto;
+    overflow-x: hidden;
+    animation: fadeInModal 0.2s ease-out forwards;
   }
-  
-  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-  .custom-modal-content {
-    background: #1f2937;
+  @media (min-width: 992px) {
+    .admin-modal-overlay {
+      left: 280px;
+      right: 0;
+      width: calc(100vw - 280px);
+      padding: 1.5rem;
+    }
+  }
+
+  .admin-modal-overlay.closing {
+    animation: fadeOutModal 0.2s ease-in forwards;
+  }
+
+  .admin-modal-overlay.closing .event-studio-modal {
+    animation: scaleOutModal 0.2s ease-in forwards;
+  }
+
+  @keyframes fadeInModal {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes fadeOutModal {
+    from { opacity: 1; }
+    to { opacity: 0; }
+  }
+
+  @keyframes scaleInModal {
+    from { transform: scale(0.96); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  @keyframes scaleOutModal {
+    from { transform: scale(1); opacity: 1; }
+    to { transform: scale(0.95); opacity: 0; }
+  }
+
+  @keyframes pulseDanger {
+    0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+    70% { box-shadow: 0 0 0 12px rgba(239, 68, 68, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+  }
+
+  .event-studio-modal {
+    max-width: 900px;
+    width: 100%;
+    background: linear-gradient(165deg, #0f172a 0%, #090d16 100%);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
-    border-radius: 20px;
-    width: 100%; max-width: 800px; max-height: 90vh; overflow-y: auto;
+    border-radius: 18px;
+    box-shadow: 0 30px 70px -15px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    position: relative;
+    overflow: hidden;
+    animation: scaleInModal 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .event-studio-modal::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, #3b82f6, #8b5cf6, transparent);
+    opacity: 0.9;
+  }
+
+  /* Dedicated crop modal without scale transform to prevent cropper offset distortion */
+  .event-crop-modal {
+    max-width: 760px;
+    width: 100%;
+    background: linear-gradient(165deg, #0f172a 0%, #090d16 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 18px;
+    box-shadow: 0 30px 70px -15px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    position: relative;
+    overflow: hidden;
+    animation: fadeInCropModal 0.15s ease-out forwards;
+  }
+
+  .event-crop-modal::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, #3b82f6, #8b5cf6, transparent);
+    opacity: 0.9;
+  }
+
+  @keyframes fadeInCropModal {
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
 
   /* Scrollbar */
-  .custom-modal-content::-webkit-scrollbar { width: 8px; }
-  .custom-modal-content::-webkit-scrollbar-track { background: transparent; }
-  .custom-modal-content::-webkit-scrollbar-thumb { background-color: rgba(255, 255, 255, 0.2); border-radius: 4px; }
+  .event-studio-modal::-webkit-scrollbar { width: 8px; }
+  .event-studio-modal::-webkit-scrollbar-track { background: transparent; }
+  .event-studio-modal::-webkit-scrollbar-thumb { background-color: rgba(255, 255, 255, 0.2); border-radius: 4px; }
+
+  /* --- 4-Step Studio Tab Slider --- */
+  .tab-slider-wrapper {
+    overflow: hidden;
+    width: 100%;
+    position: relative;
+  }
+
+  .tab-slider-track {
+    display: flex;
+    width: 400%;
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .tab-slide {
+    width: 25%;
+    flex-shrink: 0;
+    box-sizing: border-box;
+  }
+
+  /* --- Media Upload Frames --- */
+  .media-upload-frame {
+    border: 2px dashed rgba(59, 130, 246, 0.35);
+    background: radial-gradient(circle at center, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.9) 100%);
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .media-upload-frame:hover {
+    border-color: #3b82f6;
+    box-shadow: 0 8px 24px -5px rgba(59, 130, 246, 0.25);
+  }
+
+  .media-upload-frame.has-image {
+    border: 2px solid rgba(59, 130, 246, 0.5);
+  }
 
   /* --- Inputs & Selects Glassmorphism --- */
   .form-control-glass, .form-select-glass {
-    background: rgba(0, 0, 0, 0.3) !important;
-    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    background: #060911 !important;
+    border: 1px solid #1e293b !important;
     color: #ffffff !important;
-    border-radius: 10px;
-    padding: 0.55rem 0.85rem;
+    border-radius: 8px;
+    padding: 0.6rem 0.85rem;
     transition: all 0.2s ease;
   }
+  .form-control-glass::placeholder, textarea.form-control-glass::placeholder {
+    color: #64748b !important;
+    opacity: 1 !important;
+    font-weight: 400 !important;
+  }
   .form-control-glass:focus, .form-select-glass:focus {
-    background: rgba(0, 0, 0, 0.5) !important;
+    background: #060911 !important;
     border-color: #3b82f6 !important;
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2) !important;
     color: #ffffff !important;
+  }
+  .admin-input-group-text {
+    background: rgba(30, 41, 59, 0.5) !important;
+    border: 1px solid #1e293b !important;
+    border-right: none !important;
+    color: #94a3b8 !important;
+    border-top-left-radius: 8px !important;
+    border-bottom-left-radius: 8px !important;
   }
   .input-group > .form-control-glass,
   .input-group > .form-select-glass {
     border-top-left-radius: 0 !important;
     border-bottom-left-radius: 0 !important;
   }
-  .input-group > .input-group-text {
-    border-top-left-radius: 10px !important;
-    border-bottom-left-radius: 10px !important;
-  }
   .input-group > .btn {
-    border-top-right-radius: 10px !important;
-    border-bottom-right-radius: 10px !important;
+    border-top-right-radius: 8px !important;
+    border-bottom-right-radius: 8px !important;
   }
   .form-select-glass option {
-    background-color: #111827;
+    background-color: #0d1527;
     color: #ffffff;
   }
   .form-control-glass.is-invalid, .form-select-glass.is-invalid {
-    border-color: #dc3545 !important;
-    background: rgba(220, 53, 69, 0.1) !important;
+    border-color: #ef4444 !important;
+    background: rgba(239, 68, 68, 0.08) !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
   }
   .form-control-glass.is-invalid:focus, .form-select-glass.is-invalid:focus {
-    border-color: #dc3545 !important;
-    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.2) !important;
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2) !important;
   }
 
   .form-control-dark {
-    background-color: #374151;
-    border: 1px solid #4b5563;
+    background-color: #060911;
+    border: 1px solid #1e293b;
     color: #ffffff !important;
   }
   .form-control-dark:focus {
-    background-color: #374151;
+    background-color: #060911;
     border-color: #3b82f6;
-    box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.25);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
   }
   .form-control-dark.is-invalid {
-    border-color: #dc3545;
-    background: rgba(220, 53, 69, 0.1);
+    border-color: #ef4444;
+    background: rgba(239, 68, 68, 0.08);
   }
   .form-control-dark.is-invalid:focus {
-    border-color: #dc3545;
-    box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25);
+    border-color: #ef4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
   }
-  .form-control-dark::placeholder { color: #9ca3af !important; }
+  .form-control-dark::placeholder { color: #64748b !important; }
   .form-control-dark::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
   
   .form-section {
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(255, 255, 255, 0.02);
     border-radius: 12px;
     padding: 1rem;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-  }
-  
-  .custom-modal-overlay.closing {
-    animation: fadeOut 0.3s ease-in forwards;
-  }
-
-  .custom-modal-overlay.closing .custom-modal-content {
-    animation: scaleOut 0.25s ease-in forwards;
-  }
-
-  @keyframes fadeOut {
-    from { opacity: 1; }
-    to { opacity: 0; }
-  }
-
-  @keyframes scaleOut {
-    from { transform: scale(1); opacity: 1; }
-    to { transform: scale(0.92); opacity: 0; }
-  }
-
-  .modal-content-glass {
-    background: #1f2937 !important;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
-    color: #ffffff;
-  }
-
-  .modal-content-glass .modal-body {
-    background: transparent;
-  }
-
-  .modal-content-glass h4 {
-    color: #ffffff;
-  }
-
-  .modal-content-glass p {
-    color: #9ca3af;
+    border: 1px solid rgba(255, 255, 255, 0.06);
   }
 
   /* --- Validation Styles --- */
@@ -360,6 +456,76 @@ interface ValidationErrors {
   whatsappGroupLink?: string;
 }
 
+// Image cropping utilities
+const createImage = (url: string): Promise<HTMLImageElement> =>
+  new Promise((resolve, reject) => {
+    const image = new Image();
+    image.addEventListener('load', () => resolve(image));
+    image.addEventListener('error', (error) => reject(error));
+    image.setAttribute('crossOrigin', 'anonymous');
+    image.src = url;
+  });
+
+const getCroppedImg = async (imageSrc: string, pixelCrop: Area): Promise<string> => {
+  const image = await createImage(imageSrc);
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+
+  if (!ctx) throw new Error('No 2d context');
+
+  canvas.width = Math.max(1, Math.round(pixelCrop.width));
+  canvas.height = Math.max(1, Math.round(pixelCrop.height));
+
+  let bgColor = '#ffffff';
+  try {
+    const sampleCanvas = document.createElement('canvas');
+    sampleCanvas.width = 1;
+    sampleCanvas.height = 1;
+    const sampleCtx = sampleCanvas.getContext('2d');
+    if (sampleCtx) {
+      sampleCtx.drawImage(image, 0, 0, 1, 1, 0, 0, 1, 1);
+      const p = sampleCtx.getImageData(0, 0, 1, 1).data;
+      if (p[3] > 0) {
+        bgColor = `rgb(${p[0]}, ${p[1]}, ${p[2]})`;
+      }
+    }
+  } catch (_) {}
+
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const sX = Math.max(0, pixelCrop.x);
+  const sY = Math.max(0, pixelCrop.y);
+  const sWidth = Math.min(image.naturalWidth - sX, pixelCrop.width - (sX - pixelCrop.x));
+  const sHeight = Math.min(image.naturalHeight - sY, pixelCrop.height - (sY - pixelCrop.y));
+
+  const dX = Math.max(0, sX - pixelCrop.x);
+  const dY = Math.max(0, sY - pixelCrop.y);
+  const dWidth = Math.max(0, sWidth);
+  const dHeight = Math.max(0, sHeight);
+
+  if (dWidth > 0 && dHeight > 0) {
+    ctx.drawImage(
+      image,
+      sX,
+      sY,
+      sWidth,
+      sHeight,
+      dX,
+      dY,
+      dWidth,
+      dHeight
+    );
+  }
+
+  return new Promise((resolve) => {
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      resolve(URL.createObjectURL(blob));
+    }, 'image/jpeg', 0.95);
+  });
+};
+
 // Required registration questions (cannot be edited/removed)
 const REQUIRED_REGISTRATION_QUESTIONS = [
   "Name",
@@ -383,7 +549,21 @@ const EventManager: React.FC = () => {
   const [eventToDelete, setEventToDelete] = useState<Event | null>(null);
   const [loading, setLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [eventModalTab, setEventModalTab] = useState<'details' | 'form'>('details');
+  type EventModalTab = 'info' | 'schedule' | 'contacts' | 'form';
+  const [eventModalTab, setEventModalTab] = useState<EventModalTab>('info');
+
+  // Media & Crop States
+  const [, setThumbnailFile] = useState<File | null>(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string>("");
+  const [, setPosterFile] = useState<File | null>(null);
+  const [posterPreview, setPosterPreview] = useState<string>("");
+
+  const [showCropModal, setShowCropModal] = useState(false);
+  const [cropTarget, setCropTarget] = useState<'thumbnail' | 'poster' | null>(null);
+  const [imageToCrop, setImageToCrop] = useState<string>("");
+  const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
 
   /* Validation state */
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
@@ -689,6 +869,16 @@ const EventManager: React.FC = () => {
     }
   }, [showModal]);
 
+  // Recalculate cropper dimensions when crop modal opens
+  useEffect(() => {
+    if (showCropModal) {
+      const timer = setTimeout(() => {
+        window.dispatchEvent(new Event('resize'));
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [showCropModal]);
+
   const resetForm = () => {
     setForm({
       _id: "",
@@ -703,9 +893,114 @@ const EventManager: React.FC = () => {
       whatsappGroupLink: "",
       display: true,
     });
+    setThumbnailFile(null);
+    setThumbnailPreview("");
+    setPosterFile(null);
+    setPosterPreview("");
     setEditingId(null);
-    setEventModalTab("details");
+    setEventModalTab("info");
     setValidationErrors({});
+  };
+
+  const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      if (file.size > 5 * 1024 * 1024) {
+        showToast("error", "Thumbnail image must be less than 5MB");
+        return;
+      }
+      setThumbnailFile(file);
+      const reader = new FileReader();
+      reader.onload = () => {
+        setImageToCrop(reader.result as string);
+        setCropTarget('thumbnail');
+        setCrop({ x: 0, y: 0 });
+        setZoom(1);
+        setShowCropModal(true);
+      };
+      reader.readAsDataURL(file);
+      // Reset input value so same file can be selected again
+      e.target.value = "";
+    }
+  };
+
+  const handlePosterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      if (file.size > 8 * 1024 * 1024) {
+        showToast("error", "Poster image must be less than 8MB");
+        return;
+      }
+      setPosterFile(file);
+      const reader = new FileReader();
+      reader.onload = () => {
+        setImageToCrop(reader.result as string);
+        setCropTarget('poster');
+        setCrop({ x: 0, y: 0 });
+        setZoom(1);
+        setShowCropModal(true);
+      };
+      reader.readAsDataURL(file);
+      // Reset input value so same file can be selected again
+      e.target.value = "";
+    }
+  };
+
+  const handleCropSave = async () => {
+    if (!imageToCrop || !croppedAreaPixels) return;
+
+    try {
+      const croppedUrl = await getCroppedImg(imageToCrop, croppedAreaPixels);
+      if (cropTarget === 'thumbnail') {
+        setThumbnailPreview(croppedUrl);
+      } else if (cropTarget === 'poster') {
+        setPosterPreview(croppedUrl);
+      }
+      setShowCropModal(false);
+      setImageToCrop("");
+      setCropTarget(null);
+    } catch {
+      showToast("error", "Failed to crop image");
+    }
+  };
+
+  const removeThumbnail = () => {
+    setThumbnailFile(null);
+    setThumbnailPreview("");
+  };
+
+  const removePoster = () => {
+    setPosterFile(null);
+    setPosterPreview("");
+  };
+
+  const tabOrder: Array<'info' | 'schedule' | 'contacts' | 'form'> = ['info', 'schedule', 'contacts', 'form'];
+
+  const handleNextTab = () => {
+    const currentIndex = tabOrder.indexOf(eventModalTab);
+    if (currentIndex < tabOrder.length - 1) {
+      setEventModalTab(tabOrder[currentIndex + 1]);
+    }
+  };
+
+  const handlePreviousTab = () => {
+    const currentIndex = tabOrder.indexOf(eventModalTab);
+    if (currentIndex > 0) {
+      setEventModalTab(tabOrder[currentIndex - 1]);
+    }
+  };
+
+  const getNextTabTitle = () => {
+    switch (eventModalTab) {
+      case 'info':
+        return 'Poster & Schedule';
+      case 'schedule':
+        return 'Contacts & Links';
+      case 'contacts':
+        return `Form Builder (${form.customQuestions?.length || 0})`;
+      default:
+        return 'Submit';
+    }
   };
 
   // --- Modal Logic ---
@@ -749,8 +1044,13 @@ const EventManager: React.FC = () => {
       customQuestions: customQuestions.length > 0 ? customQuestions : [...ACM_STANDARD_STUDENT_QUESTIONS],
     });
 
+    setThumbnailFile(null);
+    setThumbnailPreview("");
+    setPosterFile(null);
+    setPosterPreview("");
+
     setEditingId(event._id);
-    setEventModalTab("details");
+    setEventModalTab("info");
     setIsClosing(false);
     setShowModal(true);
   };
@@ -1025,115 +1325,144 @@ const EventManager: React.FC = () => {
       {/* --- Unified Modal (Create & Edit) --- */}
       {showModal && (
         <div className={`admin-modal-overlay ${isClosing ? 'closing' : ''}`}>
-          <div className="admin-modal-container p-4 m-2" style={{ maxWidth: '1050px', width: '100%' }}>
+          <div className="event-studio-modal p-4" style={{ maxWidth: '900px', width: '100%' }}>
 
             {/* Modal Header */}
-            <div className="d-flex justify-content-between align-items-center mb-3 border-bottom border-secondary border-opacity-25 pb-3">
+            <div className="d-flex justify-content-between align-items-center mb-3 pb-3" style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
               <div className="d-flex align-items-center gap-3">
                 <div
-                  className="rounded-circle d-flex align-items-center justify-content-center shadow-sm"
+                  className="d-flex align-items-center justify-content-center flex-shrink-0"
                   style={{
-                    width: 44,
-                    height: 44,
-                    background: 'rgba(59, 130, 246, 0.15)',
-                    border: '1px solid rgba(59, 130, 246, 0.3)'
+                    width: 40,
+                    height: 40,
+                    borderRadius: '10px',
+                    background: 'rgba(56, 189, 248, 0.15)',
+                    border: '1px solid rgba(56, 189, 248, 0.3)',
+                    color: '#38bdf8'
                   }}
                 >
-                  <i className={`bi ${editingId ? 'bi-calendar-check text-primary' : 'bi-calendar-plus text-primary'} fs-5`}></i>
+                  <i className={`bi ${editingId ? 'bi-calendar-check' : 'bi-calendar-plus'} fs-5`}></i>
                 </div>
                 <div>
-                  <h4 className="m-0 fw-bold text-white">
+                  <h5 className="m-0 fw-bold text-white tracking-tight" style={{ fontSize: '1.15rem' }}>
                     {editingId ? "Edit Event Details" : "Create New Event"}
-                  </h4>
-                  <p className="text-secondary small mb-0 mt-1">Configure event details, schedule, contact info, and registration form</p>
+                  </h5>
+                  <p className="text-secondary small mb-0 mt-0.5" style={{ fontSize: '0.8rem' }}>
+                    Configure event schedule, venue, contact persons, and registration form
+                  </p>
                 </div>
               </div>
               <button
+                type="button"
                 onClick={closeModal}
-                className="btn btn-link text-secondary text-decoration-none fs-4 p-0"
+                className="btn btn-sm btn-link text-secondary text-decoration-none p-1.5 rounded-circle hover-light"
                 style={{ lineHeight: 1 }}
               >
                 <i className="bi bi-x-lg"></i>
               </button>
             </div>
 
-            {/* Modal Tabs with Sliding Active Pill */}
+            {/* Modal Tabs - Sleek 4-Step Segmented Studio Design */}
             <div
-              className="position-relative d-flex mb-3 p-1 bg-dark bg-opacity-75 rounded-3 border border-secondary border-opacity-25 overflow-hidden"
-              style={{ minHeight: '46px' }}
+              className="d-flex mb-3 p-1 rounded-3"
+              style={{
+                background: '#060911',
+                border: '1px solid #1e293b',
+                gap: '6px',
+                minHeight: '46px'
+              }}
             >
-              {/* Smooth Sliding Pill Indicator */}
-              <div
-                className="position-absolute rounded-2 shadow"
-                style={{
-                  top: '4px',
-                  bottom: '4px',
-                  left: '4px',
-                  width: 'calc(50% - 4px)',
-                  background: 'linear-gradient(135deg, #2563eb, #3b82f6)',
-                  boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)',
-                  transform: eventModalTab === 'details' ? 'translateX(0%)' : 'translateX(100%)',
-                  transition: 'transform 0.32s cubic-bezier(0.4, 0, 0.2, 1)',
-                  zIndex: 1,
-                  pointerEvents: 'none'
-                }}
-              />
-
-              {/* Tab 1: Details */}
-              <button
-                type="button"
-                className={`btn flex-fill py-2 rounded-2 fw-semibold d-flex align-items-center justify-content-center gap-2 border-0 position-relative ${
-                  eventModalTab === 'details' ? 'text-white' : 'text-secondary'
-                }`}
-                style={{ zIndex: 2, transition: 'color 0.25s ease', background: 'transparent' }}
-                onClick={() => setEventModalTab('details')}
-              >
-                <i className="bi bi-calendar-event"></i>
-                <span>1. Event Details</span>
-              </button>
-
-              {/* Tab 2: Form Builder */}
-              <button
-                type="button"
-                className={`btn flex-fill py-2 rounded-2 fw-semibold d-flex align-items-center justify-content-center gap-2 border-0 position-relative ${
-                  eventModalTab === 'form' ? 'text-white' : 'text-secondary'
-                }`}
-                style={{ zIndex: 2, transition: 'color 0.25s ease', background: 'transparent' }}
-                onClick={() => setEventModalTab('form')}
-              >
-                <i className="bi bi-ui-checks-grid"></i>
-                <span>2. Registration Form Builder</span>
-                <span
-                  className={`badge rounded-pill px-2 ${
-                    eventModalTab === 'form' ? 'bg-white bg-opacity-25 text-white' : 'bg-secondary bg-opacity-50 text-light'
-                  }`}
-                  style={{ transition: 'all 0.25s ease' }}
-                >
-                  {form.customQuestions?.length || 0}
-                </span>
-              </button>
+              {[
+                { id: 'info', label: '1. Basic Info', icon: 'bi-info-circle' },
+                { id: 'schedule', label: '2. Poster & Schedule', icon: 'bi-calendar-event' },
+                { id: 'contacts', label: '3. Contacts & Links', icon: 'bi-people' },
+                { id: 'form', label: '4. Form Builder', icon: 'bi-ui-checks-grid', count: form.customQuestions?.length || 0 }
+              ].map((tab) => {
+                const isActive = eventModalTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    className="btn flex-fill py-2 px-2 rounded-2 fw-medium d-flex align-items-center justify-content-center border-0 position-relative text-nowrap"
+                    style={{
+                      background: isActive
+                        ? 'linear-gradient(135deg, rgba(37, 99, 235, 0.22) 0%, rgba(59, 130, 246, 0.1) 100%)'
+                        : 'transparent',
+                      border: isActive
+                        ? '1px solid rgba(59, 130, 246, 0.45)'
+                        : '1px solid transparent',
+                      color: isActive ? '#ffffff' : '#94a3b8',
+                      boxShadow: isActive
+                        ? '0 4px 14px -2px rgba(37, 99, 235, 0.3), inset 0 1px 0 0 rgba(255, 255, 255, 0.1)'
+                        : 'none',
+                      transition: 'all 0.25s ease',
+                      fontSize: '0.84rem',
+                      gap: '8px'
+                    }}
+                    onClick={() => setEventModalTab(tab.id as any)}
+                  >
+                    <div
+                      className="d-flex align-items-center justify-content-center flex-shrink-0"
+                      style={{
+                        width: 24,
+                        height: 24,
+                        borderRadius: '6px',
+                        background: isActive ? 'rgba(56, 189, 248, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                        color: isActive ? '#38bdf8' : '#64748b',
+                        border: `1px solid ${isActive ? 'rgba(56, 189, 248, 0.4)' : 'rgba(255, 255, 255, 0.05)'}`,
+                        fontSize: '0.75rem'
+                      }}
+                    >
+                      <i className={`bi ${tab.icon}`}></i>
+                    </div>
+                    <span className="fw-semibold">{tab.label}</span>
+                    {tab.count !== undefined && (
+                      <span
+                        className="badge px-1.5 py-0.5 ms-1"
+                        style={{
+                          fontSize: '0.7rem',
+                          background: isActive ? 'rgba(56, 189, 248, 0.2)' : 'rgba(255, 255, 255, 0.06)',
+                          color: isActive ? '#38bdf8' : '#94a3b8',
+                          border: `1px solid ${isActive ? 'rgba(56, 189, 248, 0.4)' : 'rgba(255, 255, 255, 0.08)'}`,
+                          borderRadius: '6px',
+                          fontWeight: 600
+                        }}
+                      >
+                        {tab.count}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
 
-            {/* Modal Body with Smooth Sliding Tabs */}
+            {/* Modal Body with Smooth 4-Step Sliding Track */}
             <div className="tab-slider-wrapper">
               <div
                 className="tab-slider-track"
                 style={{
-                  transform: eventModalTab === 'details' ? 'translateX(0%)' : 'translateX(-50%)'
+                  transform:
+                    eventModalTab === 'info'
+                      ? 'translateX(0%)'
+                      : eventModalTab === 'schedule'
+                      ? 'translateX(-25%)'
+                      : eventModalTab === 'contacts'
+                      ? 'translateX(-50%)'
+                      : 'translateX(-75%)'
                 }}
               >
-                {/* Slide 1: Event Details (2-Column Non-Scrollable Layout) */}
+                {/* --- SLIDE 1: Basic Info --- */}
                 <div className="tab-slide px-1">
                   <div className="row g-3">
-                    {/* Left Column */}
-                    <div className="col-lg-6 d-flex flex-column gap-3">
+                    {/* Left: Name & Description */}
+                    <div className="col-lg-7 d-flex flex-column gap-3">
                       {/* Event Name */}
                       <div>
-                        <label className="form-label text-secondary small fw-bold mb-1">
-                          Event Name <span className="required-asterisk">*</span>
+                        <label className="admin-form-label">
+                          Event Name <span className="text-danger">*</span>
                         </label>
                         <div className="input-group">
-                          <span className="input-group-text bg-dark bg-opacity-50 border-secondary border-opacity-50 text-primary">
+                          <span className="admin-input-group-text">
                             <i className="bi bi-card-heading"></i>
                           </span>
                           <input
@@ -1157,14 +1486,163 @@ const EventManager: React.FC = () => {
                         </div>
                       </div>
 
+                      {/* Description */}
+                      <div>
+                        <label className="admin-form-label">
+                          Event Description <span className="text-danger">*</span>
+                        </label>
+                        <textarea
+                          className={`form-control form-control-glass ${validationErrors.description ? 'is-invalid' : ''}`}
+                          rows={4}
+                          placeholder="Describe the event, objectives, and highlights..."
+                          value={form.description}
+                          onChange={(e) => {
+                            setForm({ ...form, description: e.target.value });
+                            setValidationErrors({ ...validationErrors, description: validateDescription(e.target.value) });
+                          }}
+                          maxLength={500}
+                          style={{ resize: 'none' }}
+                        />
+                        {validationErrors.description && (
+                          <div className="invalid-feedback-custom">
+                            {validationErrors.description}
+                          </div>
+                        )}
+                        <div className={`character-counter ${form.description.length > 450 ? 'warning' : ''} ${form.description.length >= 500 ? 'danger' : ''}`}>
+                          {form.description.length} / 500
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right: Thumbnail Upload */}
+                    <div className="col-lg-5 d-flex flex-column">
+                      <label className="admin-form-label">
+                        Event Thumbnail <span className="text-secondary opacity-75 fw-normal">(optional)</span>
+                      </label>
+                      <div
+                        className={`media-upload-frame d-flex flex-column align-items-center justify-content-center p-3 text-center flex-grow-1 ${thumbnailPreview ? 'has-image' : ''}`}
+                        style={{ minHeight: '210px' }}
+                      >
+                        {thumbnailPreview ? (
+                          <div className="position-relative w-100 h-100 d-flex flex-column align-items-center justify-content-center">
+                            <img
+                              src={thumbnailPreview}
+                              alt="Thumbnail preview"
+                              style={{ width: '100%', maxHeight: '145px', aspectRatio: '16 / 9', objectFit: 'cover', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.1)' }}
+                            />
+                            <div className="d-flex align-items-center gap-2 mt-2">
+                              <label
+                                className="btn btn-sm btn-outline-primary py-1 px-2.5 d-inline-flex align-items-center gap-1.5"
+                                style={{ fontSize: '0.75rem', cursor: 'pointer', borderRadius: '6px' }}
+                              >
+                                <i className="bi bi-arrow-repeat"></i> Change
+                                <input type="file" accept="image/*" className="d-none" onChange={handleThumbnailChange} />
+                              </label>
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-outline-danger py-1 px-2.5 d-inline-flex align-items-center gap-1.5"
+                                style={{ fontSize: '0.75rem', borderRadius: '6px' }}
+                                onClick={removeThumbnail}
+                              >
+                                <i className="bi bi-trash"></i> Remove
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <label className="d-flex flex-column align-items-center justify-content-center w-100 h-100 cursor-pointer mb-0" style={{ cursor: 'pointer' }}>
+                            <div
+                              className="d-flex align-items-center justify-content-center mb-2"
+                              style={{
+                                width: 44,
+                                height: 44,
+                                borderRadius: '10px',
+                                background: 'rgba(56, 189, 248, 0.1)',
+                                border: '1px solid rgba(56, 189, 248, 0.25)',
+                                color: '#38bdf8'
+                              }}
+                            >
+                              <i className="bi bi-image fs-5"></i>
+                            </div>
+                            <span className="fw-semibold text-white small mb-1">Click to upload thumbnail</span>
+                            <span className="text-secondary" style={{ fontSize: '0.75rem' }}>16:9 Card ratio (Max 5MB)</span>
+                            <input type="file" accept="image/*" className="d-none" onChange={handleThumbnailChange} />
+                          </label>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* --- SLIDE 2: Poster, Date, Time, Venue --- */}
+                <div className="tab-slide px-1">
+                  <div className="row g-3">
+                    {/* Left: Poster */}
+                    <div className="col-lg-5 d-flex flex-column">
+                      <label className="admin-form-label">
+                        Event Poster <span className="text-secondary opacity-75 fw-normal">(optional)</span>
+                      </label>
+                      <div
+                        className={`media-upload-frame d-flex flex-column align-items-center justify-content-center p-3 text-center flex-grow-1 ${posterPreview ? 'has-image' : ''}`}
+                        style={{ minHeight: '235px' }}
+                      >
+                        {posterPreview ? (
+                          <div className="position-relative w-100 h-100 d-flex flex-column align-items-center justify-content-center">
+                            <img
+                              src={posterPreview}
+                              alt="Poster preview"
+                              style={{ maxHeight: '160px', maxWidth: '100%', aspectRatio: '1810 / 2560', objectFit: 'contain', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.1)' }}
+                            />
+                            <div className="d-flex align-items-center gap-2 mt-2">
+                              <label
+                                className="btn btn-sm btn-outline-primary py-1 px-2.5 d-inline-flex align-items-center gap-1.5"
+                                style={{ fontSize: '0.75rem', cursor: 'pointer', borderRadius: '6px' }}
+                              >
+                                <i className="bi bi-arrow-repeat"></i> Change
+                                <input type="file" accept="image/*" className="d-none" onChange={handlePosterChange} />
+                              </label>
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-outline-danger py-1 px-2.5 d-inline-flex align-items-center gap-1.5"
+                                style={{ fontSize: '0.75rem', borderRadius: '6px' }}
+                                onClick={removePoster}
+                              >
+                                <i className="bi bi-trash"></i> Remove
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <label className="d-flex flex-column align-items-center justify-content-center w-100 h-100 cursor-pointer mb-0" style={{ cursor: 'pointer' }}>
+                            <div
+                              className="d-flex align-items-center justify-content-center mb-2"
+                              style={{
+                                width: 44,
+                                height: 44,
+                                borderRadius: '10px',
+                                background: 'rgba(56, 189, 248, 0.1)',
+                                border: '1px solid rgba(56, 189, 248, 0.25)',
+                                color: '#38bdf8'
+                              }}
+                            >
+                              <i className="bi bi-file-earmark-image fs-5"></i>
+                            </div>
+                            <span className="fw-semibold text-white small mb-1">Click to upload poster</span>
+                            <span className="text-secondary" style={{ fontSize: '0.75rem' }}>1810 × 2560 portrait poster (Max 8MB)</span>
+                            <input type="file" accept="image/*" className="d-none" onChange={handlePosterChange} />
+                          </label>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Right: Date, Time, Venue */}
+                    <div className="col-lg-7 d-flex flex-column gap-3">
                       {/* Date & Time */}
                       <div className="row g-2">
                         <div className="col-6">
-                          <label className="form-label text-secondary small fw-bold mb-1">
-                            Event Date <span className="required-asterisk">*</span>
+                          <label className="admin-form-label">
+                            Event Date <span className="text-danger">*</span>
                           </label>
                           <div className="input-group">
-                            <span className="input-group-text bg-dark bg-opacity-50 border-secondary border-opacity-50 text-info">
+                            <span className="admin-input-group-text">
                               <i className="bi bi-calendar3"></i>
                             </span>
                             <input
@@ -1186,11 +1664,11 @@ const EventManager: React.FC = () => {
                         </div>
 
                         <div className="col-6">
-                          <label className="form-label text-secondary small fw-bold mb-1">
-                            Event Time <span className="required-asterisk">*</span>
+                          <label className="admin-form-label">
+                            Event Time <span className="text-danger">*</span>
                           </label>
                           <div className="input-group">
-                            <span className="input-group-text bg-dark bg-opacity-50 border-secondary border-opacity-50 text-warning">
+                            <span className="admin-input-group-text">
                               <i className="bi bi-clock"></i>
                             </span>
                             <select
@@ -1253,12 +1731,12 @@ const EventManager: React.FC = () => {
 
                       {/* Venue */}
                       <div>
-                        <label className="form-label text-secondary small fw-bold mb-1">
-                          Venue <span className="required-asterisk">*</span>
+                        <label className="admin-form-label">
+                          Venue <span className="text-danger">*</span>
                         </label>
                         <div className="input-group">
-                          <span className="input-group-text bg-dark bg-opacity-50 border-secondary border-opacity-50 text-danger">
-                            <i className="bi bi-geo-alt-fill"></i>
+                          <span className="admin-input-group-text">
+                            <i className="bi bi-geo-alt"></i>
                           </span>
                           <input
                             className={`form-control form-control-glass ${validationErrors.venue ? 'is-invalid' : ''}`}
@@ -1280,143 +1758,128 @@ const EventManager: React.FC = () => {
                           {form.venue.length} / 200
                         </div>
                       </div>
-
-                      {/* WhatsApp */}
-                      <div>
-                        <label className="form-label text-secondary small fw-bold mb-1">
-                          WhatsApp Group Link <span className="text-secondary opacity-75 fw-normal">(Optional)</span>
-                        </label>
-                        <div className="input-group">
-                          <span className="input-group-text bg-dark bg-opacity-50 border-secondary border-opacity-50 text-success">
-                            <i className="bi bi-whatsapp"></i>
-                          </span>
-                          <input
-                            className={`form-control form-control-glass ${validationErrors.whatsappGroupLink ? 'is-invalid' : ''}`}
-                            placeholder="https://chat.whatsapp.com/..."
-                            value={form.whatsappGroupLink || ""}
-                            onChange={(e) => {
-                              setForm({ ...form, whatsappGroupLink: e.target.value });
-                              setValidationErrors({ ...validationErrors, whatsappGroupLink: validateWhatsAppUrl(e.target.value) });
-                            }}
-                          />
-                        </div>
-                        {validationErrors.whatsappGroupLink && (
-                          <div className="invalid-feedback-custom">
-                            {validationErrors.whatsappGroupLink}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Right Column */}
-                    <div className="col-lg-6 d-flex flex-column gap-3">
-                      {/* Description */}
-                      <div>
-                        <label className="form-label text-secondary small fw-bold mb-1">
-                          Event Description
-                        </label>
-                        <textarea
-                          className={`form-control form-control-glass ${validationErrors.description ? 'is-invalid' : ''}`}
-                          rows={3}
-                          placeholder="Describe the event, objectives, and highlights..."
-                          value={form.description}
-                          onChange={(e) => {
-                            setForm({ ...form, description: e.target.value });
-                            setValidationErrors({ ...validationErrors, description: validateDescription(e.target.value) });
-                          }}
-                          maxLength={500}
-                          style={{ resize: 'none' }}
-                        />
-                        {validationErrors.description && (
-                          <div className="invalid-feedback-custom">
-                            {validationErrors.description}
-                          </div>
-                        )}
-                        <div className={`character-counter ${form.description.length > 450 ? 'warning' : ''} ${form.description.length >= 500 ? 'danger' : ''}`}>
-                          {form.description.length} / 500
-                        </div>
-                      </div>
-
-                      {/* Contact Persons */}
-                      <div className="form-section p-3 rounded-3" style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                        <div className="d-flex justify-content-between align-items-center mb-2">
-                          <h6 className="m-0 text-info small fw-bold">
-                            <i className="bi bi-person-lines-fill me-1"></i> Contact Persons <span className="required-asterisk">*</span>
-                          </h6>
-                          <button
-                            type="button"
-                            className="btn btn-xs btn-outline-info rounded-pill py-1 px-3"
-                            style={{ fontSize: '0.75rem' }}
-                            onClick={() => setForm({ ...form, contactPersons: [...form.contactPersons, { name: "", phone: "" }] })}
-                          >
-                            <i className="bi bi-plus-lg me-1"></i>Add Contact
-                          </button>
-                        </div>
-
-                        <div style={{ maxHeight: '135px', overflowY: 'auto' }} className="d-flex flex-column gap-2 pe-1">
-                          {form.contactPersons.map((cp, i) => (
-                            <div key={i} className="row g-2 align-items-center">
-                              <div className="col-5">
-                                <div className="input-group input-group-sm">
-                                  <span className="input-group-text bg-dark bg-opacity-50 border-secondary border-opacity-50 text-secondary">
-                                    <i className="bi bi-person"></i>
-                                  </span>
-                                  <input
-                                    className={`form-control form-control-glass form-control-sm ${validationErrors.contactPersons?.[i] ? 'is-invalid' : ''}`}
-                                    placeholder="Name"
-                                    value={cp.name}
-                                    onChange={(e) => handleContactNameChange(e.target.value, i)}
-                                    maxLength={50}
-                                  />
-                                </div>
-                              </div>
-                              <div className="col-5">
-                                <div className="input-group input-group-sm">
-                                  <span className="input-group-text bg-dark bg-opacity-50 border-secondary border-opacity-50 text-secondary">
-                                    <i className="bi bi-telephone"></i>
-                                  </span>
-                                  <input
-                                    className={`form-control form-control-glass form-control-sm ${validationErrors.contactPersons?.[i] ? 'is-invalid' : ''}`}
-                                    placeholder="10-digit Phone"
-                                    value={cp.phone}
-                                    onChange={(e) => handlePhoneChange(e.target.value, i)}
-                                    maxLength={10}
-                                  />
-                                </div>
-                              </div>
-                              <div className="col-2">
-                                <button
-                                  type="button"
-                                  className="btn btn-outline-danger btn-sm p-1 w-100"
-                                  disabled={form.contactPersons.length === 1}
-                                  onClick={() => {
-                                    const list = form.contactPersons.filter((_, index) => index !== i);
-                                    setForm({ ...form, contactPersons: list });
-                                    if (validationErrors.contactPersons) {
-                                      const newErrors = validationErrors.contactPersons.filter((_, index) => index !== i);
-                                      setValidationErrors({ ...validationErrors, contactPersons: newErrors });
-                                    }
-                                  }}
-                                  title="Remove Contact"
-                                >
-                                  <i className="bi bi-trash small"></i>
-                                </button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Slide 2: Form Builder */}
+                {/* --- SLIDE 3: Contacts & WhatsApp Link --- */}
+                <div className="tab-slide px-1">
+                  <div className="d-flex flex-column gap-3">
+                    {/* Contact Persons */}
+                    <div className="p-3 rounded-2" style={{ background: '#060911', border: '1px solid #1e293b' }}>
+                      <div className="d-flex justify-content-between align-items-center mb-2.5">
+                        <div>
+                          <span className="admin-form-label mb-0 fw-semibold text-white">
+                            <i className="bi bi-person-lines-fill me-1 text-primary"></i> Contact Persons <span className="text-danger">*</span>
+                          </span>
+                          <p className="text-secondary small mb-0" style={{ fontSize: '0.78rem' }}>
+                            Add coordinators or student leads for attendee inquiries
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline-primary py-1 px-2.5 d-inline-flex align-items-center gap-1"
+                          style={{ fontSize: '0.78rem', borderRadius: '6px' }}
+                          onClick={() => setForm({ ...form, contactPersons: [...form.contactPersons, { name: "", phone: "" }] })}
+                        >
+                          <i className="bi bi-plus-lg"></i>
+                          <span>Add Contact</span>
+                        </button>
+                      </div>
+
+                      <div style={{ maxHeight: '180px', overflowY: 'auto' }} className="d-flex flex-column gap-2 pe-1">
+                        {form.contactPersons.map((cp, i) => (
+                          <div key={i} className="row g-2 align-items-center">
+                            <div className="col-5">
+                              <div className="input-group input-group-sm">
+                                <span className="admin-input-group-text py-1 px-2">
+                                  <i className="bi bi-person"></i>
+                                </span>
+                                <input
+                                  className={`form-control form-control-glass form-control-sm ${validationErrors.contactPersons?.[i] ? 'is-invalid' : ''}`}
+                                  placeholder="Contact Name"
+                                  value={cp.name}
+                                  onChange={(e) => handleContactNameChange(e.target.value, i)}
+                                  maxLength={50}
+                                />
+                              </div>
+                            </div>
+                            <div className="col-5">
+                              <div className="input-group input-group-sm">
+                                <span className="admin-input-group-text py-1 px-2">
+                                  <i className="bi bi-telephone"></i>
+                                </span>
+                                <input
+                                  className={`form-control form-control-glass form-control-sm ${validationErrors.contactPersons?.[i] ? 'is-invalid' : ''}`}
+                                  placeholder="10-digit Phone"
+                                  value={cp.phone}
+                                  onChange={(e) => handlePhoneChange(e.target.value, i)}
+                                  maxLength={10}
+                                />
+                              </div>
+                            </div>
+                            <div className="col-2">
+                              <button
+                                type="button"
+                                className="btn btn-outline-danger btn-sm p-1 w-100"
+                                style={{ borderRadius: '6px' }}
+                                disabled={form.contactPersons.length === 1}
+                                onClick={() => {
+                                  const list = form.contactPersons.filter((_, index) => index !== i);
+                                  setForm({ ...form, contactPersons: list });
+                                  if (validationErrors.contactPersons) {
+                                    const newErrors = validationErrors.contactPersons.filter((_, index) => index !== i);
+                                    setValidationErrors({ ...validationErrors, contactPersons: newErrors });
+                                  }
+                                }}
+                                title="Remove Contact"
+                              >
+                                <i className="bi bi-trash small"></i>
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* WhatsApp Group Link */}
+                    <div>
+                      <label className="admin-form-label">
+                        WhatsApp Group Link <span className="text-secondary opacity-75 fw-normal text-lowercase">(Optional)</span>
+                      </label>
+                      <div className="input-group">
+                        <span className="admin-input-group-text" style={{ color: '#22c55e' }}>
+                          <i className="bi bi-whatsapp"></i>
+                        </span>
+                        <input
+                          className={`form-control form-control-glass ${validationErrors.whatsappGroupLink ? 'is-invalid' : ''}`}
+                          placeholder="https://chat.whatsapp.com/..."
+                          value={form.whatsappGroupLink || ""}
+                          onChange={(e) => {
+                            setForm({ ...form, whatsappGroupLink: e.target.value });
+                            setValidationErrors({ ...validationErrors, whatsappGroupLink: validateWhatsAppUrl(e.target.value) });
+                          }}
+                        />
+                      </div>
+                      {validationErrors.whatsappGroupLink && (
+                        <div className="invalid-feedback-custom">
+                          {validationErrors.whatsappGroupLink}
+                        </div>
+                      )}
+                      <p className="text-secondary small mt-1 mb-0" style={{ fontSize: '0.78rem' }}>
+                        Provide an official invite link where participants can join for event updates.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* --- SLIDE 4: Registration Form Builder --- */}
                 <div className="tab-slide px-1">
                   <div style={{ maxHeight: 'calc(75vh - 180px)', overflowY: 'auto' }} className="pe-1">
-                    <div className="alert alert-info border-0 bg-opacity-10 bg-info d-flex align-items-center gap-2 mb-3 py-2 px-3">
-                      <i className="bi bi-info-circle-fill text-info fs-6"></i>
+                    <div className="alert border-0 d-flex align-items-center gap-2 mb-3 py-2 px-3 rounded-2" style={{ background: '#1e293b', border: '1px solid #334155' }}>
+                      <i className="bi bi-info-circle text-primary fs-6"></i>
                       <span className="small text-light">
-                        Customize registration questions, input types, and required validations just like Google Forms. Changes are saved with the event.
+                        Configure registration questions, required fields, and input types. Form questions are stored with the event.
                       </span>
                     </div>
                     <FormBuilder
@@ -1436,45 +1899,174 @@ const EventManager: React.FC = () => {
               </div>
             </div>
 
-            {/* Modal Footer */}
-            <div className="d-flex justify-content-between align-items-center pt-3 border-top border-secondary border-opacity-25 mt-3">
+            {/* Modal Footer - Wizard Navigation */}
+            <div className="d-flex justify-content-between align-items-center pt-3 mt-3" style={{ borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
               <div>
-                {eventModalTab === 'details' ? (
-                  <button
-                    type="button"
-                    className="btn btn-outline-info rounded-pill px-3"
-                    onClick={() => setEventModalTab('form')}
-                  >
-                    <i className="bi bi-arrow-right me-1"></i>Next: Form Builder ({form.customQuestions?.length || 0})
+                {eventModalTab === 'info' ? (
+                  <button type="button" className="btn-admin-secondary px-4 py-2" onClick={closeModal}>
+                    Cancel
                   </button>
                 ) : (
                   <button
                     type="button"
-                    className="btn btn-outline-secondary rounded-pill px-3"
-                    onClick={() => setEventModalTab('details')}
+                    className="btn-admin-outline d-inline-flex align-items-center gap-2 px-3 py-2"
+                    onClick={handlePreviousTab}
                   >
-                    <i className="bi bi-arrow-left me-1"></i>Back: Event Details
+                    <i className="bi bi-arrow-left"></i>
+                    <span>Previous</span>
                   </button>
                 )}
               </div>
-              <div className="d-flex gap-2">
-                <button type="button" className="btn btn-outline-light px-4 rounded-pill" onClick={closeModal}>
+
+              <div className="d-flex align-items-center" style={{ gap: '12px' }}>
+                {eventModalTab !== 'form' ? (
+                  <button
+                    type="button"
+                    className="btn-admin-primary px-4 py-2 d-inline-flex align-items-center gap-2"
+                    onClick={handleNextTab}
+                  >
+                    <span>Next: {getNextTabTitle()}</span>
+                    <i className="bi bi-arrow-right"></i>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn-admin-primary px-4 py-2 d-inline-flex align-items-center gap-2"
+                    onClick={handleSaveEvent}
+                    disabled={hasValidationErrors || isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <span className="d-inline-flex align-items-center gap-2">
+                        <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        <span>{editingId ? 'Updating...' : 'Saving...'}</span>
+                      </span>
+                    ) : (
+                      <span className="d-inline-flex align-items-center gap-2">
+                        <i className="bi bi-check2 fs-6"></i>
+                        <span>{editingId ? "Save Changes" : "Create Event"}</span>
+                      </span>
+                    )}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- CROP STUDIO MODAL --- */}
+      {showCropModal && (
+        <div className="admin-modal-overlay">
+          <div className="event-crop-modal p-4" style={{ maxWidth: '760px', width: '100%' }}>
+            {/* Header */}
+            <div className="d-flex justify-content-between align-items-center mb-3 pb-3" style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
+              <div className="d-flex align-items-center gap-3">
+                <div
+                  className="d-flex align-items-center justify-content-center flex-shrink-0"
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: '10px',
+                    background: 'rgba(56, 189, 248, 0.15)',
+                    border: '1px solid rgba(56, 189, 248, 0.3)',
+                    color: '#38bdf8'
+                  }}
+                >
+                  <i className="bi bi-crop fs-5"></i>
+                </div>
+                <div>
+                  <h5 className="m-0 fw-bold text-white tracking-tight" style={{ fontSize: '1.1rem' }}>
+                    {cropTarget === 'thumbnail' ? 'Event Thumbnail Framing (16:9 Card Ratio)' : 'Event Poster Framing (1810 × 2560 Poster)'}
+                  </h5>
+                  <p className="text-secondary small mb-0 mt-0.5" style={{ fontSize: '0.78rem' }}>
+                    {cropTarget === 'thumbnail' ? 'Align visual elements for the 16:9 website event cards' : 'Drag and zoom to perfectly frame the event poster visual'}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="btn btn-sm btn-link text-secondary text-decoration-none p-1.5 rounded-circle hover-light"
+                onClick={() => {
+                  setShowCropModal(false);
+                  setImageToCrop("");
+                  setCropTarget(null);
+                }}
+              >
+                <i className="bi bi-x-lg"></i>
+              </button>
+            </div>
+
+            {/* Cropper Viewport */}
+            <div
+              className="position-relative overflow-hidden rounded-3 mb-3"
+              style={{
+                height: cropTarget === 'thumbnail' ? '400px' : '460px',
+                background: '#020617',
+                border: '1px solid rgba(255, 255, 255, 0.12)',
+                boxShadow: 'inset 0 0 40px rgba(0,0,0,0.8)'
+              }}
+            >
+              <Cropper
+                image={imageToCrop}
+                crop={crop}
+                zoom={zoom}
+                aspect={cropTarget === 'thumbnail' ? 16 / 9 : 1810 / 2560}
+                restrictPosition={true}
+                minZoom={1}
+                maxZoom={4}
+                onCropChange={setCrop}
+                onCropComplete={(_, pixels) => setCroppedAreaPixels(pixels)}
+                onZoomChange={setZoom}
+                showGrid={true}
+              />
+            </div>
+
+            {/* Footer Controls */}
+            <div className="d-flex flex-column flex-sm-row justify-content-between align-items-center gap-3 pt-2">
+              <div className="d-flex align-items-center w-100 w-sm-auto" style={{ gap: '12px' }}>
+                <i className="bi bi-zoom-out text-secondary" style={{ fontSize: '1rem', flexShrink: 0 }}></i>
+                <input
+                  type="range"
+                  min={1}
+                  max={4}
+                  step={0.05}
+                  value={zoom}
+                  onChange={(e) => setZoom(Number(e.target.value))}
+                  className="form-range"
+                  style={{ width: 140, cursor: 'pointer', margin: '0 4px' }}
+                />
+                <i className="bi bi-zoom-in text-secondary" style={{ fontSize: '1rem', flexShrink: 0 }}></i>
+                <span
+                  className="badge rounded-pill bg-dark border border-secondary text-secondary"
+                  style={{
+                    fontSize: '0.75rem',
+                    padding: '6px 12px',
+                    marginLeft: '8px',
+                    letterSpacing: '0.5px'
+                  }}
+                >
+                  {zoom.toFixed(1)}x
+                </span>
+              </div>
+              <div className="d-flex align-items-center w-100 w-sm-auto justify-content-end" style={{ gap: '14px' }}>
+                <button
+                  type="button"
+                  className="btn-admin-secondary px-4 py-2"
+                  onClick={() => {
+                    setShowCropModal(false);
+                    setImageToCrop("");
+                    setCropTarget(null);
+                  }}
+                >
                   Cancel
                 </button>
                 <button
                   type="button"
-                  className="btn btn-primary px-5 rounded-pill fw-bold shadow"
-                  onClick={handleSaveEvent}
-                  disabled={hasValidationErrors || isSubmitting}
+                  className="btn-admin-primary px-4 py-2 d-inline-flex align-items-center"
+                  style={{ gap: '8px' }}
+                  onClick={handleCropSave}
                 >
-                  {isSubmitting ? (
-                    <span>
-                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                      {editingId ? 'Updating...' : 'Saving...'}
-                    </span>
-                  ) : (
-                    editingId ? "Save Changes" : "Create Event"
-                  )}
+                  <i className="bi bi-check2 fs-6"></i> <span>Apply Crop</span>
                 </button>
               </div>
             </div>
@@ -1482,35 +2074,100 @@ const EventManager: React.FC = () => {
         </div>
       )}
 
-      {/* --- Delete Confirmation Modal --- */}
+      {/* --- DELETE CONFIRMATION MODAL --- */}
       {showDeleteModal && (
-        <div className="modal fade show d-block" style={{ backgroundColor: "rgba(0,0,0,0.8)" }}>
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content modal-content-glass rounded-4 p-3 text-center">
-              <div className="modal-body">
-                <div className="bg-danger bg-opacity-10 text-danger rounded-circle d-inline-flex p-3 mb-3">
-                  <i className="bi bi-exclamation-triangle-fill fs-3"></i>
+        <div className="admin-modal-overlay">
+          <div
+            className="event-studio-modal p-4 m-2 text-center"
+            style={{
+              maxWidth: '460px',
+              width: '100%',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              boxShadow: '0 25px 60px -10px rgba(0, 0, 0, 0.95), 0 0 30px rgba(239, 68, 68, 0.15)'
+            }}
+          >
+            {/* Glowing Warning Icon */}
+            <div
+              className="d-inline-flex align-items-center justify-content-center p-3 mb-3"
+              style={{
+                width: 64,
+                height: 64,
+                borderRadius: '50%',
+                background: 'rgba(239, 68, 68, 0.12)',
+                border: '1px solid rgba(239, 68, 68, 0.35)',
+                animation: 'pulseDanger 2s infinite'
+              }}
+            >
+              <i className="bi bi-trash3-fill fs-3 text-danger"></i>
+            </div>
+
+            <h4 className="fw-bold text-white mb-1.5" style={{ fontSize: '1.25rem' }}>Delete Event?</h4>
+            <p className="text-secondary small mb-3" style={{ fontSize: '0.85rem' }}>
+              Are you sure you want to remove <strong>{eventToDelete?.name}</strong>? This action cannot be undone.
+            </p>
+
+            {/* Event Identity Chip */}
+            {eventToDelete && (
+              <div
+                className="rounded-3 mb-4 d-flex align-items-center text-start mx-auto"
+                style={{
+                  maxWidth: '360px',
+                  background: 'rgba(255, 255, 255, 0.03)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  padding: '12px 16px',
+                  gap: '14px'
+                }}
+              >
+                <div
+                  className="d-flex align-items-center justify-content-center rounded-2 flex-shrink-0"
+                  style={{
+                    width: 44,
+                    height: 44,
+                    background: 'rgba(239, 68, 68, 0.15)',
+                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                    color: '#f87171'
+                  }}
+                >
+                  <i className="bi bi-calendar-x fs-5"></i>
                 </div>
-                <h4 className="fw-bold mb-2 text-white">Delete Event?</h4>
-                <p className="text-secondary mb-4">Are you sure you want to remove <strong>{eventToDelete?.name}</strong>? This action cannot be undone.</p>
-                <div className="d-flex gap-2 justify-content-center">
-                  <button className="btn btn-outline-light rounded-pill px-4" onClick={() => setShowDeleteModal(false)}>Cancel</button>
-                  <button
-                    className="btn btn-danger rounded-pill px-4 fw-bold"
-                    onClick={handleDeleteEvent}
-                    disabled={loading}
-                  >
-                    {loading ? (
-                      <span>
-                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                        Deleting...
-                      </span>
-                    ) : (
-                      'Delete'
-                    )}
-                  </button>
+                <div className="overflow-hidden flex-grow-1">
+                  <div className="text-white fw-bold text-truncate" style={{ fontSize: '0.925rem', lineHeight: 1.3, marginBottom: '2px' }}>
+                    {eventToDelete.name}
+                  </div>
+                  <div className="text-secondary small text-truncate" style={{ fontSize: '0.78rem', lineHeight: 1.3, color: '#94a3b8' }}>
+                    <i className="bi bi-calendar3 me-1"></i>{eventToDelete.date} · <i className="bi bi-geo-alt me-1"></i>{eventToDelete.venue}
+                  </div>
                 </div>
               </div>
+            )}
+
+            <div className="d-flex justify-content-center" style={{ gap: '14px' }}>
+              <button
+                type="button"
+                className="btn-admin-secondary px-4 py-2"
+                onClick={() => setShowDeleteModal(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn btn-danger px-4 py-2 rounded-2 fw-semibold d-inline-flex align-items-center gap-2 shadow"
+                onClick={handleDeleteEvent}
+                disabled={loading}
+                style={{ background: '#dc2626', border: '1px solid #ef4444' }}
+              >
+                {loading ? (
+                  <span className="d-inline-flex align-items-center gap-2">
+                    <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    <span>Deleting...</span>
+                  </span>
+                ) : (
+                  <span className="d-inline-flex align-items-center gap-2">
+                    <i className="bi bi-trash3-fill"></i>
+                    <span>Delete Event</span>
+                  </span>
+                )}
+              </button>
             </div>
           </div>
         </div>

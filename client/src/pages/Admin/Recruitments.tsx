@@ -799,29 +799,32 @@ const Recruitments: React.FC = () => {
           <div className="admin-modal-container p-4 m-2" style={{ maxWidth: '1050px', width: '100%' }}>
 
             {/* Modal Header */}
-            <div className="d-flex justify-content-between align-items-center mb-3 border-bottom border-secondary border-opacity-25 pb-3">
+            <div className="d-flex justify-content-between align-items-center mb-3 pb-3" style={{ borderBottom: '1px solid #1e293b' }}>
               <div className="d-flex align-items-center gap-3">
                 <div
-                  className="rounded-circle d-flex align-items-center justify-content-center shadow-sm"
+                  className="d-flex align-items-center justify-content-center"
                   style={{
-                    width: 44,
-                    height: 44,
-                    background: 'rgba(59, 130, 246, 0.15)',
-                    border: '1px solid rgba(59, 130, 246, 0.3)'
+                    width: 38,
+                    height: 38,
+                    borderRadius: '6px',
+                    background: '#1e293b',
+                    border: '1px solid #334155'
                   }}
                 >
-                  <i className={`bi ${editingId ? 'bi-briefcase-fill text-primary' : 'bi-plus-circle-fill text-primary'} fs-5`}></i>
+                  <i className={`bi ${editingId ? 'bi-briefcase text-primary' : 'bi-plus-circle text-primary'} fs-5`}></i>
                 </div>
                 <div>
-                  <h4 className="m-0 fw-bold text-white">
+                  <h5 className="m-0 fw-semibold text-white">
                     {editingId ? "Edit Recruitment Drive" : "Create New Drive"}
-                  </h4>
-                  <p className="text-secondary small mb-0 mt-1">Configure drive details, eligibility timeline, and application form</p>
+                  </h5>
+                  <p className="text-secondary small mb-0 mt-0" style={{ fontSize: '0.8125rem' }}>
+                    Configure recruitment timeline, position role, and application questions
+                  </p>
                 </div>
               </div>
               <button
                 type="button"
-                className="btn btn-link text-secondary text-decoration-none fs-4 p-0"
+                className="btn btn-link text-secondary text-decoration-none p-1"
                 style={{ lineHeight: 1 }}
                 onClick={() => {
                   setShowModal(false);
@@ -829,27 +832,26 @@ const Recruitments: React.FC = () => {
                   setRecruitmentModalTab('details');
                 }}
               >
-                <i className="bi bi-x-lg"></i>
+                <i className="bi bi-x-lg fs-6"></i>
               </button>
             </div>
 
-            {/* Modal Tabs with Sliding Active Pill */}
+            {/* Modal Tabs with Sliding Active Segment */}
             <div
-              className="position-relative d-flex mb-3 p-1 bg-dark bg-opacity-75 rounded-3 border border-secondary border-opacity-25 overflow-hidden"
-              style={{ minHeight: '46px' }}
+              className="position-relative d-flex mb-3 p-1 rounded-2 border overflow-hidden"
+              style={{ background: '#090d16', borderColor: '#1e293b', minHeight: '42px' }}
             >
               {/* Smooth Sliding Pill Indicator */}
               <div
-                className="position-absolute rounded-2 shadow"
+                className="position-absolute rounded-2 shadow-sm"
                 style={{
                   top: '4px',
                   bottom: '4px',
                   left: '4px',
                   width: 'calc(50% - 4px)',
-                  background: 'linear-gradient(135deg, #2563eb, #3b82f6)',
-                  boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)',
+                  background: '#2563eb',
                   transform: recruitmentModalTab === 'details' ? 'translateX(0%)' : 'translateX(100%)',
-                  transition: 'transform 0.32s cubic-bezier(0.4, 0, 0.2, 1)',
+                  transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                   zIndex: 1,
                   pointerEvents: 'none'
                 }}
@@ -858,10 +860,10 @@ const Recruitments: React.FC = () => {
               {/* Tab 1: Drive Details */}
               <button
                 type="button"
-                className={`btn flex-fill py-2 rounded-2 fw-semibold d-flex align-items-center justify-content-center gap-2 border-0 position-relative ${
+                className={`btn flex-fill py-1 rounded-2 fw-medium d-flex align-items-center justify-content-center gap-2 border-0 position-relative ${
                   recruitmentModalTab === 'details' ? 'text-white' : 'text-secondary'
                 }`}
-                style={{ zIndex: 2, transition: 'color 0.25s ease', background: 'transparent' }}
+                style={{ zIndex: 2, transition: 'color 0.2s ease', background: 'transparent', fontSize: '0.875rem' }}
                 onClick={() => setRecruitmentModalTab('details')}
               >
                 <i className="bi bi-briefcase"></i>
@@ -871,19 +873,22 @@ const Recruitments: React.FC = () => {
               {/* Tab 2: Application Form */}
               <button
                 type="button"
-                className={`btn flex-fill py-2 rounded-2 fw-semibold d-flex align-items-center justify-content-center gap-2 border-0 position-relative ${
+                className={`btn flex-fill py-1 rounded-2 fw-medium d-flex align-items-center justify-content-center gap-2 border-0 position-relative ${
                   recruitmentModalTab === 'form' ? 'text-white' : 'text-secondary'
                 }`}
-                style={{ zIndex: 2, transition: 'color 0.25s ease', background: 'transparent' }}
+                style={{ zIndex: 2, transition: 'color 0.2s ease', background: 'transparent', fontSize: '0.875rem' }}
                 onClick={() => setRecruitmentModalTab('form')}
               >
                 <i className="bi bi-ui-checks-grid"></i>
                 <span>2. Application Form</span>
                 <span
-                  className={`badge rounded-pill px-2 ${
-                    recruitmentModalTab === 'form' ? 'bg-white bg-opacity-25 text-white' : 'bg-secondary bg-opacity-50 text-light'
-                  }`}
-                  style={{ transition: 'all 0.25s ease' }}
+                  className="badge rounded-1 px-2"
+                  style={{
+                    fontSize: '0.72rem',
+                    background: recruitmentModalTab === 'form' ? 'rgba(255,255,255,0.25)' : '#1e293b',
+                    color: recruitmentModalTab === 'form' ? '#ffffff' : '#94a3b8',
+                    border: '1px solid rgba(255,255,255,0.1)'
+                  }}
                 >
                   {form.questions?.length || 0}
                 </span>
@@ -905,11 +910,11 @@ const Recruitments: React.FC = () => {
                     <div className="col-lg-6 d-flex flex-column gap-3">
                       {/* Title */}
                       <div>
-                        <label className="form-label text-secondary small fw-bold mb-1">
-                          Drive Title <span className="required-asterisk">*</span>
+                        <label className="admin-form-label">
+                          Drive Title <span className="text-danger">*</span>
                         </label>
                         <div className="input-group">
-                          <span className="input-group-text bg-dark bg-opacity-50 border-secondary border-opacity-50 text-primary">
+                          <span className="admin-input-group-text">
                             <i className="bi bi-card-heading"></i>
                           </span>
                           <input
@@ -935,11 +940,11 @@ const Recruitments: React.FC = () => {
 
                       {/* Role */}
                       <div>
-                        <label className="form-label text-secondary small fw-bold mb-1">
-                          Role / Position Title <span className="required-asterisk">*</span>
+                        <label className="admin-form-label">
+                          Role / Position Title <span className="text-danger">*</span>
                         </label>
                         <div className="input-group">
-                          <span className="input-group-text bg-dark bg-opacity-50 border-secondary border-opacity-50 text-info">
+                          <span className="admin-input-group-text">
                             <i className="bi bi-person-badge"></i>
                           </span>
                           <input
@@ -967,11 +972,11 @@ const Recruitments: React.FC = () => {
                       {/* Dates in 1 row */}
                       <div className="row g-2">
                         <div className="col-6">
-                          <label className="form-label text-secondary small fw-bold mb-1">
-                            Start Date <span className="required-asterisk">*</span>
+                          <label className="admin-form-label">
+                            Start Date <span className="text-danger">*</span>
                           </label>
                           <div className="input-group">
-                            <span className="input-group-text bg-dark bg-opacity-50 border-secondary border-opacity-50 text-success">
+                            <span className="admin-input-group-text">
                               <i className="bi bi-calendar-check"></i>
                             </span>
                             <input
@@ -1004,11 +1009,11 @@ const Recruitments: React.FC = () => {
                         </div>
 
                         <div className="col-6">
-                          <label className="form-label text-secondary small fw-bold mb-1">
-                            End Date <span className="required-asterisk">*</span>
+                          <label className="admin-form-label">
+                            End Date <span className="text-danger">*</span>
                           </label>
                           <div className="input-group">
-                            <span className="input-group-text bg-dark bg-opacity-50 border-secondary border-opacity-50 text-danger">
+                            <span className="admin-input-group-text">
                               <i className="bi bi-calendar-x"></i>
                             </span>
                             <input
@@ -1045,12 +1050,20 @@ const Recruitments: React.FC = () => {
                       </div>
 
                       {/* Open Applications Toggle */}
-                      <div className="form-check form-switch p-3 rounded-3 d-flex align-items-center justify-content-between" style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                      <div className="p-3 rounded-2 d-flex align-items-center justify-content-between" style={{ background: '#090d16', border: '1px solid #1e293b' }}>
                         <div>
-                          <div className="text-white fw-semibold small mb-1">
+                          <div className="text-white fw-medium small mb-1">
                             Accepting Applications?
                           </div>
-                          <span className={`badge ${form.isOpen ? 'bg-success bg-opacity-20 text-success' : 'bg-secondary bg-opacity-25 text-secondary'} rounded-pill px-2 py-1`} style={{ fontSize: '0.72rem' }}>
+                          <span
+                            className="badge rounded-1 px-2 py-1"
+                            style={{
+                              fontSize: '0.72rem',
+                              background: form.isOpen ? 'rgba(16, 185, 129, 0.15)' : '#1e293b',
+                              color: form.isOpen ? '#6ee7b7' : '#94a3b8',
+                              border: form.isOpen ? '1px solid rgba(16, 185, 129, 0.25)' : '1px solid #334155'
+                            }}
+                          >
                             <i className={`bi ${form.isOpen ? 'bi-check-circle-fill' : 'bi-dash-circle'} me-1`}></i>
                             {form.isOpen ? 'Open & Accepting' : 'Closed / Draft'}
                           </span>
@@ -1058,7 +1071,7 @@ const Recruitments: React.FC = () => {
                         <input
                           className="form-check-input m-0 cursor-pointer"
                           type="checkbox"
-                          style={{ width: '2.8em', height: '1.4em', cursor: 'pointer' }}
+                          style={{ width: '2.6em', height: '1.3em', cursor: 'pointer' }}
                           checked={form.isOpen}
                           onChange={(e) => setForm({ ...form, isOpen: e.target.checked })}
                         />
@@ -1069,7 +1082,7 @@ const Recruitments: React.FC = () => {
                     <div className="col-lg-6 d-flex flex-column gap-3">
                       {/* Description */}
                       <div>
-                        <label className="form-label text-secondary small fw-bold mb-1">
+                        <label className="admin-form-label">
                           Drive Description
                         </label>
                         <textarea
@@ -1095,12 +1108,12 @@ const Recruitments: React.FC = () => {
                       </div>
 
                       {/* Guidelines Card */}
-                      <div className="p-3 rounded-3 d-flex flex-column gap-2" style={{ background: 'rgba(59, 130, 246, 0.06)', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
-                        <div className="d-flex align-items-center gap-2 text-primary fw-bold small">
-                          <i className="bi bi-lightbulb-fill"></i>
+                      <div className="p-3 rounded-2 d-flex flex-column gap-2" style={{ background: '#131b2e', border: '1px solid #1e293b' }}>
+                        <div className="d-flex align-items-center gap-2 text-primary fw-medium small">
+                          <i className="bi bi-ui-checks"></i>
                           <span>Application Form Builder</span>
                         </div>
-                        <p className="text-secondary small mb-0" style={{ lineHeight: 1.5 }}>
+                        <p className="text-secondary small mb-0" style={{ lineHeight: 1.5, fontSize: '0.8125rem' }}>
                           Use the <strong>Application Form</strong> tab to configure custom questions, portfolio uploads, and short answers. Applicants will fill out your customized form directly.
                         </p>
                       </div>
@@ -1111,8 +1124,8 @@ const Recruitments: React.FC = () => {
                 {/* Slide 2: Form Builder */}
                 <div className="tab-slide px-1">
                   <div style={{ maxHeight: 'calc(75vh - 180px)', overflowY: 'auto' }} className="pe-1">
-                    <div className="alert alert-info border-0 bg-opacity-10 bg-info d-flex align-items-center gap-2 mb-3 py-2 px-3">
-                      <i className="bi bi-info-circle-fill text-info fs-6"></i>
+                    <div className="alert border-0 d-flex align-items-center gap-2 mb-3 py-2 px-3 rounded-2" style={{ background: '#1e293b', border: '1px solid #334155' }}>
+                      <i className="bi bi-info-circle text-primary fs-6"></i>
                       <span className="small text-light">
                         Build your application form with custom questions, input types, and validations. Changes are saved with the recruitment drive.
                       </span>
@@ -1134,34 +1147,36 @@ const Recruitments: React.FC = () => {
             </div>
 
             {/* Modal Footer */}
-            <div className="d-flex justify-content-between align-items-center pt-3 border-top border-secondary border-opacity-25 mt-3">
+            <div className="d-flex justify-content-between align-items-center pt-3 mt-3" style={{ borderTop: '1px solid #1e293b' }}>
               <div>
                 {recruitmentModalTab === 'details' ? (
                   <button
                     type="button"
-                    className="btn btn-outline-info rounded-pill px-3"
+                    className="btn-admin-outline"
                     onClick={() => setRecruitmentModalTab('form')}
                   >
-                    <i className="bi bi-arrow-right me-1"></i>Next: Application Form ({form.questions?.length || 0})
+                    <span>Next: Application Form ({form.questions?.length || 0})</span>
+                    <i className="bi bi-arrow-right"></i>
                   </button>
                 ) : (
                   <button
                     type="button"
-                    className="btn btn-outline-secondary rounded-pill px-3"
+                    className="btn-admin-outline"
                     onClick={() => setRecruitmentModalTab('details')}
                   >
-                    <i className="bi bi-arrow-left me-1"></i>Back: Drive Details
+                    <i className="bi bi-arrow-left"></i>
+                    <span>Back: Drive Details</span>
                   </button>
                 )}
               </div>
               <div className="d-flex gap-2">
-                <button className="btn btn-outline-light rounded-pill px-4" onClick={() => {
+                <button className="btn-admin-secondary" onClick={() => {
                   setShowModal(false);
                   setValidationErrors({});
                   setRecruitmentModalTab('details');
                 }}>Cancel</button>
                 <button
-                  className="btn btn-primary rounded-pill px-5 fw-bold shadow"
+                  className="btn-admin-primary"
                   onClick={handleSave}
                   disabled={hasValidationErrors || isSubmitting}
                 >
