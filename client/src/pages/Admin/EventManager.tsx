@@ -2,13 +2,20 @@ import React, { useState, useEffect, useMemo } from "react";
 import AdminLayout from "../../components/AdminLayout";
 import { createEvent, deleteEvent, getAllEvents, toggleEventDisplay, updateEvent } from "../../services/admin/eventService";
 import FormBuilder from "../../components/FormBuilder/FormBuilder";
-import { type IQuestion, ACM_STANDARD_STUDENT_QUESTIONS } from "../../types/formBuilder";
+import { type IQuestion } from "../../types/formBuilder";
 import Cropper from "react-easy-crop";
 import type { Area, Point } from "react-easy-crop";
+import { CustomDatePicker } from "../../components/CustomDatePicker";
+import { CustomTimePicker } from "../../components/CustomTimePicker";
 
 // --- CSS Styles for Animation & Design ---
 const styles = `
   /* --- Keyframes --- */
+  @keyframes fadeInPicker {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
   @keyframes slideInUp {
     from { opacity: 0; transform: translateY(30px); }
     to { opacity: 1; transform: translateY(0); }
@@ -173,11 +180,11 @@ const styles = `
   }
 
   .event-studio-modal {
-    max-width: 900px;
-    width: 100%;
+    max-width: 1060px;
+    width: 95%;
     background: linear-gradient(165deg, #0f172a 0%, #090d16 100%);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 18px;
+    border-radius: 20px;
     box-shadow: 0 30px 70px -15px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(255, 255, 255, 0.05);
     position: relative;
     overflow: hidden;
@@ -451,8 +458,8 @@ interface ValidationErrors {
   time?: string;
   venue?: string;
   description?: string;
-  contactPersons?: string[]; // Array of errors for each contact
-  registrationQuestions?: string[]; // Array of errors for each question
+  contactPersons?: string[];
+  registrationQuestions?: string[];
   whatsappGroupLink?: string;
 }
 
@@ -558,12 +565,17 @@ const EventManager: React.FC = () => {
   const [, setPosterFile] = useState<File | null>(null);
   const [posterPreview, setPosterPreview] = useState<string>("");
 
+  // Start Time & End Time States
+  const [startTime, setStartTime] = useState<string>("");
+  const [endTime, setEndTime] = useState<string>("");
+
   const [showCropModal, setShowCropModal] = useState(false);
   const [cropTarget, setCropTarget] = useState<'thumbnail' | 'poster' | null>(null);
   const [imageToCrop, setImageToCrop] = useState<string>("");
   const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+  const [previewModalImage, setPreviewModalImage] = useState<{ src: string; title: string; ratio?: string } | null>(null);
 
   /* Validation state */
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
@@ -611,13 +623,16 @@ const EventManager: React.FC = () => {
     return "";
   };
 
-  const validateTime = (time: string): string => {
-    if (!time) return "Event time is required";
+  const validateTime = (start: string, end?: string): string => {
+    if (!start || !start.trim()) return "Start time is required";
 
-    // Validate HH:MM AM/PM format
-    const timeRegex = /^(0[1-9]|1[0-2]):([0-5][0-9]) (AM|PM)$/;
-    if (!timeRegex.test(time)) {
-      return "Time must be in HH:MM AM/PM format (e.g., 02:30 PM)";
+    const timeRegex = /^(0[1-9]|1[0-2]):([0-5][0-9])\s*(AM|PM)$/i;
+    if (!timeRegex.test(start.trim())) {
+      return "Start time must be valid (e.g., 09:30 AM)";
+    }
+
+    if (end && end.trim() && !timeRegex.test(end.trim())) {
+      return "End time must be valid (e.g., 12:30 PM)";
     }
 
     return "";
@@ -631,6 +646,12 @@ const EventManager: React.FC = () => {
   };
 
   const validateDescription = (description: string): string => {
+    if (!description.trim()) {
+      return "Event description is required";
+    }
+    if (description.length < 10) {
+      return "Description must be at least 10 characters";
+    }
     if (description.length > 500) {
       return "Description must be less than 500 characters";
     }
@@ -697,6 +718,36 @@ const EventManager: React.FC = () => {
     return "";
   };
 
+  // Section completion check helpers
+  const isStep1Valid = (): boolean => {
+    return !validateName(form.name) && !validateDescription(form.description);
+  };
+
+  const isStep2Valid = (): boolean => {
+    return (
+      !validateDate(form.date, Boolean(editingId)) &&
+      !validateTime(startTime, endTime) &&
+      !validateVenue(form.venue)
+    );
+  };
+
+  const isStep3Valid = (): boolean => {
+    if (!form.contactPersons || form.contactPersons.length === 0) return false;
+    const hasContactError = form.contactPersons.some(
+      (c) => validateContactName(c.name) !== "" || validatePhoneNumber(c.phone) !== ""
+    );
+    const whatsappError = validateWhatsAppUrl(form.whatsappGroupLink || "");
+    return !hasContactError && !whatsappError;
+  };
+
+  const canAccessTab = (tabId: EventModalTab): boolean => {
+    if (tabId === 'info') return true;
+    if (tabId === 'schedule') return isStep1Valid();
+    if (tabId === 'contacts') return isStep1Valid() && isStep2Valid();
+    if (tabId === 'form') return isStep1Valid() && isStep2Valid() && isStep3Valid();
+    return false;
+  };
+
   const [form, setForm] = useState<Event>({
     _id: "",
     name: "",
@@ -706,7 +757,7 @@ const EventManager: React.FC = () => {
     description: "",
     contactPersons: [{ name: "", phone: "" }],
     registrationQuestions: REQUIRED_REGISTRATION_QUESTIONS,
-    customQuestions: [...ACM_STANDARD_STUDENT_QUESTIONS],
+    customQuestions: [],
     whatsappGroupLink: "",
     display: true,
   });
@@ -717,7 +768,7 @@ const EventManager: React.FC = () => {
     // Validate basic fields
     errors.name = validateName(form.name);
     errors.date = validateDate(form.date, Boolean(editingId));
-    errors.time = validateTime(form.time);
+    errors.time = validateTime(startTime, endTime);
     errors.venue = validateVenue(form.venue);
     errors.description = validateDescription(form.description);
     errors.whatsappGroupLink = validateWhatsAppUrl(form.whatsappGroupLink || "");
@@ -771,64 +822,6 @@ const EventManager: React.FC = () => {
     });
   }, [form]);
 
-  const parseTime = (time?: string) => {
-    if (!time) return { hour: "", minute: "", meridian: "" };
-
-    if (time.includes("T")) {
-      const date = new Date(time);
-      let h = date.getHours();
-      const m = date.getMinutes();
-
-      const meridian = h >= 12 ? "PM" : "AM";
-      if (h > 12) h -= 12;
-      if (h === 0) h = 12;
-
-      return {
-        hour: String(h).padStart(2, "0"),
-        minute: String(m).padStart(2, "0"),
-        meridian,
-      };
-    }
-
-    if (time.split(":").length === 3) {
-      let [hour, minute] = time.split(":");
-      let h = parseInt(hour, 10);
-
-      const meridian = h >= 12 ? "PM" : "AM";
-      if (h > 12) h -= 12;
-      if (h === 0) h = 12;
-
-      return {
-        hour: String(h).padStart(2, "0"),
-        minute: minute,
-        meridian,
-      };
-    }
-
-    if (time.includes(" ")) {
-      const [hm, meridian] = time.split(" ");
-      const [hour, minute] = hm.split(":");
-      return { hour, minute, meridian };
-    }
-
-    if (time.includes(":")) {
-      let [hour, minute] = time.split(":");
-      let h = parseInt(hour, 10);
-
-      const meridian = h >= 12 ? "PM" : "AM";
-      if (h > 12) h -= 12;
-      if (h === 0) h = 12;
-
-      return {
-        hour: String(h).padStart(2, "0"),
-        minute: minute || "00",
-        meridian,
-      };
-    }
-
-    return { hour: "", minute: "", meridian: "" };
-  };
-
   const getMinDate = () => {
     const today = new Date();
     return today.toISOString().split('T')[0];
@@ -853,14 +846,20 @@ const EventManager: React.FC = () => {
 
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && showModal) {
-        closeModal();
+      if (e.key === "Escape") {
+        if (previewModalImage) {
+          setPreviewModalImage(null);
+        } else if (showCropModal) {
+          setShowCropModal(false);
+        } else if (showModal) {
+          closeModal();
+        }
       }
     };
 
     window.addEventListener("keydown", handleEsc);
     return () => window.removeEventListener("keydown", handleEsc);
-  }, [showModal]);
+  }, [showModal, previewModalImage, showCropModal]);
 
   // Reset validation errors when modal closes
   useEffect(() => {
@@ -889,10 +888,12 @@ const EventManager: React.FC = () => {
       description: "",
       contactPersons: [{ name: "", phone: "" }],
       registrationQuestions: REQUIRED_REGISTRATION_QUESTIONS,
-      customQuestions: [...ACM_STANDARD_STUDENT_QUESTIONS],
+      customQuestions: [],
       whatsappGroupLink: "",
       display: true,
     });
+    setStartTime("");
+    setEndTime("");
     setThumbnailFile(null);
     setThumbnailPreview("");
     setPosterFile(null);
@@ -974,12 +975,100 @@ const EventManager: React.FC = () => {
     setPosterPreview("");
   };
 
-  const tabOrder: Array<'info' | 'schedule' | 'contacts' | 'form'> = ['info', 'schedule', 'contacts', 'form'];
+  const tabOrder: Array<EventModalTab> = ['info', 'schedule', 'contacts', 'form'];
+
+  const handleTabClick = (tabId: EventModalTab) => {
+    if (canAccessTab(tabId)) {
+      setEventModalTab(tabId);
+      return;
+    }
+
+    // Trigger validation on current step to clearly show missing fields
+    if (!isStep1Valid()) {
+      setValidationErrors((prev) => ({
+        ...prev,
+        name: validateName(form.name),
+        description: validateDescription(form.description),
+      }));
+      setEventModalTab('info');
+      showToast("warning", "Please complete all required fields in Basic Info first");
+    } else if (!isStep2Valid()) {
+      setValidationErrors((prev) => ({
+        ...prev,
+        date: validateDate(form.date, Boolean(editingId)),
+        time: validateTime(startTime, endTime),
+        venue: validateVenue(form.venue),
+      }));
+      setEventModalTab('schedule');
+      showToast("warning", "Please complete Date, Time, and Venue first");
+    } else if (!isStep3Valid()) {
+      const contactErrors: string[] = [];
+      form.contactPersons.forEach((contact, index) => {
+        const nameErr = validateContactName(contact.name);
+        const phoneErr = validatePhoneNumber(contact.phone);
+        if (nameErr || phoneErr) {
+          contactErrors[index] = nameErr || phoneErr;
+        }
+      });
+      setValidationErrors((prev) => ({
+        ...prev,
+        contactPersons: contactErrors.length > 0 ? contactErrors : undefined,
+        whatsappGroupLink: validateWhatsAppUrl(form.whatsappGroupLink || ""),
+      }));
+      setEventModalTab('contacts');
+      showToast("warning", "Please provide valid coordinator contact details first");
+    }
+  };
 
   const handleNextTab = () => {
-    const currentIndex = tabOrder.indexOf(eventModalTab);
-    if (currentIndex < tabOrder.length - 1) {
-      setEventModalTab(tabOrder[currentIndex + 1]);
+    if (eventModalTab === 'info') {
+      const nameErr = validateName(form.name);
+      const descErr = validateDescription(form.description);
+      if (nameErr || descErr) {
+        setValidationErrors((prev) => ({
+          ...prev,
+          name: nameErr,
+          description: descErr,
+        }));
+        showToast("warning", "Please complete all required fields in Basic Info");
+        return;
+      }
+      setEventModalTab('schedule');
+    } else if (eventModalTab === 'schedule') {
+      const dateErr = validateDate(form.date, Boolean(editingId));
+      const timeErr = validateTime(startTime, endTime);
+      const venueErr = validateVenue(form.venue);
+      if (dateErr || timeErr || venueErr) {
+        setValidationErrors((prev) => ({
+          ...prev,
+          date: dateErr,
+          time: timeErr,
+          venue: venueErr,
+        }));
+        showToast("warning", "Please provide valid Date, Time, and Venue");
+        return;
+      }
+      setEventModalTab('contacts');
+    } else if (eventModalTab === 'contacts') {
+      const contactErrors: string[] = [];
+      form.contactPersons.forEach((contact, index) => {
+        const nameErr = validateContactName(contact.name);
+        const phoneErr = validatePhoneNumber(contact.phone);
+        if (nameErr || phoneErr) {
+          contactErrors[index] = nameErr || phoneErr;
+        }
+      });
+      const waErr = validateWhatsAppUrl(form.whatsappGroupLink || "");
+      if (contactErrors.length > 0 || waErr || form.contactPersons.length === 0) {
+        setValidationErrors((prev) => ({
+          ...prev,
+          contactPersons: contactErrors.length > 0 ? contactErrors : undefined,
+          whatsappGroupLink: waErr,
+        }));
+        showToast("warning", "Please provide valid coordinator contact details");
+        return;
+      }
+      setEventModalTab('form');
     }
   };
 
@@ -1025,7 +1114,28 @@ const EventManager: React.FC = () => {
       ? new Date(event.date).toISOString().split("T")[0]
       : "";
 
-    const formattedTime = event.time || "";
+    const rawTime = event.time || "";
+    let sTime = "";
+    let eTime = "";
+    if (rawTime.includes(" - ")) {
+      const parts = rawTime.split(" - ");
+      sTime = parts[0]?.trim() || "";
+      eTime = parts[1]?.trim() || "";
+    } else if (rawTime.includes("-")) {
+      const parts = rawTime.split("-");
+      sTime = parts[0]?.trim() || "";
+      eTime = parts[1]?.trim() || "";
+    } else if (rawTime.toLowerCase().includes(" to ")) {
+      const parts = rawTime.split(/ to /i);
+      sTime = parts[0]?.trim() || "";
+      eTime = parts[1]?.trim() || "";
+    } else {
+      sTime = rawTime.trim();
+      eTime = "";
+    }
+
+    setStartTime(sTime);
+    setEndTime(eTime);
 
     const customQuestions: IQuestion[] =
       event.customQuestions && event.customQuestions.length > 0
@@ -1040,8 +1150,8 @@ const EventManager: React.FC = () => {
     setForm({
       ...event,
       date: formattedDate,
-      time: formattedTime,
-      customQuestions: customQuestions.length > 0 ? customQuestions : [...ACM_STANDARD_STUDENT_QUESTIONS],
+      time: rawTime,
+      customQuestions: customQuestions,
     });
 
     setThumbnailFile(null);
@@ -1176,8 +1286,6 @@ const EventManager: React.FC = () => {
       setValidationErrors({ ...validationErrors, contactPersons: newErrors });
     }
   };
-
-  const { hour, minute, meridian } = parseTime(form.time);
 
   return (
     <AdminLayout
@@ -1325,7 +1433,7 @@ const EventManager: React.FC = () => {
       {/* --- Unified Modal (Create & Edit) --- */}
       {showModal && (
         <div className={`admin-modal-overlay ${isClosing ? 'closing' : ''}`}>
-          <div className="event-studio-modal p-4" style={{ maxWidth: '900px', width: '100%' }}>
+          <div className="event-studio-modal p-4 p-md-4.5" style={{ maxWidth: '1060px', width: '95%' }}>
 
             {/* Modal Header */}
             <div className="d-flex justify-content-between align-items-center mb-3 pb-3" style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
@@ -1373,33 +1481,37 @@ const EventManager: React.FC = () => {
               }}
             >
               {[
-                { id: 'info', label: '1. Basic Info', icon: 'bi-info-circle' },
-                { id: 'schedule', label: '2. Poster & Schedule', icon: 'bi-calendar-event' },
-                { id: 'contacts', label: '3. Contacts & Links', icon: 'bi-people' },
-                { id: 'form', label: '4. Form Builder', icon: 'bi-ui-checks-grid', count: form.customQuestions?.length || 0 }
+                { id: 'info' as const, label: '1. Basic Info', icon: 'bi-info-circle', isCompleted: isStep1Valid() },
+                { id: 'schedule' as const, label: '2. Poster & Schedule', icon: 'bi-calendar-event', isCompleted: isStep1Valid() && isStep2Valid() },
+                { id: 'contacts' as const, label: '3. Contacts & Links', icon: 'bi-people', isCompleted: isStep1Valid() && isStep2Valid() && isStep3Valid() },
+                { id: 'form' as const, label: '4. Form Builder', icon: 'bi-ui-checks-grid', count: form.customQuestions?.length || 0, isCompleted: false }
               ].map((tab) => {
                 const isActive = eventModalTab === tab.id;
+                const isAccessible = canAccessTab(tab.id);
+
                 return (
                   <button
                     key={tab.id}
                     type="button"
-                    className="btn flex-fill py-2 px-2 rounded-2 fw-medium d-flex align-items-center justify-content-center border-0 position-relative text-nowrap"
+                    className="btn flex-fill py-2 px-2.5 rounded-2 fw-medium d-flex align-items-center justify-content-center border-0 position-relative text-nowrap"
                     style={{
                       background: isActive
-                        ? 'linear-gradient(135deg, rgba(37, 99, 235, 0.22) 0%, rgba(59, 130, 246, 0.1) 100%)'
+                        ? 'linear-gradient(135deg, rgba(37, 99, 235, 0.25) 0%, rgba(59, 130, 246, 0.12) 100%)'
                         : 'transparent',
                       border: isActive
-                        ? '1px solid rgba(59, 130, 246, 0.45)'
+                        ? '1px solid rgba(59, 130, 246, 0.5)'
                         : '1px solid transparent',
-                      color: isActive ? '#ffffff' : '#94a3b8',
+                      color: isActive ? '#ffffff' : isAccessible ? '#94a3b8' : '#475569',
                       boxShadow: isActive
-                        ? '0 4px 14px -2px rgba(37, 99, 235, 0.3), inset 0 1px 0 0 rgba(255, 255, 255, 0.1)'
+                        ? '0 4px 14px -2px rgba(37, 99, 235, 0.35), inset 0 1px 0 0 rgba(255, 255, 255, 0.1)'
                         : 'none',
                       transition: 'all 0.25s ease',
                       fontSize: '0.84rem',
-                      gap: '8px'
+                      gap: '8px',
+                      opacity: isAccessible ? 1 : 0.55,
+                      cursor: isAccessible ? 'pointer' : 'not-allowed'
                     }}
-                    onClick={() => setEventModalTab(tab.id as any)}
+                    onClick={() => handleTabClick(tab.id)}
                   >
                     <div
                       className="d-flex align-items-center justify-content-center flex-shrink-0"
@@ -1407,13 +1519,35 @@ const EventManager: React.FC = () => {
                         width: 24,
                         height: 24,
                         borderRadius: '6px',
-                        background: isActive ? 'rgba(56, 189, 248, 0.2)' : 'rgba(255, 255, 255, 0.05)',
-                        color: isActive ? '#38bdf8' : '#64748b',
-                        border: `1px solid ${isActive ? 'rgba(56, 189, 248, 0.4)' : 'rgba(255, 255, 255, 0.05)'}`,
+                        background: isActive
+                          ? 'rgba(56, 189, 248, 0.2)'
+                          : tab.isCompleted && !isActive
+                          ? 'rgba(34, 197, 94, 0.15)'
+                          : 'rgba(255, 255, 255, 0.05)',
+                        color: isActive
+                          ? '#38bdf8'
+                          : tab.isCompleted && !isActive
+                          ? '#4ade80'
+                          : isAccessible
+                          ? '#64748b'
+                          : '#334155',
+                        border: `1px solid ${
+                          isActive
+                            ? 'rgba(56, 189, 248, 0.4)'
+                            : tab.isCompleted && !isActive
+                            ? 'rgba(34, 197, 94, 0.3)'
+                            : 'rgba(255, 255, 255, 0.05)'
+                        }`,
                         fontSize: '0.75rem'
                       }}
                     >
-                      <i className={`bi ${tab.icon}`}></i>
+                      {tab.isCompleted && !isActive ? (
+                        <i className="bi bi-check2 fw-bold"></i>
+                      ) : !isAccessible ? (
+                        <i className="bi bi-lock-fill"></i>
+                      ) : (
+                        <i className={`bi ${tab.icon}`}></i>
+                      )}
                     </div>
                     <span className="fw-semibold">{tab.label}</span>
                     {tab.count !== undefined && (
@@ -1453,7 +1587,7 @@ const EventManager: React.FC = () => {
               >
                 {/* --- SLIDE 1: Basic Info --- */}
                 <div className="tab-slide px-1">
-                  <div className="row g-3">
+                  <div className="row g-3 g-lg-4 align-items-stretch">
                     {/* Left: Name & Description */}
                     <div className="col-lg-7 d-flex flex-column gap-3">
                       {/* Event Name */}
@@ -1476,24 +1610,24 @@ const EventManager: React.FC = () => {
                             maxLength={100}
                           />
                         </div>
-                        {validationErrors.name && (
-                          <div className="invalid-feedback-custom">
-                            {validationErrors.name}
+                        <div className="d-flex justify-content-between align-items-center mt-1 px-1">
+                          {validationErrors.name ? (
+                            <div className="invalid-feedback-custom m-0">{validationErrors.name}</div>
+                          ) : <div />}
+                          <div className={`character-counter m-0 ${form.name.length > 90 ? 'warning' : ''} ${form.name.length >= 100 ? 'danger' : ''}`}>
+                            {form.name.length} / 100
                           </div>
-                        )}
-                        <div className={`character-counter ${form.name.length > 90 ? 'warning' : ''} ${form.name.length >= 100 ? 'danger' : ''}`}>
-                          {form.name.length} / 100
                         </div>
                       </div>
 
                       {/* Description */}
-                      <div>
+                      <div className="flex-grow-1 d-flex flex-column">
                         <label className="admin-form-label">
                           Event Description <span className="text-danger">*</span>
                         </label>
                         <textarea
-                          className={`form-control form-control-glass ${validationErrors.description ? 'is-invalid' : ''}`}
-                          rows={4}
+                          className={`form-control form-control-glass flex-grow-1 ${validationErrors.description ? 'is-invalid' : ''}`}
+                          rows={6}
                           placeholder="Describe the event, objectives, and highlights..."
                           value={form.description}
                           onChange={(e) => {
@@ -1501,15 +1635,15 @@ const EventManager: React.FC = () => {
                             setValidationErrors({ ...validationErrors, description: validateDescription(e.target.value) });
                           }}
                           maxLength={500}
-                          style={{ resize: 'none' }}
+                          style={{ resize: 'none', height: '145px' }}
                         />
-                        {validationErrors.description && (
-                          <div className="invalid-feedback-custom">
-                            {validationErrors.description}
+                        <div className="d-flex justify-content-between align-items-center mt-1 px-1">
+                          {validationErrors.description ? (
+                            <div className="invalid-feedback-custom m-0">{validationErrors.description}</div>
+                          ) : <div />}
+                          <div className={`character-counter m-0 ${form.description.length > 450 ? 'warning' : ''} ${form.description.length >= 500 ? 'danger' : ''}`}>
+                            {form.description.length} / 500
                           </div>
-                        )}
-                        <div className={`character-counter ${form.description.length > 450 ? 'warning' : ''} ${form.description.length >= 500 ? 'danger' : ''}`}>
-                          {form.description.length} / 500
                         </div>
                       </div>
                     </div>
@@ -1517,20 +1651,31 @@ const EventManager: React.FC = () => {
                     {/* Right: Thumbnail Upload */}
                     <div className="col-lg-5 d-flex flex-column">
                       <label className="admin-form-label">
-                        Event Thumbnail <span className="text-secondary opacity-75 fw-normal">(optional)</span>
+                        Event Thumbnail <span className="text-secondary opacity-75 fw-normal">(Optional · 16:9 Card Ratio)</span>
                       </label>
                       <div
                         className={`media-upload-frame d-flex flex-column align-items-center justify-content-center p-3 text-center flex-grow-1 ${thumbnailPreview ? 'has-image' : ''}`}
-                        style={{ minHeight: '210px' }}
+                        style={{ minHeight: '260px', height: '100%' }}
                       >
                         {thumbnailPreview ? (
                           <div className="position-relative w-100 h-100 d-flex flex-column align-items-center justify-content-center">
                             <img
                               src={thumbnailPreview}
                               alt="Thumbnail preview"
-                              style={{ width: '100%', maxHeight: '145px', aspectRatio: '16 / 9', objectFit: 'cover', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.1)' }}
+                              className="cursor-pointer"
+                              style={{ width: '100%', maxHeight: '180px', aspectRatio: '16 / 9', objectFit: 'cover', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.1)', cursor: 'pointer' }}
+                              onClick={() => setPreviewModalImage({ src: thumbnailPreview, title: 'Event Thumbnail Preview', ratio: '16:9 Card' })}
+                              title="Click to preview"
                             />
                             <div className="d-flex align-items-center gap-2 mt-2">
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-outline-info py-1 px-2.5 d-inline-flex align-items-center gap-1.5"
+                                style={{ fontSize: '0.75rem', borderRadius: '6px' }}
+                                onClick={() => setPreviewModalImage({ src: thumbnailPreview, title: 'Event Thumbnail Preview', ratio: '16:9 Card' })}
+                              >
+                                <i className="bi bi-eye"></i> Preview
+                              </button>
                               <label
                                 className="btn btn-sm btn-outline-primary py-1 px-2.5 d-inline-flex align-items-center gap-1.5"
                                 style={{ fontSize: '0.75rem', cursor: 'pointer', borderRadius: '6px' }}
@@ -1553,15 +1698,15 @@ const EventManager: React.FC = () => {
                             <div
                               className="d-flex align-items-center justify-content-center mb-2"
                               style={{
-                                width: 44,
-                                height: 44,
-                                borderRadius: '10px',
+                                width: 48,
+                                height: 48,
+                                borderRadius: '12px',
                                 background: 'rgba(56, 189, 248, 0.1)',
                                 border: '1px solid rgba(56, 189, 248, 0.25)',
                                 color: '#38bdf8'
                               }}
                             >
-                              <i className="bi bi-image fs-5"></i>
+                              <i className="bi bi-image fs-4"></i>
                             </div>
                             <span className="fw-semibold text-white small mb-1">Click to upload thumbnail</span>
                             <span className="text-secondary" style={{ fontSize: '0.75rem' }}>16:9 Card ratio (Max 5MB)</span>
@@ -1575,24 +1720,45 @@ const EventManager: React.FC = () => {
 
                 {/* --- SLIDE 2: Poster, Date, Time, Venue --- */}
                 <div className="tab-slide px-1">
-                  <div className="row g-3">
+                  <div className="row g-3 g-lg-4 align-items-stretch">
                     {/* Left: Poster */}
                     <div className="col-lg-5 d-flex flex-column">
                       <label className="admin-form-label">
-                        Event Poster <span className="text-secondary opacity-75 fw-normal">(optional)</span>
+                        Event Poster <span className="text-secondary opacity-75 fw-normal">(Optional · 1810 × 2560 Portrait)</span>
                       </label>
                       <div
-                        className={`media-upload-frame d-flex flex-column align-items-center justify-content-center p-3 text-center flex-grow-1 ${posterPreview ? 'has-image' : ''}`}
-                        style={{ minHeight: '235px' }}
+                        className={`media-upload-frame d-flex flex-column align-items-center justify-content-center p-2.5 text-center flex-grow-1 ${posterPreview ? 'has-image' : ''}`}
+                        style={{ minHeight: '330px', height: '100%' }}
                       >
                         {posterPreview ? (
-                          <div className="position-relative w-100 h-100 d-flex flex-column align-items-center justify-content-center">
+                          <div className="position-relative w-100 h-100 d-flex flex-column align-items-center justify-content-center pt-3 pb-2">
                             <img
                               src={posterPreview}
                               alt="Poster preview"
-                              style={{ maxHeight: '160px', maxWidth: '100%', aspectRatio: '1810 / 2560', objectFit: 'contain', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.1)' }}
+                              className="cursor-pointer"
+                              style={{
+                                height: '255px',
+                                maxHeight: '270px',
+                                maxWidth: '100%',
+                                aspectRatio: '1810 / 2560',
+                                objectFit: 'contain',
+                                borderRadius: '8px',
+                                border: '1px solid rgba(255, 255, 255, 0.12)',
+                                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 0 15px rgba(56, 189, 248, 0.15)',
+                                cursor: 'pointer'
+                              }}
+                              onClick={() => setPreviewModalImage({ src: posterPreview, title: 'Event Poster Preview', ratio: '1810 × 2560 Portrait' })}
+                              title="Click to preview"
                             />
                             <div className="d-flex align-items-center gap-2 mt-2">
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-outline-info py-1 px-2.5 d-inline-flex align-items-center gap-1.5"
+                                style={{ fontSize: '0.75rem', borderRadius: '6px' }}
+                                onClick={() => setPreviewModalImage({ src: posterPreview, title: 'Event Poster Preview', ratio: '1810 × 2560 Portrait' })}
+                              >
+                                <i className="bi bi-eye"></i> Preview
+                              </button>
                               <label
                                 className="btn btn-sm btn-outline-primary py-1 px-2.5 d-inline-flex align-items-center gap-1.5"
                                 style={{ fontSize: '0.75rem', cursor: 'pointer', borderRadius: '6px' }}
@@ -1611,19 +1777,19 @@ const EventManager: React.FC = () => {
                             </div>
                           </div>
                         ) : (
-                          <label className="d-flex flex-column align-items-center justify-content-center w-100 h-100 cursor-pointer mb-0" style={{ cursor: 'pointer' }}>
+                          <label className="d-flex flex-column align-items-center justify-content-center w-100 h-100 cursor-pointer mb-0 py-4" style={{ cursor: 'pointer' }}>
                             <div
-                              className="d-flex align-items-center justify-content-center mb-2"
+                              className="d-flex align-items-center justify-content-center mb-2.5"
                               style={{
-                                width: 44,
-                                height: 44,
-                                borderRadius: '10px',
+                                width: 52,
+                                height: 52,
+                                borderRadius: '14px',
                                 background: 'rgba(56, 189, 248, 0.1)',
                                 border: '1px solid rgba(56, 189, 248, 0.25)',
                                 color: '#38bdf8'
                               }}
                             >
-                              <i className="bi bi-file-earmark-image fs-5"></i>
+                              <i className="bi bi-file-earmark-image fs-3"></i>
                             </div>
                             <span className="fw-semibold text-white small mb-1">Click to upload poster</span>
                             <span className="text-secondary" style={{ fontSize: '0.75rem' }}>1810 × 2560 portrait poster (Max 8MB)</span>
@@ -1634,105 +1800,85 @@ const EventManager: React.FC = () => {
                     </div>
 
                     {/* Right: Date, Time, Venue */}
-                    <div className="col-lg-7 d-flex flex-column gap-3">
-                      {/* Date & Time */}
-                      <div className="row g-2">
-                        <div className="col-6">
-                          <label className="admin-form-label">
-                            Event Date <span className="text-danger">*</span>
-                          </label>
-                          <div className="input-group">
-                            <span className="admin-input-group-text">
-                              <i className="bi bi-calendar3"></i>
-                            </span>
-                            <input
-                              type="date"
-                              className={`form-control form-control-glass ${validationErrors.date ? 'is-invalid' : ''}`}
-                              value={form.date}
-                              min={getMinDate()}
-                              onChange={(e) => {
-                                setForm({ ...form, date: e.target.value });
-                                setValidationErrors({ ...validationErrors, date: validateDate(e.target.value) });
+                    <div className="col-lg-7 d-flex flex-column gap-4 py-1">
+                      {/* Event Date */}
+                      <div>
+                        <label className="admin-form-label">
+                          Event Date <span className="text-danger">*</span>
+                        </label>
+                        <CustomDatePicker
+                          value={form.date}
+                          minDate={getMinDate()}
+                          isInvalid={Boolean(validationErrors.date)}
+                          placeholder="Select event date"
+                          onChange={(dateStr) => {
+                            setForm({ ...form, date: dateStr });
+                            setValidationErrors({
+                              ...validationErrors,
+                              date: validateDate(dateStr, Boolean(editingId)),
+                            });
+                          }}
+                        />
+                        {validationErrors.date && (
+                          <div className="invalid-feedback-custom">
+                            {validationErrors.date}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Start Time & End Time */}
+                      <div>
+                        <div className="row g-2">
+                          <div className="col-6">
+                            <label className="admin-form-label">
+                              Start Time <span className="text-danger">*</span>
+                            </label>
+                            <CustomTimePicker
+                              value={startTime}
+                              isInvalid={Boolean(validationErrors.time)}
+                              placeholder="09:30 AM"
+                              onChange={(timeStr) => {
+                                setStartTime(timeStr);
+                                const combined = endTime ? `${timeStr} - ${endTime}` : timeStr;
+                                setForm({ ...form, time: combined });
+                                setValidationErrors({
+                                  ...validationErrors,
+                                  time: validateTime(timeStr, endTime),
+                                });
                               }}
                             />
                           </div>
-                          {validationErrors.date && (
-                            <div className="invalid-feedback-custom">
-                              {validationErrors.date}
-                            </div>
-                          )}
-                        </div>
 
-                        <div className="col-6">
-                          <label className="admin-form-label">
-                            Event Time <span className="text-danger">*</span>
-                          </label>
-                          <div className="input-group">
-                            <span className="admin-input-group-text">
-                              <i className="bi bi-clock"></i>
-                            </span>
-                            <select
-                              className={`form-select form-select-glass p-1 text-center ${validationErrors.time ? 'is-invalid' : ''}`}
-                              value={hour}
-                              onChange={(e) => {
-                                const newTime = `${e.target.value || "01"}:${minute || "00"} ${meridian || "AM"}`;
-                                setForm({ ...form, time: newTime });
-                                setValidationErrors({ ...validationErrors, time: validateTime(newTime) });
+                          <div className="col-6">
+                            <label className="admin-form-label">
+                              End Time <span className="text-secondary small fw-normal">(Optional)</span>
+                            </label>
+                            <CustomTimePicker
+                              value={endTime}
+                              placeholder="12:30 PM"
+                              onChange={(timeStr) => {
+                                setEndTime(timeStr);
+                                const combined = timeStr ? `${startTime} - ${timeStr}` : startTime;
+                                setForm({ ...form, time: combined });
+                                setValidationErrors({
+                                  ...validationErrors,
+                                  time: validateTime(startTime, timeStr),
+                                });
                               }}
-                            >
-                              <option value="">HH</option>
-                              {Array.from({ length: 12 }, (_, i) => {
-                                const h = String(i + 1).padStart(2, "0");
-                                return (
-                                  <option key={h} value={h}>
-                                    {h}
-                                  </option>
-                                );
-                              })}
-                            </select>
-
-                            <select
-                              className={`form-select form-select-glass p-1 text-center ${validationErrors.time ? 'is-invalid' : ''}`}
-                              value={minute}
-                              onChange={(e) => {
-                                const newTime = `${hour || "01"}:${e.target.value || "00"} ${meridian || "AM"}`;
-                                setForm({ ...form, time: newTime });
-                                setValidationErrors({ ...validationErrors, time: validateTime(newTime) });
-                              }}
-                            >
-                              <option value="">MM</option>
-                              {["00", "15", "30", "45"].map((m) => (
-                                <option key={m} value={m}>
-                                  {m}
-                                </option>
-                              ))}
-                            </select>
-
-                            <select
-                              className={`form-select form-select-glass p-1 text-center ${validationErrors.time ? 'is-invalid' : ''}`}
-                              value={meridian}
-                              onChange={(e) => {
-                                const newTime = `${hour || "01"}:${minute || "00"} ${e.target.value || "AM"}`;
-                                setForm({ ...form, time: newTime });
-                                setValidationErrors({ ...validationErrors, time: validateTime(newTime) });
-                              }}
-                            >
-                              <option value="AM">AM</option>
-                              <option value="PM">PM</option>
-                            </select>
+                            />
                           </div>
-                          {validationErrors.time && (
-                            <div className="invalid-feedback-custom">
-                              {validationErrors.time}
-                            </div>
-                          )}
                         </div>
+                        {validationErrors.time && (
+                          <div className="invalid-feedback-custom mt-1">
+                            {validationErrors.time}
+                          </div>
+                        )}
                       </div>
 
                       {/* Venue */}
                       <div>
                         <label className="admin-form-label">
-                          Venue <span className="text-danger">*</span>
+                          Venue Location <span className="text-danger">*</span>
                         </label>
                         <div className="input-group">
                           <span className="admin-input-group-text">
@@ -1749,13 +1895,13 @@ const EventManager: React.FC = () => {
                             maxLength={200}
                           />
                         </div>
-                        {validationErrors.venue && (
-                          <div className="invalid-feedback-custom">
-                            {validationErrors.venue}
+                        <div className="d-flex justify-content-between align-items-center mt-1 px-1">
+                          {validationErrors.venue ? (
+                            <div className="invalid-feedback-custom m-0">{validationErrors.venue}</div>
+                          ) : <div />}
+                          <div className={`character-counter m-0 ${form.venue.length > 180 ? 'warning' : ''} ${form.venue.length >= 200 ? 'danger' : ''}`}>
+                            {form.venue.length} / 200
                           </div>
-                        )}
-                        <div className={`character-counter ${form.venue.length > 180 ? 'warning' : ''} ${form.venue.length >= 200 ? 'danger' : ''}`}>
-                          {form.venue.length} / 200
                         </div>
                       </div>
                     </div>
@@ -1766,14 +1912,14 @@ const EventManager: React.FC = () => {
                 <div className="tab-slide px-1">
                   <div className="d-flex flex-column gap-3">
                     {/* Contact Persons */}
-                    <div className="p-3 rounded-2" style={{ background: '#060911', border: '1px solid #1e293b' }}>
+                    <div className="p-3 rounded-3" style={{ background: '#060911', border: '1px solid #1e293b' }}>
                       <div className="d-flex justify-content-between align-items-center mb-2.5">
                         <div>
                           <span className="admin-form-label mb-0 fw-semibold text-white">
                             <i className="bi bi-person-lines-fill me-1 text-primary"></i> Contact Persons <span className="text-danger">*</span>
                           </span>
                           <p className="text-secondary small mb-0" style={{ fontSize: '0.78rem' }}>
-                            Add coordinators or student leads for attendee inquiries
+                            Add student leads or faculty coordinators for attendee inquiries
                           </p>
                         </div>
                         <button
@@ -1787,7 +1933,14 @@ const EventManager: React.FC = () => {
                         </button>
                       </div>
 
-                      <div style={{ maxHeight: '180px', overflowY: 'auto' }} className="d-flex flex-column gap-2 pe-1">
+                      {/* Column Subheaders */}
+                      <div className="row g-2 px-1 mb-1 text-secondary d-none d-md-flex" style={{ fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.5px' }}>
+                        <div className="col-5">COORDINATOR NAME <span className="text-danger">*</span></div>
+                        <div className="col-5">10-DIGIT MOBILE NUMBER <span className="text-danger">*</span></div>
+                        <div className="col-2 text-center">ACTION</div>
+                      </div>
+
+                      <div style={{ maxHeight: '190px', overflowY: 'auto' }} className="d-flex flex-column gap-2 pe-1">
                         {form.contactPersons.map((cp, i) => (
                           <div key={i} className="row g-2 align-items-center">
                             <div className="col-5">
@@ -1806,13 +1959,13 @@ const EventManager: React.FC = () => {
                             </div>
                             <div className="col-5">
                               <div className="input-group input-group-sm">
-                                <span className="admin-input-group-text py-1 px-2">
-                                  <i className="bi bi-telephone"></i>
+                                <span className="admin-input-group-text py-1 px-2" style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                                  +91
                                 </span>
                                 <input
                                   className={`form-control form-control-glass form-control-sm ${validationErrors.contactPersons?.[i] ? 'is-invalid' : ''}`}
                                   placeholder="10-digit Phone"
-                                  value={cp.phone}
+                                  value={cp.phone.replace(/^\+91/, '')}
                                   onChange={(e) => handlePhoneChange(e.target.value, i)}
                                   maxLength={10}
                                 />
@@ -1867,7 +2020,7 @@ const EventManager: React.FC = () => {
                         </div>
                       )}
                       <p className="text-secondary small mt-1 mb-0" style={{ fontSize: '0.78rem' }}>
-                        Provide an official invite link where participants can join for event updates.
+                        Provide an official WhatsApp group invite link where participants can join for updates.
                       </p>
                     </div>
                   </div>
@@ -2167,6 +2320,103 @@ const EventManager: React.FC = () => {
                     <span>Delete Event</span>
                   </span>
                 )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- IMAGE PREVIEW LIGHTBOX MODAL --- */}
+      {previewModalImage && (
+        <div
+          className="admin-modal-overlay"
+          style={{ zIndex: 1100, backdropFilter: 'blur(10px)', background: 'rgba(3, 7, 18, 0.88)' }}
+          onClick={() => setPreviewModalImage(null)}
+        >
+          <div
+            className="event-studio-modal p-0 m-3 overflow-hidden d-flex flex-column"
+            style={{
+              maxWidth: '850px',
+              width: '100%',
+              background: 'linear-gradient(165deg, #090d16 0%, #030712 100%)',
+              border: '1px solid rgba(56, 189, 248, 0.3)',
+              boxShadow: '0 25px 60px -10px rgba(0, 0, 0, 0.95), 0 0 35px rgba(56, 189, 248, 0.2)',
+              borderRadius: '16px',
+              animation: 'modalSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="d-flex align-items-center justify-content-between px-4 py-3 border-bottom border-dark border-opacity-50">
+              <div className="d-flex align-items-center gap-2">
+                <i className="bi bi-eye text-primary fs-5"></i>
+                <h5 className="m-0 text-white fw-bold fs-6">{previewModalImage.title}</h5>
+                {previewModalImage.ratio && (
+                  <span
+                    className="badge ms-2 px-2 py-0.5"
+                    style={{
+                      background: 'rgba(56, 189, 248, 0.12)',
+                      color: '#38bdf8',
+                      border: '1px solid rgba(56, 189, 248, 0.25)',
+                      fontSize: '0.75rem',
+                      fontWeight: 600
+                    }}
+                  >
+                    {previewModalImage.ratio}
+                  </span>
+                )}
+              </div>
+              <button
+                type="button"
+                className="btn-close-studio"
+                onClick={() => setPreviewModalImage(null)}
+              >
+                <i className="bi bi-x-lg"></i>
+              </button>
+            </div>
+
+            {/* Image Preview Container */}
+            <div
+              className="p-3 d-flex align-items-center justify-content-center"
+              style={{
+                background: 'radial-gradient(circle at center, rgba(15, 23, 42, 0.8) 0%, rgba(3, 7, 18, 0.95) 100%)',
+                minHeight: '300px',
+                maxHeight: '72vh',
+                overflow: 'auto'
+              }}
+            >
+              <img
+                src={previewModalImage.src}
+                alt={previewModalImage.title}
+                style={{
+                  maxWidth: '100%',
+                  maxHeight: '68vh',
+                  objectFit: 'contain',
+                  borderRadius: '10px',
+                  boxShadow: '0 15px 35px rgba(0,0,0,0.7), 0 0 20px rgba(56, 189, 248, 0.15)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)'
+                }}
+              />
+            </div>
+
+            {/* Footer */}
+            <div className="d-flex align-items-center justify-content-between px-4 py-2.5 border-top border-dark border-opacity-50">
+              <a
+                href={previewModalImage.src}
+                target="_blank"
+                rel="noreferrer"
+                className="btn btn-sm btn-link text-info text-decoration-none p-0 d-inline-flex align-items-center gap-1.5"
+                style={{ fontSize: '0.82rem' }}
+              >
+                <i className="bi bi-box-arrow-up-right"></i> Open full image in new tab
+              </a>
+              <button
+                type="button"
+                className="btn-admin-secondary px-3 py-1.5"
+                style={{ fontSize: '0.85rem' }}
+                onClick={() => setPreviewModalImage(null)}
+              >
+                Close
               </button>
             </div>
           </div>

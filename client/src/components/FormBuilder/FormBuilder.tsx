@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { type IQuestion, type QuestionType, ACM_STANDARD_STUDENT_QUESTIONS } from "../../types/formBuilder";
+import type { IQuestion, QuestionType } from "../../types/formBuilder";
 import QuestionCard from "./QuestionCard";
 import FormPreviewModal from "./FormPreviewModal";
 import "./formBuilder.css";
@@ -21,6 +21,7 @@ const FormBuilder: React.FC<FormBuilderProps> = ({
     questions[0]?.id || null
   );
   const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [showClearConfirmModal, setShowClearConfirmModal] = useState(false);
 
   /* ---------------- QUESTION CRUD ---------------- */
   const handleAddQuestion = (type: QuestionType = "text") => {
@@ -62,7 +63,12 @@ const FormBuilder: React.FC<FormBuilderProps> = ({
       ...target,
       id: `q_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
       question: target.question ? `${target.question} (Copy)` : "",
-      options: target.options ? target.options.map(o => ({ ...o, id: `opt_${Date.now()}_${Math.random().toString(36).substring(2, 6)}` })) : undefined,
+      options: target.options
+        ? target.options.map((o) => ({
+            ...o,
+            id: `opt_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+          }))
+        : undefined,
     };
 
     const updated = [...questions];
@@ -97,23 +103,10 @@ const FormBuilder: React.FC<FormBuilderProps> = ({
     onChange(updated);
   };
 
-  const handleImportPresets = () => {
-    const existingIds = new Set(questions.map((q) => q.question.toLowerCase().trim()));
-    const newPresets = ACM_STANDARD_STUDENT_QUESTIONS.filter(
-      (preset) => !existingIds.has(preset.question.toLowerCase().trim())
-    ).map((preset) => ({
-      ...preset,
-      id: `q_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-    }));
-
-    onChange([...questions, ...newPresets]);
-  };
-
-  const handleClearAll = () => {
-    if (window.confirm("Are you sure you want to remove all questions?")) {
-      onChange([]);
-      setActiveQuestionId(null);
-    }
+  const handleConfirmClearAll = () => {
+    onChange([]);
+    setActiveQuestionId(null);
+    setShowClearConfirmModal(false);
   };
 
   return (
@@ -121,25 +114,16 @@ const FormBuilder: React.FC<FormBuilderProps> = ({
       {/* Sticky Top Action Bar */}
       <div className="form-builder-toolbar">
         <div className="d-flex align-items-center gap-2">
-          <span className="badge bg-indigo-500 text-white px-3 py-2" style={{ background: "#6366f1" }}>
-            <i className="bi bi-ui-checks-grid me-1"></i> {questions.length} Questions
-          </span>
-          <span className="text-secondary small d-none d-md-inline">
-            Build custom Google Form-style questionnaire
+          <span
+            className="badge bg-indigo-500 text-white px-3 py-2"
+            style={{ background: "#6366f1" }}
+          >
+            <i className="bi bi-ui-checks-grid me-1"></i> {questions.length} Question
+            {questions.length === 1 ? "" : "s"}
           </span>
         </div>
 
         <div className="d-flex align-items-center gap-2 flex-wrap">
-          {/* Preset Importer */}
-          <button
-            type="button"
-            className="btn btn-sm btn-outline-info d-inline-flex align-items-center gap-1"
-            onClick={handleImportPresets}
-            title="Import Full Name, Reg No, Dept, Year, Section, Email, Phone"
-          >
-            <i className="bi bi-person-badge"></i> Import ACM Profile
-          </button>
-
           {/* Add Question Button */}
           <div className="btn-group">
             <button
@@ -240,7 +224,7 @@ const FormBuilder: React.FC<FormBuilderProps> = ({
             <button
               type="button"
               className="btn btn-sm btn-outline-danger d-inline-flex align-items-center"
-              onClick={handleClearAll}
+              onClick={() => setShowClearConfirmModal(true)}
               title="Clear all questions"
             >
               <i className="bi bi-trash"></i>
@@ -259,27 +243,23 @@ const FormBuilder: React.FC<FormBuilderProps> = ({
           }}
         >
           <div className="display-4 text-secondary mb-3">
-            <i className="bi bi-journal-plus text-indigo-400" style={{ color: "#818cf8" }}></i>
+            <i
+              className="bi bi-journal-plus text-indigo-400"
+              style={{ color: "#818cf8" }}
+            ></i>
           </div>
           <h5 className="fw-bold text-white mb-2">No Questions Added Yet</h5>
           <p className="text-secondary mb-4 small max-w-md mx-auto">
-            Click "+ Add Question" to start building your custom form or click "Import ACM Profile" to quickly populate standard student fields.
+            Click "+ Add Question" to start building your custom questionnaire from scratch.
           </p>
-          <div className="d-flex justify-content-center gap-3">
+          <div className="d-flex justify-content-center">
             <button
               type="button"
-              className="btn btn-primary px-4 py-2"
+              className="btn btn-primary px-4 py-2 d-inline-flex align-items-center gap-2"
               style={{ background: "#6366f1", borderColor: "#6366f1" }}
               onClick={() => handleAddQuestion("text")}
             >
-              <i className="bi bi-plus-lg me-1"></i> Add First Question
-            </button>
-            <button
-              type="button"
-              className="btn btn-outline-info px-4 py-2"
-              onClick={handleImportPresets}
-            >
-              <i className="bi bi-person-badge me-1"></i> Import Standard ACM Profile
+              <i className="bi bi-plus-lg"></i> Add Question
             </button>
           </div>
         </div>
@@ -311,6 +291,74 @@ const FormBuilder: React.FC<FormBuilderProps> = ({
         show={showPreviewModal}
         onClose={() => setShowPreviewModal(false)}
       />
+
+      {/* Styled Glassmorphic Clear All Confirmation Modal */}
+      {showClearConfirmModal && (
+        <div
+          className="modal fade show d-block"
+          tabIndex={-1}
+          style={{
+            backgroundColor: "rgba(0, 0, 0, 0.8)",
+            backdropFilter: "blur(8px)",
+            zIndex: 1060,
+          }}
+        >
+          <div className="modal-dialog modal-dialog-centered" style={{ maxWidth: "420px" }}>
+            <div
+              className="modal-content rounded-4 border-0 p-4 text-center text-white"
+              style={{
+                background: "linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98))",
+                border: "1px solid rgba(239, 68, 68, 0.35)",
+                boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 30px rgba(239, 68, 68, 0.15)",
+              }}
+            >
+              <div className="modal-body p-0">
+                <div
+                  className="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
+                  style={{
+                    width: "60px",
+                    height: "60px",
+                    background: "rgba(239, 68, 68, 0.15)",
+                    color: "#ef4444",
+                    border: "1px solid rgba(239, 68, 68, 0.3)",
+                    boxShadow: "0 0 20px rgba(239, 68, 68, 0.2)",
+                  }}
+                >
+                  <i className="bi bi-trash3-fill fs-3"></i>
+                </div>
+                <h4 className="fw-bold mb-2 text-white">Clear All Questions?</h4>
+                <p className="text-secondary mb-4 small" style={{ lineHeight: 1.5 }}>
+                  Are you sure you want to remove all {questions.length} question
+                  {questions.length > 1 ? "s" : ""}? This action cannot be undone.
+                </p>
+
+                <div className="d-flex gap-2 justify-content-center">
+                  <button
+                    type="button"
+                    className="btn btn-outline-light rounded-pill px-4 py-2"
+                    onClick={() => setShowClearConfirmModal(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-danger rounded-pill px-4 py-2 fw-semibold d-inline-flex align-items-center gap-2"
+                    style={{
+                      background: "linear-gradient(135deg, #ef4444, #dc2626)",
+                      border: "none",
+                      boxShadow: "0 4px 14px rgba(239, 68, 68, 0.4)",
+                    }}
+                    onClick={handleConfirmClearAll}
+                  >
+                    <i className="bi bi-trash"></i>
+                    Clear All
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
