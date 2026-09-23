@@ -5,6 +5,7 @@ import type { IQuestion } from "../../types/formBuilder";
 interface ContactPerson {
   name: string;
   phone: string;
+  role?: string;
 }
 
 export interface CreateEventPayload {

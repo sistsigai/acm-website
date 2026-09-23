@@ -32,67 +32,33 @@ export interface IQuestion {
   maxFiles?: number;
 }
 
-/* ---------------- DEFAULT ACM STUDENT PRESETS ---------------- */
-export const ACM_STANDARD_STUDENT_QUESTIONS: IQuestion[] = [
+/* ---------------- DEFAULT INITIAL EVENT QUESTIONS ---------------- */
+export const DEFAULT_INITIAL_EVENT_QUESTIONS: IQuestion[] = [
   {
-    id: "acm_name",
+    id: "default_q_name",
     type: "text",
     question: "Full Name",
     required: true,
-    placeholder: "e.g. John Doe",
+    placeholder: "Enter your full name",
   },
   {
-    id: "acm_regno",
+    id: "default_q_regno",
     type: "text",
-    question: "Registration Number",
+    question: "Register Number",
     required: true,
     placeholder: "e.g. 41110001",
   },
   {
-    id: "acm_dept",
-    type: "dropdown",
-    question: "Department",
-    required: true,
-    options: [
-      { id: "opt_cse", label: "CSE" },
-      { id: "opt_it", label: "IT" },
-      { id: "opt_ai_ds", label: "AI & DS" },
-      { id: "opt_ece", label: "ECE" },
-      { id: "opt_eee", label: "EEE" },
-      { id: "opt_mech", label: "Mechanical" },
-      { id: "opt_other", label: "Other" },
-    ],
-  },
-  {
-    id: "acm_year",
-    type: "multiple-choice",
-    question: "Year of Study",
-    required: true,
-    options: [
-      { id: "yr_1", label: "1st Year" },
-      { id: "yr_2", label: "2nd Year" },
-      { id: "yr_3", label: "3rd Year" },
-      { id: "yr_4", label: "4th Year" },
-    ],
-  },
-  {
-    id: "acm_section",
+    id: "default_q_email",
     type: "text",
-    question: "Section",
-    required: true,
-    placeholder: "e.g. A, B, C",
-  },
-  {
-    id: "acm_email",
-    type: "text",
-    question: "Official / Sathyabama Email ID",
+    question: "Email ID",
     required: true,
     placeholder: "e.g. student@sathyabama.ac.in",
   },
   {
-    id: "acm_phone",
+    id: "default_q_phone",
     type: "text",
-    question: "WhatsApp Phone Number",
+    question: "Phone Number",
     required: true,
     placeholder: "e.g. 9876543210",
   },

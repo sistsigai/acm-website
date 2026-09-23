@@ -12,11 +12,16 @@ import {
 import type { Area, Point } from "react-easy-crop";
 import { getCroppedBlob } from "../../utils/cropUtils";
 import EventCard, { type AdminEvent } from "../../components/Admin/Events/EventCard";
-import EventStudioModal, { type EventFormData, type ValidationErrors } from "../../components/Admin/Events/EventStudioModal";
+import EventStudioModal, {
+  type EventFormData,
+  type EventStudioSection,
+  type ValidationErrors,
+} from "../../components/Admin/Events/EventStudioModal";
 import EventCropperModal from "../../components/Admin/Events/EventCropperModal";
 import ImagePreviewModal from "../../components/Admin/Events/ImagePreviewModal";
 import AdminEventDetailModal from "../../components/Admin/Events/AdminEventDetailModal";
 import ConfirmModal from "../../components/Common/ConfirmModal";
+import { DEFAULT_INITIAL_EVENT_QUESTIONS } from "../../types/formBuilder";
 
 // Required registration questions (cannot be edited/removed)
 const REQUIRED_REGISTRATION_QUESTIONS = [
@@ -35,6 +40,7 @@ const EventManager: React.FC = () => {
 
   /* Modal control */
   const [showModal, setShowModal] = useState(false);
+  const [activeSection, setActiveSection] = useState<EventStudioSection>("info");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedDetailEvent, setSelectedDetailEvent] = useState<AdminEvent | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -102,9 +108,9 @@ const EventManager: React.FC = () => {
     thumbnailPublicId: "",
     posterUrl: "",
     posterPublicId: "",
-    contactPersons: [{ name: "", phone: "" }],
+    contactPersons: [{ name: "", phone: "", role: "Student Coordinator" }],
     registrationQuestions: REQUIRED_REGISTRATION_QUESTIONS,
-    customQuestions: [],
+    customQuestions: DEFAULT_INITIAL_EVENT_QUESTIONS,
     whatsappGroupLink: "",
     display: true,
   });
@@ -207,6 +213,10 @@ const EventManager: React.FC = () => {
     const waErr = validateWhatsAppUrl(form.whatsappGroupLink || "");
     if (waErr) errors.whatsappGroupLink = waErr;
 
+    if (!posterPreview && !form.posterUrl) {
+      errors.poster = "Event poster is required";
+    }
+
     const contactErrors: string[] = [];
     form.contactPersons.forEach((contact, index) => {
       const nameError = validateContactName(contact.name);
@@ -228,7 +238,109 @@ const EventManager: React.FC = () => {
       if (Array.isArray(error)) return error.some((err) => err);
       return error !== "";
     });
-  }, [form, startTime, endTime, editingId]);
+  }, [form, startTime, endTime, editingId, posterPreview]);
+
+  const isInfoValid = (): boolean => {
+    return Boolean(
+      form.name &&
+        form.name.trim().length >= 3 &&
+        form.description &&
+        form.description.trim().length >= 10 &&
+        form.date &&
+        startTime &&
+        form.venue &&
+        form.venue.trim().length >= 2
+    );
+  };
+
+  const isMediaValid = (): boolean => {
+    return Boolean(posterPreview || form.posterUrl);
+  };
+
+  const isContactsValid = (): boolean => {
+    if (form.contactPersons.length === 0) return false;
+    const allContactsValid = form.contactPersons.every(
+      (c) => validateContactName(c.name) === "" && validatePhoneNumber(c.phone) === ""
+    );
+    const waValid = validateWhatsAppUrl(form.whatsappGroupLink || "") === "";
+    return allContactsValid && waValid;
+  };
+
+  const canAccessSection = (sec: EventStudioSection): boolean => {
+    if (sec === "info") return true;
+    if (sec === "media") return isInfoValid();
+    if (sec === "contacts") return isInfoValid() && isMediaValid();
+    if (sec === "form") return isInfoValid() && isMediaValid() && isContactsValid();
+    return false;
+  };
+
+  const sectionOrder: EventStudioSection[] = ["info", "media", "contacts", "form"];
+
+  const handleNextSection = () => {
+    if (activeSection === "info") {
+      const nameErr = validateName(form.name);
+      const descErr = validateDescription(form.description);
+      const dateErr = validateDate(form.date, Boolean(editingId));
+      const timeErr = validateTime(startTime, endTime);
+      const venueErr = validateVenue(form.venue);
+
+      if (nameErr || descErr || dateErr || timeErr || venueErr) {
+        setValidationErrors((prev) => ({
+          ...prev,
+          name: nameErr,
+          description: descErr,
+          date: dateErr,
+          time: timeErr,
+          venue: venueErr,
+        }));
+        showToast("warning", "Please fill in all required fields in Info & Schedule");
+        return;
+      }
+      setActiveSection("media");
+    } else if (activeSection === "media") {
+      if (!posterPreview && !form.posterUrl) {
+        setValidationErrors((prev) => ({ ...prev, poster: "Event poster is required" }));
+        showToast("warning", "Please upload an event poster to proceed");
+        return;
+      }
+      setValidationErrors((prev) => ({ ...prev, poster: undefined }));
+      setActiveSection("contacts");
+    } else if (activeSection === "contacts") {
+      const contactErrors: string[] = [];
+      form.contactPersons.forEach((contact, index) => {
+        const nameErr = validateContactName(contact.name);
+        const phoneErr = validatePhoneNumber(contact.phone);
+        if (nameErr || phoneErr) contactErrors[index] = nameErr || phoneErr;
+      });
+      const waErr = validateWhatsAppUrl(form.whatsappGroupLink || "");
+
+      if (contactErrors.length > 0 || waErr || form.contactPersons.length === 0) {
+        setValidationErrors((prev) => ({
+          ...prev,
+          contactPersons: contactErrors.length > 0 ? contactErrors : undefined,
+          whatsappGroupLink: waErr,
+        }));
+        showToast("warning", "Please provide valid coordinator contact details");
+        return;
+      }
+      setActiveSection("form");
+    }
+  };
+
+  const handlePreviousSection = () => {
+    const currentIndex = sectionOrder.indexOf(activeSection);
+    if (currentIndex > 0) {
+      setActiveSection(sectionOrder[currentIndex - 1]);
+    }
+  };
+
+  const handleSectionClick = (sec: EventStudioSection) => {
+    if (canAccessSection(sec)) {
+      setActiveSection(sec);
+    } else {
+      showToast("warning", "Please complete preceding steps first");
+    }
+  };
 
   const fetchAllEvents = async () => {
     try {
@@ -258,9 +370,9 @@ const EventManager: React.FC = () => {
       thumbnailPublicId: "",
       posterUrl: "",
       posterPublicId: "",
-      contactPersons: [{ name: "", phone: "" }],
+      contactPersons: [{ name: "", phone: "", role: "Student Coordinator" }],
       registrationQuestions: REQUIRED_REGISTRATION_QUESTIONS,
-      customQuestions: [],
+      customQuestions: DEFAULT_INITIAL_EVENT_QUESTIONS,
       whatsappGroupLink: "",
       display: true,
     });
@@ -268,6 +380,7 @@ const EventManager: React.FC = () => {
     setEndTime("");
     setThumbnailPreview("");
     setPosterPreview("");
+    setActiveSection("info");
     setValidationErrors({});
     unsavedThumbnailPublicIdRef.current = null;
     unsavedPosterPublicIdRef.current = null;
@@ -298,6 +411,7 @@ const EventManager: React.FC = () => {
 
   const handleCreateEvent = () => {
     resetForm();
+    setActiveSection("info");
     setShowModal(true);
   };
 
@@ -334,14 +448,22 @@ const EventManager: React.FC = () => {
       posterPublicId: event.posterPublicId || "",
       contactPersons:
         event.contactPersons && event.contactPersons.length > 0
-          ? event.contactPersons
-          : [{ name: "", phone: "" }],
+          ? event.contactPersons.map((cp) => ({
+              name: cp.name || "",
+              phone: cp.phone || "",
+              role: cp.role || "Student Coordinator",
+            }))
+          : [{ name: "", phone: "", role: "Student Coordinator" }],
       registrationQuestions: event.registrationQuestions || REQUIRED_REGISTRATION_QUESTIONS,
-      customQuestions: event.customQuestions || [],
+      customQuestions:
+        event.customQuestions && event.customQuestions.length > 0
+          ? event.customQuestions
+          : DEFAULT_INITIAL_EVENT_QUESTIONS,
       whatsappGroupLink: event.whatsappGroupLink || "",
       display: event.display !== false,
     });
 
+    setActiveSection("info");
     setShowModal(true);
   };
 
@@ -621,10 +743,11 @@ const EventManager: React.FC = () => {
         onToggleDisplay={handleToggleDisplay}
       />
 
-      {/* Event Studio Modal (Single-View with Direct Cloud Upload & Progress Rings) */}
+      {/* Event Studio Modal (Section-by-Section Step Wizard) */}
       <EventStudioModal
         show={showModal}
         editingId={editingId}
+        activeSection={activeSection}
         form={form}
         validationErrors={validationErrors}
         startTime={startTime}
@@ -639,6 +762,13 @@ const EventManager: React.FC = () => {
         hasValidationErrors={hasValidationErrors}
         onClose={closeModal}
         onSave={handleSaveEvent}
+        onSectionClick={handleSectionClick}
+        onPreviousSection={handlePreviousSection}
+        onNextSection={handleNextSection}
+        isInfoValid={isInfoValid}
+        isMediaValid={isMediaValid}
+        isContactsValid={isContactsValid}
+        canAccessSection={canAccessSection}
         onNameChange={(val) => {
           setForm({ ...form, name: val });
           setValidationErrors({ ...validationErrors, name: validateName(val) });
@@ -694,6 +824,11 @@ const EventManager: React.FC = () => {
             setValidationErrors({ ...validationErrors, contactPersons: newErrors });
           }
         }}
+        onContactRoleChange={(value, index) => {
+          const list = [...form.contactPersons];
+          list[index].role = value;
+          setForm({ ...form, contactPersons: list });
+        }}
         onPhoneChange={(value, index) => {
           const digits = value.replace(/\D/g, "").slice(0, 10);
           const list = [...form.contactPersons];
@@ -707,7 +842,13 @@ const EventManager: React.FC = () => {
           }
         }}
         onAddContact={() =>
-          setForm({ ...form, contactPersons: [...form.contactPersons, { name: "", phone: "" }] })
+          setForm({
+            ...form,
+            contactPersons: [
+              ...form.contactPersons,
+              { name: "", phone: "", role: "Student Coordinator" },
+            ],
+          })
         }
         onRemoveContact={(index) => {
           const list = form.contactPersons.filter((_, i) => i !== index);

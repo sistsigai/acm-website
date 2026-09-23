@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import type { IQuestion, QuestionType } from "../../types/formBuilder";
 import QuestionCard from "./QuestionCard";
 import FormPreviewModal from "./FormPreviewModal";
@@ -10,6 +11,18 @@ interface FormBuilderProps {
   formDescription?: string;
 }
 
+const QUESTION_TYPES_CONFIG: { type: QuestionType; label: string; icon: string; color: string }[] = [
+  { type: "text", label: "Short Answer", icon: "bi-card-text", color: "#38bdf8" },
+  { type: "textarea", label: "Paragraph", icon: "bi-text-paragraph", color: "#818cf8" },
+  { type: "multiple-choice", label: "Multiple Choice", icon: "bi-ui-radios", color: "#4ade80" },
+  { type: "checkbox", label: "Checkboxes", icon: "bi-ui-checks", color: "#fbbf24" },
+  { type: "dropdown", label: "Dropdown", icon: "bi-caret-down-square", color: "#a78bfa" },
+  { type: "yes-no", label: "Yes / No", icon: "bi-toggles", color: "#f472b6" },
+  { type: "file", label: "File Upload", icon: "bi-file-earmark-arrow-up", color: "#38bdf8" },
+  { type: "date", label: "Date", icon: "bi-calendar-event", color: "#34d399" },
+  { type: "time", label: "Time", icon: "bi-clock", color: "#fb923c" },
+];
+
 const FormBuilder: React.FC<FormBuilderProps> = ({
   questions,
   onChange,
@@ -19,11 +32,50 @@ const FormBuilder: React.FC<FormBuilderProps> = ({
   const [activeQuestionId, setActiveQuestionId] = useState<string | null>(
     questions[0]?.id || null
   );
+  const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [showClearConfirmModal, setShowClearConfirmModal] = useState(false);
+  const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
+
+  const addMenuRef = useRef<HTMLDivElement>(null);
+
+  // Click-outside listener for + Add Question dropdown
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (addMenuRef.current && !addMenuRef.current.contains(e.target as Node)) {
+        setIsAddMenuOpen(false);
+      }
+    };
+    if (isAddMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isAddMenuOpen]);
+
+  /* ---------------- COLLAPSE HANDLERS ---------------- */
+  const toggleCollapse = (id: string) => {
+    setCollapsedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const handleCollapseAll = () => {
+    if (collapsedIds.size === questions.length) {
+      setCollapsedIds(new Set()); // Expand all
+    } else {
+      setCollapsedIds(new Set(questions.map((q) => q.id))); // Collapse all
+    }
+  };
 
   /* ---------------- QUESTION CRUD ---------------- */
   const handleAddQuestion = (type: QuestionType = "text") => {
+    setIsAddMenuOpen(false);
     const newId = `q_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     const newQuestion: IQuestion = {
       id: newId,
@@ -43,11 +95,20 @@ const FormBuilder: React.FC<FormBuilderProps> = ({
         { id: "opt_yes", label: "Yes" },
         { id: "opt_no", label: "No" },
       ];
+    } else if (type === "file") {
+      newQuestion.allowedFormats = ["pdf", "jpg", "png", "docx"];
+      newQuestion.maxFileSize = 5;
+      newQuestion.maxFiles = 1;
     }
 
     const updated = [...questions, newQuestion];
     onChange(updated);
     setActiveQuestionId(newId);
+    setCollapsedIds((prev) => {
+      const next = new Set(prev);
+      next.delete(newId); // Keep new question expanded
+      return next;
+    });
   };
 
   const handleUpdateQuestion = (index: number, updatedQuestion: IQuestion) => {
@@ -105,124 +166,121 @@ const FormBuilder: React.FC<FormBuilderProps> = ({
   const handleConfirmClearAll = () => {
     onChange([]);
     setActiveQuestionId(null);
+    setCollapsedIds(new Set());
     setShowClearConfirmModal(false);
   };
 
+  const allCollapsed =
+    questions.length > 0 && collapsedIds.size === questions.length;
+
   return (
     <div className="form-builder-container">
-      {/* Sticky Top Action Bar */}
-      <div className="form-builder-toolbar">
+      {/* Sticky Top Toolbar */}
+      <div
+        className="d-flex align-items-center justify-content-between p-2.5 mb-3 rounded-3 flex-wrap gap-2"
+        style={{
+          background: "#080c16",
+          border: "1px solid #1e293b",
+        }}
+      >
         <div className="d-flex align-items-center gap-2">
           <span
-            className="badge bg-indigo-500 text-white px-3 py-2"
-            style={{ background: "#6366f1" }}
+            className="badge px-3 py-2 rounded-2 fw-semibold d-inline-flex align-items-center gap-1.5"
+            style={{
+              background: "rgba(56, 189, 248, 0.12)",
+              color: "#38bdf8",
+              border: "1px solid rgba(56, 189, 248, 0.28)",
+              fontSize: "0.82rem",
+            }}
           >
-            <i className="bi bi-ui-checks-grid me-1"></i> {questions.length} Question
-            {questions.length === 1 ? "" : "s"}
+            <i className="bi bi-ui-checks-grid"></i>
+            <span>
+              {questions.length} Question{questions.length === 1 ? "" : "s"}
+            </span>
           </span>
         </div>
 
         <div className="d-flex align-items-center gap-2 flex-wrap">
-          {/* Add Question Button */}
-          <div className="btn-group">
+          {/* + Add Question Dropdown (Controlled via React State & Click-Outside) */}
+          <div className="position-relative" ref={addMenuRef}>
             <button
               type="button"
-              className="btn btn-sm btn-primary d-inline-flex align-items-center gap-1 px-3"
-              style={{ background: "#6366f1", borderColor: "#6366f1" }}
-              onClick={() => handleAddQuestion("text")}
+              className="btn btn-sm btn-primary d-inline-flex align-items-center gap-1.5 px-3 py-1.5 rounded-2 fw-semibold"
+              style={{
+                background: "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)",
+                border: "none",
+                fontSize: "0.82rem",
+                boxShadow: "0 4px 12px rgba(37, 99, 235, 0.3)",
+              }}
+              onClick={() => setIsAddMenuOpen((prev) => !prev)}
             >
-              <i className="bi bi-plus-lg"></i> Add Question
+              <i className="bi bi-plus-lg"></i>
+              <span>Add Question</span>
+              <i className={`bi ${isAddMenuOpen ? "bi-chevron-up" : "bi-chevron-down"} small opacity-75`}></i>
             </button>
-            <button
-              type="button"
-              className="btn btn-sm btn-primary dropdown-toggle dropdown-toggle-split"
-              style={{ background: "#4f46e5", borderColor: "#4f46e5" }}
-              data-bs-toggle="dropdown"
-              aria-expanded="false"
-            >
-              <span className="visually-hidden">Toggle Dropdown</span>
-            </button>
-            <ul className="dropdown-menu dropdown-menu-dark dropdown-menu-end shadow">
-              <li>
-                <button
-                  type="button"
-                  className="dropdown-item d-flex align-items-center gap-2"
-                  onClick={() => handleAddQuestion("text")}
-                >
-                  <i className="bi bi-card-text text-primary"></i> Short Answer
-                </button>
-              </li>
-              <li>
-                <button
-                  type="button"
-                  className="dropdown-item d-flex align-items-center gap-2"
-                  onClick={() => handleAddQuestion("textarea")}
-                >
-                  <i className="bi bi-text-paragraph text-info"></i> Paragraph
-                </button>
-              </li>
-              <li>
-                <button
-                  type="button"
-                  className="dropdown-item d-flex align-items-center gap-2"
-                  onClick={() => handleAddQuestion("multiple-choice")}
-                >
-                  <i className="bi bi-ui-radios text-success"></i> Multiple Choice
-                </button>
-              </li>
-              <li>
-                <button
-                  type="button"
-                  className="dropdown-item d-flex align-items-center gap-2"
-                  onClick={() => handleAddQuestion("checkbox")}
-                >
-                  <i className="bi bi-ui-checks text-warning"></i> Checkboxes
-                </button>
-              </li>
-              <li>
-                <button
-                  type="button"
-                  className="dropdown-item d-flex align-items-center gap-2"
-                  onClick={() => handleAddQuestion("dropdown")}
-                >
-                  <i className="bi bi-caret-down-square text-secondary"></i> Dropdown
-                </button>
-              </li>
-              <li>
-                <button
-                  type="button"
-                  className="dropdown-item d-flex align-items-center gap-2"
-                  onClick={() => handleAddQuestion("yes-no")}
-                >
-                  <i className="bi bi-toggles text-danger"></i> Yes / No
-                </button>
-              </li>
-              <li>
-                <button
-                  type="button"
-                  className="dropdown-item d-flex align-items-center gap-2"
-                  onClick={() => handleAddQuestion("file")}
-                >
-                  <i className="bi bi-file-earmark-arrow-up text-primary"></i> File Upload
-                </button>
-              </li>
-            </ul>
+
+            {isAddMenuOpen && (
+              <div
+                className="dropdown-menu dropdown-menu-dark show shadow-lg border border-secondary border-opacity-25 py-2 position-absolute"
+                style={{
+                  top: "calc(100% + 6px)",
+                  right: 0,
+                  zIndex: 1100,
+                  minWidth: "210px",
+                  background: "#0f172a",
+                  borderRadius: "10px",
+                  boxShadow: "0 15px 35px rgba(0,0,0,0.8), 0 0 15px rgba(56, 189, 248, 0.15)",
+                }}
+              >
+                <div className="px-3 py-1 text-uppercase text-secondary fw-bold" style={{ fontSize: "0.68rem", letterSpacing: "0.5px" }}>
+                  Select Field Type
+                </div>
+                {QUESTION_TYPES_CONFIG.map((item) => (
+                  <button
+                    key={item.type}
+                    type="button"
+                    className="dropdown-item d-flex align-items-center gap-2.5 py-2 px-3 text-white"
+                    onClick={() => handleAddQuestion(item.type)}
+                    style={{ fontSize: "0.82rem", cursor: "pointer" }}
+                  >
+                    <i className={`bi ${item.icon}`} style={{ color: item.color, width: "18px" }}></i>
+                    <span>{item.label}</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
+
+          {/* Collapse All Toggle */}
+          {questions.length > 0 && (
+            <button
+              type="button"
+              className="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1 py-1.5 px-2.5 rounded-2"
+              style={{ fontSize: "0.82rem" }}
+              onClick={handleCollapseAll}
+              title={allCollapsed ? "Expand all questions" : "Collapse all questions"}
+            >
+              <i className={`bi ${allCollapsed ? "bi-arrows-expand" : "bi-arrows-collapse"}`}></i>
+              <span className="d-none d-sm-inline">{allCollapsed ? "Expand All" : "Collapse All"}</span>
+            </button>
+          )}
 
           {/* Live Preview Button */}
           <button
             type="button"
-            className="btn btn-sm btn-outline-light d-inline-flex align-items-center gap-1"
+            className="btn btn-sm btn-outline-light d-inline-flex align-items-center gap-1 py-1.5 px-2.5 rounded-2"
+            style={{ fontSize: "0.82rem" }}
             onClick={() => setShowPreviewModal(true)}
           >
-            <i className="bi bi-eye"></i> Preview
+            <i className="bi bi-eye"></i>
+            <span className="d-none d-sm-inline">Preview</span>
           </button>
 
           {/* Clear All */}
           {questions.length > 0 && (
             <button
               type="button"
-              className="btn btn-sm btn-outline-danger d-inline-flex align-items-center"
+              className="btn btn-sm btn-outline-danger d-inline-flex align-items-center py-1.5 px-2.5 rounded-2"
               onClick={() => setShowClearConfirmModal(true)}
               title="Clear all questions"
             >
@@ -235,32 +293,42 @@ const FormBuilder: React.FC<FormBuilderProps> = ({
       {/* Questions Canvas */}
       {questions.length === 0 ? (
         <div
-          className="text-center py-5 rounded-4"
+          className="text-center py-5 px-3 rounded-3 d-flex flex-column align-items-center justify-content-center"
           style={{
-            background: "rgba(17, 24, 39, 0.5)",
-            border: "2px dashed rgba(255, 255, 255, 0.15)",
+            background: "rgba(15, 23, 42, 0.45)",
+            border: "2px dashed rgba(56, 189, 248, 0.25)",
+            minHeight: "240px",
           }}
         >
-          <div className="display-4 text-secondary mb-3">
-            <i
-              className="bi bi-journal-plus text-indigo-400"
-              style={{ color: "#818cf8" }}
-            ></i>
+          <div
+            className="d-flex align-items-center justify-content-center mb-3"
+            style={{
+              width: "52px",
+              height: "52px",
+              borderRadius: "14px",
+              background: "rgba(56, 189, 248, 0.1)",
+              color: "#38bdf8",
+              border: "1px solid rgba(56, 189, 248, 0.25)",
+            }}
+          >
+            <i className="bi bi-ui-checks-grid fs-4"></i>
           </div>
-          <h5 className="fw-bold text-white mb-2">No Questions Added Yet</h5>
-          <p className="text-secondary mb-4 small max-w-md mx-auto">
-            Click "+ Add Question" to start building your custom questionnaire from scratch.
+
+          <h5 className="fw-bold text-white mb-1" style={{ fontSize: "1rem" }}>
+            No Questions Added
+          </h5>
+          <p className="text-secondary mb-4 small" style={{ maxWidth: "440px", lineHeight: 1.5 }}>
+            Click &quot;+ Add Question&quot; above to create registration questions for attendees.
           </p>
-          <div className="d-flex justify-content-center">
-            <button
-              type="button"
-              className="btn btn-primary px-4 py-2 d-inline-flex align-items-center gap-2"
-              style={{ background: "#6366f1", borderColor: "#6366f1" }}
-              onClick={() => handleAddQuestion("text")}
-            >
-              <i className="bi bi-plus-lg"></i> Add Question
-            </button>
-          </div>
+
+          <button
+            type="button"
+            className="btn btn-primary px-3 py-1.5 d-inline-flex align-items-center gap-2 rounded-2"
+            style={{ background: "#2563eb", borderColor: "#2563eb", fontSize: "0.85rem" }}
+            onClick={() => handleAddQuestion("text")}
+          >
+            <i className="bi bi-plus-lg"></i> Add First Question
+          </button>
         </div>
       ) : (
         <div className="d-flex flex-column gap-3">
@@ -271,6 +339,8 @@ const FormBuilder: React.FC<FormBuilderProps> = ({
               index={idx}
               totalQuestions={questions.length}
               isActive={activeQuestionId === q.id}
+              isCollapsed={collapsedIds.has(q.id)}
+              onToggleCollapse={() => toggleCollapse(q.id)}
               onSelect={() => setActiveQuestionId(q.id)}
               onChange={(updated) => handleUpdateQuestion(idx, updated)}
               onDuplicate={() => handleDuplicateQuestion(idx)}
@@ -291,73 +361,85 @@ const FormBuilder: React.FC<FormBuilderProps> = ({
         onClose={() => setShowPreviewModal(false)}
       />
 
-      {/* Styled Glassmorphic Clear All Confirmation Modal */}
-      {showClearConfirmModal && (
-        <div
-          className="modal fade show d-block"
-          tabIndex={-1}
-          style={{
-            backgroundColor: "rgba(0, 0, 0, 0.8)",
-            backdropFilter: "blur(8px)",
-            zIndex: 1060,
-          }}
-        >
-          <div className="modal-dialog modal-dialog-centered" style={{ maxWidth: "420px" }}>
+      {/* Root Portal Styled Glassmorphic Clear All Confirmation Modal */}
+      {showClearConfirmModal &&
+        createPortal(
+          <div
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              width: "100vw",
+              height: "100vh",
+              zIndex: 99999,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "rgba(3, 7, 18, 0.85)",
+              backdropFilter: "blur(12px)",
+            }}
+            onClick={() => setShowClearConfirmModal(false)}
+          >
             <div
-              className="modal-content rounded-4 border-0 p-4 text-center text-white"
+              className="text-center text-white"
               style={{
-                background: "linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98))",
-                border: "1px solid rgba(239, 68, 68, 0.35)",
-                boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 30px rgba(239, 68, 68, 0.15)",
+                maxWidth: "420px",
+                width: "90%",
+                background: "linear-gradient(165deg, #1e293b 0%, #0f172a 100%)",
+                border: "1px solid rgba(239, 68, 68, 0.4)",
+                boxShadow: "0 25px 60px -10px rgba(0, 0, 0, 0.95), 0 0 35px rgba(239, 68, 68, 0.2)",
+                borderRadius: "16px",
+                padding: "28px 24px",
               }}
+              onClick={(e) => e.stopPropagation()}
             >
-              <div className="modal-body p-0">
-                <div
-                  className="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
-                  style={{
-                    width: "60px",
-                    height: "60px",
-                    background: "rgba(239, 68, 68, 0.15)",
-                    color: "#ef4444",
-                    border: "1px solid rgba(239, 68, 68, 0.3)",
-                    boxShadow: "0 0 20px rgba(239, 68, 68, 0.2)",
-                  }}
-                >
-                  <i className="bi bi-trash3-fill fs-3"></i>
-                </div>
-                <h4 className="fw-bold mb-2 text-white">Clear All Questions?</h4>
-                <p className="text-secondary mb-4 small" style={{ lineHeight: 1.5 }}>
-                  Are you sure you want to remove all {questions.length} question
-                  {questions.length > 1 ? "s" : ""}? This action cannot be undone.
-                </p>
+              <div
+                className="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
+                style={{
+                  width: "56px",
+                  height: "56px",
+                  background: "rgba(239, 68, 68, 0.15)",
+                  color: "#ef4444",
+                  border: "1px solid rgba(239, 68, 68, 0.3)",
+                }}
+              >
+                <i className="bi bi-trash3-fill fs-3"></i>
+              </div>
+              <h5 className="fw-bold mb-2 text-white">Clear All Questions?</h5>
+              <p className="text-secondary mb-4 small" style={{ lineHeight: 1.5 }}>
+                Are you sure you want to remove all {questions.length} question
+                {questions.length > 1 ? "s" : ""}? This action cannot be undone.
+              </p>
 
-                <div className="d-flex gap-2 justify-content-center">
-                  <button
-                    type="button"
-                    className="btn btn-outline-light rounded-pill px-4 py-2"
-                    onClick={() => setShowClearConfirmModal(false)}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-danger rounded-pill px-4 py-2 fw-semibold d-inline-flex align-items-center gap-2"
-                    style={{
-                      background: "linear-gradient(135deg, #ef4444, #dc2626)",
-                      border: "none",
-                      boxShadow: "0 4px 14px rgba(239, 68, 68, 0.4)",
-                    }}
-                    onClick={handleConfirmClearAll}
-                  >
-                    <i className="bi bi-trash"></i>
-                    Clear All
-                  </button>
-                </div>
+              <div className="d-flex gap-2 justify-content-center">
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary rounded-2 px-3 py-1.5"
+                  style={{ fontSize: "0.85rem" }}
+                  onClick={() => setShowClearConfirmModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-danger rounded-2 px-3.5 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5"
+                  style={{
+                    background: "linear-gradient(135deg, #ef4444, #dc2626)",
+                    border: "none",
+                    fontSize: "0.85rem",
+                  }}
+                  onClick={handleConfirmClearAll}
+                >
+                  <i className="bi bi-trash"></i>
+                  Clear All
+                </button>
               </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 };

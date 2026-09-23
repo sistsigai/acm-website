@@ -98,11 +98,28 @@ export const WebEventDetailModal: React.FC<WebEventDetailModalProps> = ({
                   <span className="modal-section-title">Coordinators</span>
                   <div className="modal-info-box">
                     {selectedEvent.contactPersons.map((person, idx) => (
-                      <div key={idx} className="contact-item">
-                        <FaUser size={14} color="#3b82f6" />
-                        <span>
-                          {person.name} {person.phone ? `(${person.phone})` : ""}
-                        </span>
+                      <div key={idx} className="contact-item d-flex align-items-center justify-content-between flex-wrap gap-2">
+                        <div className="d-flex align-items-center gap-2">
+                          <FaUser size={14} color="#3b82f6" />
+                          <span>
+                            {person.name} {person.phone ? `(${person.phone})` : ""}
+                          </span>
+                        </div>
+                        {person.role && (
+                          <span
+                            style={{
+                              fontSize: "0.72rem",
+                              padding: "2px 8px",
+                              borderRadius: "10px",
+                              background: person.role === "Faculty Coordinator" ? "rgba(168, 85, 247, 0.15)" : "rgba(59, 130, 246, 0.15)",
+                              color: person.role === "Faculty Coordinator" ? "#c084fc" : "#60a5fa",
+                              border: `1px solid ${person.role === "Faculty Coordinator" ? "rgba(168, 85, 247, 0.3)" : "rgba(59, 130, 246, 0.3)"}`,
+                              fontWeight: 600,
+                            }}
+                          >
+                            {person.role}
+                          </span>
+                        )}
                       </div>
                     ))}
                   </div>

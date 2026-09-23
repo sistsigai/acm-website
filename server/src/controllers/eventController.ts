@@ -30,6 +30,7 @@ const uploadToCloudinary = (
 interface ContactPerson {
   name: string;
   phone: string;
+  role?: string;
 }
 
 interface ValidationData {
@@ -383,10 +384,11 @@ export const addEvent = async (req: Request, res: Response): Promise<Response> =
       ...(registrationQuestions?.slice(REQUIRED_REGISTRATION_QUESTIONS.length) || [])
     ];
 
-    // Format phone numbers with +91 prefix
+    // Format phone numbers with +91 prefix and preserve role
     const formattedContactPersons = (contactPersons || []).map((contact: any) => ({
       name: (contact?.name?.toString() || '').trim(),
-      phone: contact?.phone ? `+91${contact.phone.toString().replace(/^\+91/, '').replace(/\D/g, '').slice(0, 10)}` : ''
+      phone: contact?.phone ? `+91${contact.phone.toString().replace(/^\+91/, '').replace(/\D/g, '').slice(0, 10)}` : '',
+      role: (contact?.role?.toString() || 'Student Coordinator').trim()
     })).filter((contact: { name: any; phone: any; }) => contact.name && contact.phone);
 
     const event = await Event.create({
@@ -551,10 +553,11 @@ export const updateEvent = async (req: Request, res: Response) => {
     if (description !== undefined) event.description = description.trim();
 
     if (contactPersons !== undefined) {
-      // Format phone numbers with +91 prefix
+      // Format phone numbers with +91 prefix and preserve role
       const formattedContactPersons = (contactPersons || []).map((contact: any) => ({
         name: (contact?.name?.toString() || '').trim(),
-        phone: contact?.phone ? `+91${contact.phone.toString().replace(/^\+91/, '').replace(/\D/g, '').slice(0, 10)}` : ''
+        phone: contact?.phone ? `+91${contact.phone.toString().replace(/^\+91/, '').replace(/\D/g, '').slice(0, 10)}` : '',
+        role: (contact?.role?.toString() || 'Student Coordinator').trim()
       })).filter((contact: { name: any; phone: any; }) => contact.name && contact.phone);
       
       if (formattedContactPersons.length === 0) {

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import type { IQuestion } from "../../types/formBuilder";
 
 interface FormPreviewModalProps {
@@ -70,7 +71,7 @@ const FormPreviewModal: React.FC<FormPreviewModalProps> = ({
     setSubmitted(false);
   };
 
-  return (
+  return createPortal(
     <div
       className="modal show d-block"
       tabIndex={-1}
@@ -344,7 +345,8 @@ const FormPreviewModal: React.FC<FormPreviewModalProps> = ({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

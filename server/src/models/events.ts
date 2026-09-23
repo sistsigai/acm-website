@@ -3,6 +3,7 @@ import mongoose, { Schema, Document } from "mongoose";
 export interface ContactPerson {
   name: string;
   phone: string;
+  role?: string;
 }
 
 export interface IQuestionOption {
@@ -50,6 +51,7 @@ const ContactPersonSchema = new Schema<ContactPerson>(
   {
     name: { type: String },
     phone: { type: String },
+    role: { type: String, default: "Student Coordinator" },
   },
   { _id: false }
 );
