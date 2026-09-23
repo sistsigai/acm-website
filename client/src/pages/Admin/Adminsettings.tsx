@@ -115,94 +115,6 @@ const AdminSettings: React.FC = () => {
         }));
     };
 
-    /* ---------------- STYLES ---------------- */
-    const styles = `
-    /* --- Glass Panel (Card Layout) --- */
-    .glass-panel {
-        background: rgba(31, 41, 55, 0.7);
-        backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 16px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        height: 100%; /* Ensures equal height in grid */
-    }
-
-    /* --- Input Styling --- */
-    .form-control-glass {
-        background-color: rgba(0, 0, 0, 0.3) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        color: white !important;
-        border-radius: 8px;
-        padding: 12px;
-        transition: all 0.2s ease;
-    }
-    
-    .form-control-glass:focus {
-        background-color: rgba(0, 0, 0, 0.5) !important;
-        border-color: #3b82f6 !important;
-        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15) !important;
-    }
-
-    .form-label {
-        color: #9ca3af; 
-        font-size: 0.8rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        margin-bottom: 0.5rem;
-    }
-
-    .phone-input-group {
-        display: flex;
-        align-items: stretch;
-    }
-
-    .phone-prefix-glass {
-        background-color: rgba(0, 0, 0, 0.35) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        border-right: none !important;
-        color: #9ca3af !important;
-        font-weight: 600;
-        font-size: 0.95rem;
-        border-top-left-radius: 8px !important;
-        border-bottom-left-radius: 8px !important;
-        border-top-right-radius: 0 !important;
-        border-bottom-right-radius: 0 !important;
-        padding: 12px 16px;
-        user-select: none;
-        display: flex;
-        align-items: center;
-        transition: border-color 0.2s ease;
-    }
-
-    .phone-input-glass {
-        border-top-left-radius: 0 !important;
-        border-bottom-left-radius: 0 !important;
-        border-top-right-radius: 8px !important;
-        border-bottom-right-radius: 8px !important;
-    }
-
-    .phone-input-group:focus-within .phone-prefix-glass {
-        border-color: #3b82f6 !important;
-    }
-
-    /* --- Mobile Specifics --- */
-    @media (max-width: 768px) {
-        .mobile-offset {
-            padding-top: 85px !important;
-        }
-        
-        .save-btn-container {
-            width: 100%;
-            justify-content: center !important;
-        }
-
-        .save-btn {
-            width: 100%;
-        }
-    }
-    `;
-
     return (
         <AdminLayout
             active="Settings"
@@ -210,8 +122,6 @@ const AdminSettings: React.FC = () => {
             toast={toast ?? undefined}
             onCloseToast={() => setToast(null)}
         >
-            <style>{styles}</style>
-
             <div className="mobile-offset p-2 pb-5">
                 {/* Header */}
                 <div className="mb-4">

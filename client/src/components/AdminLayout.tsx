@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import Loader from "./Loader";
 import Message from "./Message";
 import { useAuth } from "../context/AuthContext";
-import "../styles/admin-common.css";
 
 const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
 const WARNING_TIME = 2 * 60 * 1000;     // 2 minutes

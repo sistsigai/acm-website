@@ -1,5 +1,30 @@
 import { Request, Response } from "express";
 import Event from "../models/events";
+import sharp from "sharp";
+import cloudinary from "../utils/cloudinary";
+import streamifier from "streamifier";
+
+/* ───────────────── CLOUDINARY HELPER ───────────────── */
+
+const uploadToCloudinary = (
+  buffer: Buffer,
+  folder: string
+): Promise<{ url: string; public_id: string }> => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { folder, resource_type: "image" },
+      (error, result) => {
+        if (error || !result) return reject(error);
+        resolve({
+          url: result.secure_url,
+          public_id: result.public_id,
+        });
+      }
+    );
+
+    streamifier.createReadStream(buffer).pipe(stream);
+  });
+};
 
 // --- TYPE DEFINITIONS ---
 interface ContactPerson {
@@ -247,6 +272,72 @@ const validateAllFields = (data: ValidationData, isUpdate: boolean = false): { e
   return { errors: errors.filter(e => e), fieldErrors };
 };
 
+/* ───────────────── DIRECT CLOUDINARY UPLOAD FOR EVENTS ───────────────── */
+
+export const uploadEventImage = async (req: any, res: any) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: "No image file provided" });
+    }
+
+    const { type } = req.body; // "thumbnail" or "poster"
+
+    let sharpPipeline = sharp(req.file.buffer);
+
+    if (type === "thumbnail") {
+      // 16:9 banner
+      sharpPipeline = sharpPipeline
+        .resize(1280, 720, { fit: "cover", position: "center" })
+        .jpeg({ quality: 85 });
+    } else if (type === "poster") {
+      // 3:4 portrait poster
+      sharpPipeline = sharpPipeline
+        .resize(900, 1200, { fit: "cover", position: "center" })
+        .jpeg({ quality: 85 });
+    } else {
+      sharpPipeline = sharpPipeline.jpeg({ quality: 85 });
+    }
+
+    const processedImage = await sharpPipeline.toBuffer();
+    const uploadResult = await uploadToCloudinary(processedImage, "events");
+
+    return res.status(200).json({
+      success: true,
+      message: "Image uploaded successfully",
+      url: uploadResult.url,
+      public_id: uploadResult.public_id,
+    });
+  } catch (error: any) {
+    console.error("Event Cloudinary Upload Error:", error);
+    return res.status(500).json({ success: false, message: "Cloudinary upload failed", error: error.message });
+  }
+};
+
+/* ───────────────── DIRECT CLOUDINARY DELETE FOR EVENTS ───────────────── */
+
+export const deleteEventImage = async (req: any, res: any) => {
+  try {
+    const { public_id } = req.body;
+    if (!public_id) {
+      return res.status(400).json({ success: false, message: "public_id is required" });
+    }
+
+    const result = await cloudinary.uploader.destroy(public_id);
+    return res.status(200).json({
+      success: true,
+      message: "Image deleted successfully",
+      result,
+    });
+  } catch (error: any) {
+    console.error("Event Cloudinary Delete Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to delete image from Cloudinary",
+      error: error.message,
+    });
+  }
+};
+
 export const addEvent = async (req: Request, res: Response): Promise<Response> => {
   try {
     const {
@@ -259,6 +350,10 @@ export const addEvent = async (req: Request, res: Response): Promise<Response> =
       registrationQuestions,
       customQuestions,
       whatsappGroupLink,
+      thumbnailUrl,
+      thumbnailPublicId,
+      posterUrl,
+      posterPublicId,
     } = req.body;
 
     // 🔴 Comprehensive Validation
@@ -304,6 +399,10 @@ export const addEvent = async (req: Request, res: Response): Promise<Response> =
       registrationQuestions: finalRegistrationQuestions,
       customQuestions: Array.isArray(customQuestions) ? customQuestions : [],
       whatsappGroupLink: whatsappGroupLink?.trim() || null,
+      thumbnailUrl: thumbnailUrl || null,
+      thumbnailPublicId: thumbnailPublicId || null,
+      posterUrl: posterUrl || null,
+      posterPublicId: posterPublicId || null,
       display: true
     });
 
@@ -361,6 +460,14 @@ export const deleteEvent = async (req: Request, res: Response) => {
       });
     }
 
+    // Destroy Cloudinary media assets if present
+    if (event.thumbnailPublicId) {
+      await cloudinary.uploader.destroy(event.thumbnailPublicId).catch((e) => console.error("Error deleting event thumbnail:", e));
+    }
+    if (event.posterPublicId) {
+      await cloudinary.uploader.destroy(event.posterPublicId).catch((e) => console.error("Error deleting event poster:", e));
+    }
+
     await event.deleteOne();
 
     res.json({
@@ -400,6 +507,10 @@ export const updateEvent = async (req: Request, res: Response) => {
       registrationQuestions,
       customQuestions,
       whatsappGroupLink,
+      thumbnailUrl,
+      thumbnailPublicId,
+      posterUrl,
+      posterPublicId,
       display
     } = req.body;
 
@@ -478,6 +589,24 @@ export const updateEvent = async (req: Request, res: Response) => {
 
     if (whatsappGroupLink !== undefined) {
       event.whatsappGroupLink = whatsappGroupLink?.trim() || null;
+    }
+
+    // Handle thumbnail replacement on Cloudinary
+    if (thumbnailPublicId !== undefined) {
+      if (event.thumbnailPublicId && event.thumbnailPublicId !== thumbnailPublicId) {
+        await cloudinary.uploader.destroy(event.thumbnailPublicId).catch((e) => console.error("Error destroying old thumbnail:", e));
+      }
+      event.thumbnailUrl = thumbnailUrl || null;
+      event.thumbnailPublicId = thumbnailPublicId || null;
+    }
+
+    // Handle poster replacement on Cloudinary
+    if (posterPublicId !== undefined) {
+      if (event.posterPublicId && event.posterPublicId !== posterPublicId) {
+        await cloudinary.uploader.destroy(event.posterPublicId).catch((e) => console.error("Error destroying old poster:", e));
+      }
+      event.posterUrl = posterUrl || null;
+      event.posterPublicId = posterPublicId || null;
     }
     
     if (display !== undefined) {

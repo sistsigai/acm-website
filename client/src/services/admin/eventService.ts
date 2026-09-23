@@ -17,9 +17,56 @@ export interface CreateEventPayload {
   registrationQuestions: string[];
   customQuestions?: IQuestion[];
   whatsappGroupLink?: string;
+  thumbnailUrl?: string;
+  thumbnailPublicId?: string;
+  posterUrl?: string;
+  posterPublicId?: string;
 }
 
 export type UpdateEventPayload = Partial<CreateEventPayload>;
+
+/* ---------------- DIRECT CLOUDINARY UPLOAD WITH PROGRESS ---------------- */
+export const uploadEventImageDirect = async (
+  file: Blob | File,
+  type: "thumbnail" | "poster",
+  onProgress?: (percent: number) => void
+): Promise<{ url: string; public_id: string; message: string }> => {
+  try {
+    const formData = new FormData();
+    formData.append("image", file, type === "thumbnail" ? "event-thumbnail.jpg" : "event-poster.jpg");
+    formData.append("type", type);
+
+    const res = await axiosInstance.post("/admin/eventmanager/upload-image", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+      onUploadProgress: (progressEvent) => {
+        if (progressEvent.total) {
+          const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          onProgress?.(percent);
+        }
+      },
+    });
+
+    return res.data;
+  } catch (err: any) {
+    throw new Error(
+      err?.response?.data?.message ||
+      "Failed to upload image"
+    );
+  }
+};
+
+/* ---------------- DIRECT CLOUDINARY DELETE ---------------- */
+export const deleteEventImageDirect = async (public_id: string): Promise<any> => {
+  try {
+    const res = await axiosInstance.post("/admin/eventmanager/delete-image", { public_id });
+    return res.data;
+  } catch (err: any) {
+    console.error("Direct Cloudinary delete failed:", err);
+    return null;
+  }
+};
 
 /* ---------------- CREATE EVENT ---------------- */
 export const createEvent = async (payload: CreateEventPayload) => {

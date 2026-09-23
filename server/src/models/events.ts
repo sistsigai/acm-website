@@ -36,6 +36,10 @@ export interface EventDocument extends Document {
   registrationQuestions: string[];
   customQuestions?: IQuestion[];
   whatsappGroupLink?: string | null;
+  thumbnailUrl?: string;
+  thumbnailPublicId?: string;
+  posterUrl?: string;
+  posterPublicId?: string;
   isClosed: boolean;
   display: boolean;
   createdAt: Date;
@@ -99,6 +103,11 @@ const EventSchema = new Schema<EventDocument>(
     },
 
     whatsappGroupLink: { type: String, default: null },
+
+    thumbnailUrl: { type: String, default: null },
+    thumbnailPublicId: { type: String, default: null },
+    posterUrl: { type: String, default: null },
+    posterPublicId: { type: String, default: null },
 
     isClosed: {
       type: Boolean,

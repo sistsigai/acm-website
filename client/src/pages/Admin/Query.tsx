@@ -137,174 +137,6 @@ const Query: React.FC = () => {
         }
     };
 
-    /* ---------------- STYLES ---------------- */
-    const styles = `
-    /* --- Animations --- */
-    @keyframes fadeInUp {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    @keyframes scaleIn {
-        from { opacity: 0; transform: scale(0.95); }
-        to { opacity: 1; transform: scale(1); }
-    }
-
-    .animate-up {
-        animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        opacity: 0;
-    }
-
-    /* --- Filter Toggle (Sliding Pill) --- */
-    .filter-container {
-        position: relative;
-        background: rgba(0, 0, 0, 0.3);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 50px;
-        padding: 4px;
-        display: flex;
-        width: 200px;
-        height: 40px;
-    }
-
-    .filter-bg {
-        position: absolute;
-        top: 4px;
-        bottom: 4px;
-        left: 4px;
-        width: calc(50% - 4px);
-        background: #3b82f6;
-        border-radius: 50px;
-        transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
-        z-index: 1;
-        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
-    }
-
-    .filter-container[data-active="unread"] .filter-bg {
-        transform: translateX(100%);
-    }
-
-    .filter-btn {
-        flex: 1;
-        border: none;
-        background: transparent;
-        color: #9ca3af;
-        font-weight: 600;
-        font-size: 0.85rem;
-        z-index: 2;
-        cursor: pointer;
-        transition: color 0.3s;
-        text-align: center;
-    }
-
-    .filter-btn.active {
-        color: white;
-    }
-
-    /* --- Message Card --- */
-    .message-card {
-        background: rgba(31, 41, 55, 0.4);
-        backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 16px;
-        transition: all 0.3s ease;
-        cursor: pointer;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .message-card:hover {
-        background: rgba(31, 41, 55, 0.6);
-        border-color: rgba(59, 130, 246, 0.4);
-        transform: translateY(-2px);
-        box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
-    }
-
-    .message-card.unread {
-        border-left: 4px solid #3b82f6;
-        background: rgba(59, 130, 246, 0.05);
-    }
-
-    .message-card.unread:hover {
-        background: rgba(59, 130, 246, 0.1);
-    }
-
-    /* --- Inputs --- */
-    .form-control-glass, .form-select-glass {
-        background: rgba(0, 0, 0, 0.3) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        color: white !important;
-        border-radius: 50px;
-        padding: 10px 20px;
-        height: 45px;
-    }
-    
-    .form-control-glass:focus, .form-select-glass:focus {
-        background: rgba(0, 0, 0, 0.5) !important;
-        border-color: #3b82f6 !important;
-        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15) !important;
-    }
-
-    .form-control-glass::placeholder { color: rgba(255,255,255,0.5); }
-
-    /* --- Action Buttons --- */
-    .btn-icon {
-        width: 35px;
-        height: 35px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 50%;
-        transition: all 0.2s ease;
-        background: rgba(255,255,255,0.05);
-        border: 1px solid rgba(255,255,255,0.05);
-    }
-
-    .btn-icon:hover {
-        background: rgba(255,255,255,0.1);
-        transform: scale(1.1);
-    }
-
-    /* --- Modal --- */
-    .modal-content-glass {
-        background: #1f2937;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
-        border-radius: 20px;
-        animation: scaleIn 0.3s ease-out;
-    }
-
-    .avatar-placeholder {
-        width: 45px; height: 45px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-        color: white;
-        display: flex; align-items: center; justify-content: center;
-        font-weight: bold;
-        font-size: 1.2rem;
-    }
-
-    /* --- Mobile --- */
-    @media (max-width: 768px) {
-        .mobile-offset {
-            padding-top: 85px !important;
-        }
-        
-        .filters-row {
-            flex-direction: column;
-            gap: 1rem;
-        }
-        
-        .search-bar {
-            width: 100% !important;
-        }
-
-        .filter-container {
-            width: 100%;
-        }
-    }
-    `;
-
     return (
         <AdminLayout
             active="Messages"
@@ -312,8 +144,6 @@ const Query: React.FC = () => {
             toast={toast || undefined}
             onCloseToast={() => setToast(null)}
         >
-            <style>{styles}</style>
-
             <div className="mobile-offset p-2">
 
                 {/* Header */}
@@ -332,15 +162,25 @@ const Query: React.FC = () => {
                 {/* Toolbar */}
                 <div className="d-flex filters-row justify-content-between align-items-center mb-4 animate-up" style={{ animationDelay: '100ms' }}>
                     <div className="d-flex gap-3 w-100 align-items-center filters-row">
-                        <div className="position-relative flex-grow-1 search-bar">
-                            <i className="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-secondary"></i>
+                        <div className="admin-search-bar flex-grow-1">
+                            <i className="bi bi-search search-icon"></i>
                             <input
                                 type="text"
-                                className="form-control form-control-glass ps-5"
+                                className="admin-search-input"
                                 placeholder="Search by name, email or subject..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
+                            {searchTerm && (
+                                <button
+                                    type="button"
+                                    className="search-clear-btn"
+                                    onClick={() => setSearchTerm("")}
+                                    title="Clear search"
+                                >
+                                    <i className="bi bi-x-lg"></i>
+                                </button>
+                            )}
                         </div>
 
                         {/* Animated Toggle Switch */}

@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import type { IQuestion, QuestionType } from "../../types/formBuilder";
 import QuestionCard from "./QuestionCard";
 import FormPreviewModal from "./FormPreviewModal";
-import "./formBuilder.css";
 
 interface FormBuilderProps {
   questions: IQuestion[];

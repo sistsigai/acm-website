@@ -155,11 +155,65 @@ const validateAllFields = (
   return errors;
 };
 
+/* ───────────────── DIRECT CLOUDINARY UPLOAD ───────────────── */
+
+export const uploadMemberImage = async (req: any, res: any) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No image file provided" });
+    }
+
+    const imageError = validateProfilePic(req.file);
+    if (imageError) {
+      return res.status(400).json({ message: imageError });
+    }
+
+    const processedImage = await sharp(req.file.buffer)
+      .resize(522, 747, { fit: "cover", position: "center" })
+      .jpeg({ quality: 85 })
+      .toBuffer();
+
+    const uploadResult = await uploadToCloudinary(processedImage, "members");
+
+    return res.status(200).json({
+      message: "Image uploaded to Cloudinary successfully",
+      url: uploadResult.url,
+      public_id: uploadResult.public_id,
+    });
+  } catch (error: any) {
+    console.error("Direct Cloudinary Upload Error:", error);
+    return res.status(500).json({ message: "Cloudinary upload failed", error: error.message });
+  }
+};
+
+/* ───────────────── DIRECT CLOUDINARY DELETE ───────────────── */
+
+export const deleteMemberImage = async (req: any, res: any) => {
+  try {
+    const { public_id } = req.body;
+    if (!public_id) {
+      return res.status(400).json({ message: "public_id is required" });
+    }
+
+    const result = await cloudinary.uploader.destroy(public_id);
+    return res.status(200).json({
+      message: "Image deleted from Cloudinary successfully",
+      result,
+    });
+  } catch (error: any) {
+    console.error("Delete Cloudinary Image Error:", error);
+    return res.status(500).json({
+      message: "Failed to delete image from Cloudinary",
+      error: error.message,
+    });
+  }
+};
+
 /* ───────────────── CREATE MEMBER ───────────────── */
 
 export const createMember = async (req: any, res: any) => {
   try {
-    const { name, designation, batch, linkedin, instagram, facebook } = req.body;
+    const { name, designation, batch, linkedin, instagram, facebook, imageUrl, imagePublicId } = req.body;
 
     const errors = validateAllFields(
       name,
@@ -168,30 +222,38 @@ export const createMember = async (req: any, res: any) => {
       linkedin,
       instagram,
       facebook,
-      req.file
+      req.file,
+      Boolean(imageUrl) // if imageUrl is already provided, skip file requirement
     );
 
     if (errors.length > 0) {
       return res.status(400).json({ message: "Validation failed", errors });
     }
 
-    if (!req.file) {
-      return res.status(400).json({ message: "Profile picture is required" });
+    let finalImageUrl = imageUrl;
+    let finalImagePublicId = imagePublicId;
+
+    if (!finalImageUrl) {
+      if (!req.file) {
+        return res.status(400).json({ message: "Profile picture is required" });
+      }
+
+      const processedImage = await sharp(req.file.buffer)
+        .resize(522, 747, { fit: "cover", position: "center" })
+        .jpeg({ quality: 85 })
+        .toBuffer();
+
+      const upload = await uploadToCloudinary(processedImage, "members");
+      finalImageUrl = upload.url;
+      finalImagePublicId = upload.public_id;
     }
-
-    const processedImage = await sharp(req.file.buffer)
-      .resize(522, 747, { fit: "cover", position: "center" })
-      .jpeg({ quality: 85 })
-      .toBuffer();
-
-    const upload = await uploadToCloudinary(processedImage, "members");
 
     const member = await Member.create({
       name: name.trim(),
       designation,
       batch,
-      imageUrl: upload.url,
-      imagePublicId: upload.public_id,
+      imageUrl: finalImageUrl,
+      imagePublicId: finalImagePublicId,
       social: {
         linkedin: linkedin?.trim() || undefined,
         instagram: instagram?.trim() || undefined,
@@ -242,7 +304,7 @@ export const deleteMember = async (req: Request, res: Response) => {
 export const updateMember = async (req: any, res: any) => {
   try {
     const { id } = req.params;
-    const { name, designation, batch, linkedin, instagram, facebook } = req.body;
+    const { name, designation, batch, linkedin, instagram, facebook, imageUrl, imagePublicId } = req.body;
 
     const member = await Member.findById(id);
     if (!member) {
@@ -285,7 +347,13 @@ export const updateMember = async (req: any, res: any) => {
         ? (member.social.facebook = facebook.trim())
         : delete member.social.facebook;
 
-    if (req.file) {
+    if (imageUrl && imageUrl !== member.imageUrl) {
+      if (member.imagePublicId && member.imagePublicId !== imagePublicId) {
+        await cloudinary.uploader.destroy(member.imagePublicId);
+      }
+      member.imageUrl = imageUrl;
+      member.imagePublicId = imagePublicId;
+    } else if (req.file) {
       if (member.imagePublicId) {
         await cloudinary.uploader.destroy(member.imagePublicId);
       }

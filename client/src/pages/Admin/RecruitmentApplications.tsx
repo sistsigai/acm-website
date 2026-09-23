@@ -222,133 +222,7 @@ const handleViewResume = (resumePath: string) => {
             toast={toast || undefined}
             onCloseToast={() => setToast(null)}
         >
-            <style>{`
-        /* --- 1. PAGE LAYOUT ANIMATIONS --- */
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .animate-enter {
-            opacity: 0;
-            animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-        
-        .delay-0 { animation-delay: 0.05s; }
-        .delay-1 { animation-delay: 0.1s; }
-        .delay-2 { animation-delay: 0.15s; }
-        .delay-3 { animation-delay: 0.2s; }
 
-        /* --- 2. MODAL & TAB ANIMATIONS --- */
-        
-        @keyframes springUp {
-            0% { opacity: 0; transform: scale(0.95) translateY(20px); }
-            100% { opacity: 1; transform: scale(1) translateY(0); }
-        }
-
-        .modal-glass {
-          background: rgba(18, 18, 24, 0.98) !important;
-          backdrop-filter: blur(20px);
-          border: 1px solid rgba(255,255,255,0.1);
-          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
-          animation: springUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        /* --- SMOOTH SLIDING TAB ANIMATION --- */
-        @keyframes tabSlideIn {
-            from { 
-                opacity: 0; 
-                transform: translateX(20px); /* Start slightly to the right */
-            }
-            to { 
-                opacity: 1; 
-                transform: translateX(0); 
-            }
-        }
-        
-        .tab-animate {
-            /* Using a cubic-bezier for a "Fast Start, Slow End" sliding feel */
-            animation: tabSlideIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-        }
-
-        /* --- 3. UI POLISH & GLOWS --- */
-        .glow-border {
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.3s ease;
-        }
-        .glow-border:hover {
-             border-color: rgba(59, 130, 246, 0.4);
-             box-shadow: 0 0 20px rgba(59, 130, 246, 0.15);
-        }
-
-        .glass-card {
-          background: rgba(31, 41, 55, 0.7);
-          backdrop-filter: blur(12px);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 16px;
-          transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        .glass-card:hover {
-            transform: translateY(-2px);
-        }
-
-        .detail-box {
-          background: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 12px;
-          padding: 1.5rem;
-          height: 100%;
-          transition: all 0.3s ease;
-        }
-        .detail-box:hover {
-          background: rgba(255, 255, 255, 0.06);
-          border-color: rgba(255, 255, 255, 0.2);
-          transform: translateY(-2px);
-        }
-
-        @media (max-width: 768px) {
-          .mobile-content-wrapper { padding-top: 80px; }
-          .mobile-stack { flex-direction: column !important; align-items: flex-start !important; }
-        }
-
-        /* Tabs Styling */
-        .custom-tab-btn {
-            background: transparent;
-            border: none;
-            color: #9ca3af;
-            padding: 0.75rem 1.5rem;
-            font-weight: 600;
-            border-bottom: 2px solid transparent;
-            transition: all 0.3s ease; /* Smooth transition for color */
-            position: relative;
-        }
-        .custom-tab-btn:hover { color: #fff; }
-        .custom-tab-btn.active { color: #60a5fa; }
-        
-        /* Sliding Underline Effect */
-        .custom-tab-btn::after {
-            content: '';
-            position: absolute;
-            bottom: -2px;
-            left: 50%;
-            width: 0;
-            height: 2px;
-            background: #60a5fa;
-            box-shadow: 0 -2px 10px #60a5fa;
-            transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-            transform: translateX(-50%);
-        }
-        .custom-tab-btn.active::after {
-            width: 100%; /* Expands to full width when active */
-        }
-
-        .modal-backdrop.show { opacity: 0.85; background-color: #050505; }
-        .icon-circle { width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
-        .pdf-frame { width: 100%; height: 80vh; border: none; background-color: #fff; border-radius: 8px; }
-        .input-group-text { border-color: rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); }
-        .custom-table tr { transition: all 0.2s; }
-        .custom-table tr:hover { background-color: rgba(255, 255, 255, 0.03) !important; }
-      `}</style>
 
             <div className="mobile-content-wrapper">
 
@@ -409,18 +283,25 @@ const handleViewResume = (resumePath: string) => {
                 <div className="glass-card p-3 mb-4 animate-enter delay-2">
                     <div className="row g-3">
                         <div className="col-12 col-md-5">
-                            <div className="input-group">
-                                <span className="input-group-text bg-transparent">
-                                    <i className="bi bi-search text-white"></i>
-                                </span>
+                            <div className="admin-search-bar">
+                                <i className="bi bi-search search-icon"></i>
                                 <input
                                     type="text"
-                                    className="form-control bg-transparent text-white border-start-0 border-secondary"
-                                    style={{ borderColor: 'rgba(255,255,255,0.1)' }}
+                                    className="admin-search-input"
                                     placeholder="Search applicants..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />
+                                {searchTerm && (
+                                    <button
+                                        type="button"
+                                        className="search-clear-btn"
+                                        onClick={() => setSearchTerm("")}
+                                        title="Clear search"
+                                    >
+                                        <i className="bi bi-x-lg"></i>
+                                    </button>
+                                )}
                             </div>
                         </div>
                         <div className="col-12 col-md-4">

@@ -195,157 +195,6 @@ const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose, onSuccess,
     <AnimatePresence>
       {isOpen && (
         <div className="modal-overlay">
-          {/* Modal Scoped Styles */}
-          <style>{`
-            .modal-overlay {
-              position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-              background: rgba(0, 0, 0, 0.7);
-              backdrop-filter: blur(8px);
-              -webkit-backdrop-filter: blur(8px);
-              display: flex; justify-content: center; 
-              align-items: flex-start; /* Fixes alignment to ensure gap at top */
-              padding: 100px 20px 40px 20px; /* 100px top padding guarantees gap under navbar */
-              z-index: 10000;
-              overflow-y: auto; /* Allows natural scrolling if modal is tall */
-            }
-
-            .modal-content-styled {
-              background: linear-gradient(145deg, rgba(17, 24, 39, 0.95), rgba(10, 15, 30, 0.95));
-              padding: 50px 40px; width: 100%; max-width: 750px;
-              border-radius: 24px; position: relative;
-              border: 1px solid rgba(255, 255, 255, 0.08);
-              box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-              color: #fff; margin-bottom: 20px;
-            }
-
-            .close-modal {
-              position: absolute; top: 24px; right: 24px;
-              background: rgba(255,255,255,0.05); width: 40px; height: 40px;
-              border-radius: 50%; border: none; font-size: 1.2rem;
-              cursor: pointer; color: #a1a1aa;
-              display: flex; align-items: center; justify-content: center;
-              transition: all 0.3s ease; z-index: 10;
-            }
-            .close-modal:hover {
-              background: rgba(239, 68, 68, 0.1); color: #ef4444; transform: rotate(90deg);
-            }
-
-            .modal-title {
-              text-align: center; margin-bottom: 40px;
-              font-size: 2.2rem; font-weight: 800; letter-spacing: 1px;
-            }
-            .hero-highlight {
-              background: linear-gradient(135deg, #fff 0%, #3b82f6 100%);
-              -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            }
-
-            .formBx {
-              display: grid; grid-template-columns: 1fr 1fr; gap: 35px 25px; width: 100%;
-            }
-            .full-width { grid-column: span 2; }
-
-            /* --- STRICT INPUT WRAPPER --- */
-            .input-group {
-              width: 100%; display: flex; flex-direction: column;
-            }
-            
-            .input-field-container {
-              position: relative; width: 100%; margin-top: 15px; /* Space for label floating */
-            }
-
-            .line-input {
-              display: block; width: 100%; padding: 10px 0; font-size: 1rem; color: #fff;
-              background: transparent; border: none;
-              border-bottom: 2px solid rgba(255, 255, 255, 0.15);
-              outline: none; transition: border-color 0.3s ease;
-              font-family: inherit; border-radius: 0;
-            }
-            textarea.line-input {
-              resize: none; min-height: 80px;
-            }
-
-            /* Floating Label Core */
-            .line-label {
-              position: absolute; top: 10px; left: 0; font-size: 1rem;
-              color: rgba(255, 255, 255, 0.4); pointer-events: none;
-              transition: 0.3s ease all; font-weight: 400;
-            }
-
-            /* Highlight Line Animation */
-            .focus-border {
-              position: absolute; bottom: 0; left: 50%; width: 0; height: 2px;
-              background: #3b82f6; transition: all 0.4s ease; transform: translateX(-50%);
-            }
-
-            /* --- FOCUS & HAS-VALUE STATES --- */
-            .line-input:focus ~ .focus-border, 
-            .line-input.has-value ~ .focus-border {
-              width: 100%;
-            }
-            
-            .line-input:focus ~ .line-label, 
-            .line-input.has-value ~ .line-label {
-              top: -18px; font-size: 0.8rem; color: #3b82f6; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;
-            }
-
-            /* --- ERROR STATES --- */
-            .input-field-container.has-error .line-input {
-              border-bottom-color: rgba(239, 68, 68, 0.3);
-            }
-            .input-field-container.has-error .focus-border {
-              width: 100%; background: #ef4444;
-            }
-            .input-field-container.has-error .line-label {
-              color: #ef4444;
-            }
-
-            /* Error Message completely decoupled from input border */
-            .error-message {
-              color: #ef4444; font-size: 0.8rem; margin-top: 8px;
-              display: flex; align-items: center; gap: 5px;
-              animation: fadeIn 0.3s ease;
-            }
-            .error-icon { font-size: 0.9rem; }
-
-            .character-count {
-              font-size: 0.75rem; color: rgba(255, 255, 255, 0.3);
-            }
-            .character-count.warning { color: #f59e0b; }
-            .character-count.error { color: #ef4444; }
-
-            @keyframes fadeIn {
-              from { opacity: 0; transform: translateY(-5px); }
-              to { opacity: 1; transform: translateY(0); }
-            }
-
-            /* --- SUBMIT BUTTON FIX --- */
-            .submit-btn {
-              background: linear-gradient(135deg, #2563eb, #3b82f6);
-              color: #fff; padding: 16px; border: none; border-radius: 12px;
-              font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;
-              cursor: pointer; width: 100%; margin-top: 20px;
-              display: flex; justify-content: center; align-items: center; gap: 10px;
-              transition: filter 0.3s ease, box-shadow 0.3s ease; /* Excluded transform to stop glitch */
-              transform: translateZ(0); /* Hardware accelerate to stop subpixel text twitches */
-              box-shadow: 0 10px 20px -10px rgba(59, 130, 246, 0.5);
-            }
-            .submit-btn:hover:not(:disabled) {
-              /* Replaced translateY with brightness to stop layout shifts on hover */
-              filter: brightness(1.15); 
-              box-shadow: 0 12px 25px -10px rgba(59, 130, 246, 0.8);
-            }
-            .submit-btn:disabled {
-              opacity: 0.6; cursor: not-allowed; filter: grayscale(50%); box-shadow: none;
-            }
-
-            @media (max-width: 600px) {
-              .formBx { grid-template-columns: 1fr; gap: 30px; }
-              .full-width { grid-column: span 1; }
-              .modal-content-styled { padding: 40px 20px; }
-              .modal-title { font-size: 1.8rem; }
-            }
-          `}</style>
-
           <m.div
             className="modal-content-styled"
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -363,7 +212,7 @@ const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose, onSuccess,
               <div className='formBx'>
                 
                 {/* First Name */}
-                <div className="input-group">
+                <div className="contact-input-group">
                   <div className={`input-field-container ${errors.Firstname && touched.Firstname ? 'has-error' : ''}`}>
                     <input
                       type='text'
@@ -388,7 +237,7 @@ const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose, onSuccess,
                 </div>
 
                 {/* Last Name */}
-                <div className="input-group">
+                <div className="contact-input-group">
                   <div className={`input-field-container ${errors.Lastname && touched.Lastname ? 'has-error' : ''}`}>
                     <input
                       type='text'
@@ -413,7 +262,7 @@ const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose, onSuccess,
                 </div>
 
                 {/* Email */}
-                <div className="input-group">
+                <div className="contact-input-group">
                   <div className={`input-field-container ${errors.Email && touched.Email ? 'has-error' : ''}`}>
                     <input
                       type='email'
@@ -438,7 +287,7 @@ const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose, onSuccess,
                 </div>
 
                 {/* Mobile */}
-                <div className="input-group">
+                <div className="contact-input-group">
                   <div className={`input-field-container ${errors.Mobile && touched.Mobile ? 'has-error' : ''}`}>
                     <input
                       type='tel'
@@ -465,7 +314,7 @@ const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose, onSuccess,
                 </div>
 
                 {/* Message */}
-                <div className="input-group full-width">
+                <div className="contact-input-group full-width">
                   <div className={`input-field-container ${errors.Message && touched.Message ? 'has-error' : ''}`}>
                     <textarea
                       name='Message'
@@ -498,7 +347,7 @@ const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose, onSuccess,
                 </div>
 
                 {/* Submit Button */}
-                <div className='input-group full-width'>
+                <div className='contact-input-group full-width'>
                   <button
                     type='submit'
                     className="submit-btn"
