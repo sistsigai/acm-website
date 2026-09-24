@@ -368,61 +368,96 @@ const FormPreviewModal: React.FC<FormPreviewModalProps> = ({
                         )}
 
                         {/* File Upload */}
-                        {q.type === "file" && (
-                          answers[q.id] ? (
-                            <div className="dynamic-file-uploaded-card">
-                              <div className="d-flex align-items-center gap-3 overflow-hidden">
-                                <div className="dynamic-file-icon flex-shrink-0">
-                                  <i className="bi bi-file-earmark-check-fill fs-3 text-info"></i>
-                                </div>
-                                <div className="d-flex flex-column overflow-hidden">
-                                  <span className="text-white fw-semibold text-truncate small">
-                                    {answers[q.id]}
-                                  </span>
-                                  <span
-                                    className="badge bg-success-subtle text-success border border-success-subtle d-inline-block mt-0.5"
-                                    style={{ fontSize: "0.7rem", padding: "2px 7px", width: "fit-content" }}
+                        {q.type === "file" && (() => {
+                          const maxFiles = q.maxFiles || 1;
+                          const isMultiple = maxFiles > 1;
+                          const rawVal = answers[q.id];
+                          const fileNames: string[] = Array.isArray(rawVal)
+                            ? rawVal.filter(Boolean)
+                            : rawVal
+                            ? [String(rawVal)]
+                            : [];
+
+                          const handlePreviewAdd = (files: FileList | null) => {
+                            if (!files || files.length === 0) return;
+                            const newNames = Array.from(files).map((f) => f.name);
+                            if (isMultiple) {
+                              const combined = [...fileNames, ...newNames].slice(0, maxFiles);
+                              handleInputChange(q.id, combined);
+                            } else {
+                              handleInputChange(q.id, newNames[0]);
+                            }
+                          };
+
+                          const handlePreviewRemove = (nameToRemove: string) => {
+                            if (isMultiple) {
+                              handleInputChange(
+                                q.id,
+                                fileNames.filter((n) => n !== nameToRemove)
+                              );
+                            } else {
+                              handleInputChange(q.id, "");
+                            }
+                          };
+
+                          return (
+                            <div className="dynamic-file-upload-wrapper d-flex flex-column gap-2">
+                              {fileNames.map((name, fIdx) => (
+                                <div key={fIdx} className="dynamic-file-uploaded-card">
+                                  <div className="d-flex align-items-center gap-3 overflow-hidden">
+                                    <div className="dynamic-file-icon flex-shrink-0">
+                                      <i className="bi bi-file-earmark-check-fill fs-3 text-info"></i>
+                                    </div>
+                                    <div className="d-flex flex-column overflow-hidden">
+                                      <span className="text-white fw-semibold text-truncate small">
+                                        {name}
+                                      </span>
+                                      <span
+                                        className="text-secondary small mt-0.5"
+                                        style={{ fontSize: "0.72rem" }}
+                                      >
+                                        Simulated Preview File
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    className="btn btn-sm btn-outline-danger flex-shrink-0 d-inline-flex align-items-center gap-1 ms-2"
+                                    style={{ fontSize: "0.75rem", padding: "4px 10px", borderRadius: "8px" }}
+                                    onClick={() => handlePreviewRemove(name)}
                                   >
-                                    <i className="bi bi-check-circle-fill me-1"></i> Simulated Upload
-                                  </span>
+                                    <i className="bi bi-trash3"></i>
+                                    <span>Remove</span>
+                                  </button>
                                 </div>
-                              </div>
-                              <button
-                                type="button"
-                                className="btn btn-sm btn-outline-danger flex-shrink-0 d-inline-flex align-items-center gap-1 ms-2"
-                                style={{ fontSize: "0.75rem", padding: "4px 10px", borderRadius: "8px" }}
-                                onClick={() => handleInputChange(q.id, "")}
-                              >
-                                <i className="bi bi-trash3"></i>
-                                <span>Remove</span>
-                              </button>
+                              ))}
+
+                              {fileNames.length < maxFiles && (
+                                <label
+                                  className="dynamic-file-dropzone d-block mb-0 cursor-pointer"
+                                  style={{ border: "1.5px dashed rgba(99, 102, 241, 0.4)" }}
+                                >
+                                  <input
+                                    type="file"
+                                    multiple={isMultiple}
+                                    style={{ display: "none" }}
+                                    onChange={(e) => handlePreviewAdd(e.target.files)}
+                                  />
+                                  <div className="d-flex flex-column align-items-center gap-1 py-1">
+                                    <i className="bi bi-cloud-arrow-up fs-2 text-primary" style={{ color: "#818cf8" }}></i>
+                                    <span className="text-white fw-semibold small">
+                                      Click to browse or drag & drop file here
+                                    </span>
+                                    <span className="text-secondary" style={{ fontSize: "0.74rem" }}>
+                                      Formats: {(q.allowedFormats || ["PDF", "DOCX", "JPG", "PNG"]).map((f) => f.toUpperCase()).join(", ")} (Max: {q.maxFileSize || 5} MB
+                                      {isMultiple ? `, up to ${maxFiles} files` : ""})
+                                    </span>
+                                  </div>
+                                </label>
+                              )}
                             </div>
-                          ) : (
-                            <label
-                              className="dynamic-file-dropzone d-block mb-0 cursor-pointer"
-                              style={{ border: "1.5px dashed rgba(99, 102, 241, 0.4)" }}
-                            >
-                              <input
-                                type="file"
-                                style={{ display: "none" }}
-                                onChange={(e) => {
-                                  if (e.target.files && e.target.files.length > 0) {
-                                    handleInputChange(q.id, e.target.files[0].name);
-                                  }
-                                }}
-                              />
-                              <div className="d-flex flex-column align-items-center gap-1 py-1">
-                                <i className="bi bi-cloud-arrow-up fs-2 text-primary" style={{ color: "#818cf8" }}></i>
-                                <span className="text-white fw-semibold small">
-                                  Click to browse or drag & drop file here
-                                </span>
-                                <span className="text-secondary" style={{ fontSize: "0.74rem" }}>
-                                  Formats: {(q.allowedFormats || ["PDF", "DOCX", "JPG", "PNG"]).map((f) => f.toUpperCase()).join(", ")} (Max: {q.maxFileSize || 5} MB)
-                                </span>
-                              </div>
-                            </label>
-                          )
-                        )}
+                          );
+                        })()}
 
                         {/* Date */}
                         {q.type === "date" && (

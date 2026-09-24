@@ -21,6 +21,7 @@ import EventStudioModal, {
 import EventCropperModal from "../../components/Admin/Events/EventCropperModal";
 import ImagePreviewModal from "../../components/Admin/Events/ImagePreviewModal";
 import AdminEventDetailModal from "../../components/Admin/Events/AdminEventDetailModal";
+import EventAttendeesModal from "../../components/Admin/Events/EventAttendeesModal";
 import ConfirmModal from "../../components/Common/ConfirmModal";
 import { DEFAULT_INITIAL_EVENT_QUESTIONS } from "../../types/formBuilder";
 
@@ -36,6 +37,7 @@ const EventManager: React.FC = () => {
   const [activeSection, setActiveSection] = useState<EventStudioSection>("info");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedDetailEvent, setSelectedDetailEvent] = useState<AdminEvent | null>(null);
+  const [selectedAttendeesEvent, setSelectedAttendeesEvent] = useState<AdminEvent | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [eventToDelete, setEventToDelete] = useState<AdminEvent | null>(null);
   const [loading, setLoading] = useState(false);
@@ -778,6 +780,7 @@ const EventManager: React.FC = () => {
                   setShowDeleteModal(true);
                 }}
                 onViewDetails={(ev) => setSelectedDetailEvent(ev)}
+                onOpenAttendees={(ev) => setSelectedAttendeesEvent(ev)}
               />
             ))}
           </AnimatePresence>
@@ -790,6 +793,7 @@ const EventManager: React.FC = () => {
         onClose={() => setSelectedDetailEvent(null)}
         onEdit={handleEditEvent}
         onToggleDisplay={handleToggleDisplay}
+        onOpenAttendees={(ev) => setSelectedAttendeesEvent(ev)}
       />
 
       {/* Event Studio Modal (Section-by-Section Step Wizard) */}
@@ -958,6 +962,13 @@ const EventManager: React.FC = () => {
       <ImagePreviewModal
         previewImage={previewModalImage}
         onClose={() => setPreviewModalImage(null)}
+      />
+
+      {/* Event Attendees Roster & QR Attendance Check-in Modal */}
+      <EventAttendeesModal
+        event={selectedAttendeesEvent}
+        onClose={() => setSelectedAttendeesEvent(null)}
+        showToast={(msg, variant) => showToast(variant, msg)}
       />
     </AdminLayout>
   );

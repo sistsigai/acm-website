@@ -10,6 +10,7 @@ import {
   FaEye,
   FaEyeSlash,
   FaHourglassHalf,
+  FaQrcode,
 } from "react-icons/fa";
 import type { IQuestion } from "../../../types/formBuilder";
 
@@ -67,6 +68,7 @@ interface EventCardProps {
   onEdit: (event: AdminEvent) => void;
   onDelete: (event: AdminEvent) => void;
   onViewDetails: (event: AdminEvent) => void;
+  onOpenAttendees?: (event: AdminEvent) => void;
 }
 
 const cardItemVariants: Variants = {
@@ -95,6 +97,7 @@ export const EventCard: React.FC<EventCardProps> = ({
   onEdit,
   onDelete,
   onViewDetails,
+  onOpenAttendees,
 }) => {
   const isClosed = isRegistrationClosed(event.registrationEndDate);
   const bannerImage = event.thumbnailUrl || event.posterUrl;
@@ -216,6 +219,25 @@ export const EventCard: React.FC<EventCardProps> = ({
                 <FaInfoCircle size={14} />
                 <span>View Details</span>
               </m.button>
+
+              {onOpenAttendees && (
+                <m.button
+                  type="button"
+                  className="admin-card-btn-icon btn-attendees"
+                  onClick={() => onOpenAttendees(event)}
+                  whileHover={{ scale: 1.1, y: -1 }}
+                  whileTap={{ scale: 0.92 }}
+                  title="Attendees & QR Attendance Scanner"
+                  aria-label="Attendees and QR Attendance Scanner"
+                  style={{
+                    background: "rgba(56, 189, 248, 0.15)",
+                    borderColor: "rgba(56, 189, 248, 0.4)",
+                    color: "#38bdf8",
+                  }}
+                >
+                  <FaQrcode size={13} />
+                </m.button>
+              )}
 
               <m.button
                 type="button"

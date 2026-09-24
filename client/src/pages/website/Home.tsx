@@ -6,7 +6,6 @@ import ne from '../../assets/HomePage/new.png';
 import videoB from '../../assets/HomePage/SISTACMSIGAI.mp4';
 import sat from '../../assets/HomePage/Sathyabama Institute of Science and Technology.png';
 import grp from '../../assets/HomePage/grp-01.jpeg.jpg';
-import { GlobalLoader } from "../../components/GlobalLoader";
 import {
   FaMapMarkerAlt,
   FaEnvelope,
@@ -16,20 +15,11 @@ import {
   FaLinkedin,
 } from 'react-icons/fa';
 import { type AdminSettings, getAdminSettings } from '../../services/website/Homeservice';
-import { FloatingOrb } from '../../components/StatusMessage';
 import CopyrightFooter from '../../components/Footer';
-import ContactModal from '../../components/ContactModal';
 
 
 const Home: React.FC = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false); // Controls the GlobalLoader
-  const [statusVisible, setStatusVisible] = useState(false);
-  const [statusMessage, setStatusMessage] = useState("");
-  const [statusType, setStatusType] = useState<"success" | "error">("success");
   const [adminSettings, setAdminSettings] = useState<AdminSettings | null>(null);
-
-  const toggleModal = () => setIsModalOpen(!isModalOpen);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -43,48 +33,10 @@ const Home: React.FC = () => {
     fetchSettings();
   }, []);
 
-  useEffect(() => {
-    if (statusVisible) {
-      const timer = setTimeout(() => setStatusVisible(false), 4000);
-      return () => clearTimeout(timer);
-    }
-  }, [statusVisible]);
 
-  useEffect(() => {
-    if (isModalOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [isModalOpen]);
-
-  // Handlers for Modal success/error states
-  const handleModalSuccess = (message: string) => {
-    setStatusType("success");
-    setStatusMessage(message);
-    setStatusVisible(true);
-  };
-
-  const handleModalError = (message: string) => {
-    setStatusType("error");
-    setStatusMessage(message);
-    setStatusVisible(true);
-  };
 
   return (
     <>
-      <GlobalLoader isLoading={isSubmitting} />
-
-      <FloatingOrb
-        isVisible={statusVisible}
-        message={statusMessage}
-        type={statusType}
-        onClose={() => setStatusVisible(false)}
-      />
-
       {/* --- HERO SECTION --- */}
       <div className='main'>
         <video
@@ -167,9 +119,13 @@ const Home: React.FC = () => {
               <span className="hero-highlight">{adminSettings?.orgName || "SIST ACM SIGAI"}</span>
             </div>
             <p className="cta-text">Have questions or want to collaborate?</p>
-            <button className="write-us-btn" onClick={toggleModal}>
+            <a
+              href="mailto:sist.sigai@gmail.com"
+              className="write-us-btn"
+              style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+            >
               Write to Us <FaEnvelope style={{ marginLeft: '8px', display: 'inline' }} />
-            </button>
+            </a>
             <div className="social-icons">
               <a href={adminSettings?.socials.twitter} target="_blank" aria-label="Twitter" className="social-icon twitter"><FaTwitter /></a>
               <a href={adminSettings?.socials.instagram} target="_blank" aria-label="Instagram" className="social-icon instagram"><FaInstagram /></a>
@@ -190,15 +146,6 @@ const Home: React.FC = () => {
 
         <CopyrightFooter />
       </footer>
-
-      {/* --- INJECT MODAL COMPONENT --- */}
-      <ContactModal
-        isOpen={isModalOpen}
-        onClose={toggleModal}
-        onSuccess={handleModalSuccess}
-        onError={handleModalError}
-        onLoading={setIsSubmitting} // Connects modal loading state to GlobalLoader
-      />
     </>
   );
 };

@@ -12,7 +12,6 @@ import {
 import DashboardStatCard from "../../components/Admin/Dashboard/DashboardStatCard";
 import DashboardEngagementMetrics from "../../components/Admin/Dashboard/DashboardEngagementMetrics";
 import DashboardUpcomingEvent from "../../components/Admin/Dashboard/DashboardUpcomingEvent";
-import DashboardOngoingRecruitments from "../../components/Admin/Dashboard/DashboardOngoingRecruitments";
 import DashboardRecentActivity, { formatTimeAgo } from "../../components/Admin/Dashboard/DashboardRecentActivity";
 
 /* ---------------- COMPONENT ---------------- */
@@ -49,7 +48,7 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
 
-  const { stats, latestEvent, ongoingRecruitments, topPerformers, systemHealth } =
+  const { stats, latestEvent, topPerformers, systemHealth } =
     dashboardData;
 
   const contactNotifications = enhancedRecentActivity.filter(
@@ -398,20 +397,11 @@ const Dashboard: React.FC = () => {
           )}
         </div>
 
-        {/* Third Row: Ongoing Requirements & Recent Activity */}
+        {/* Third Row: Recent Activity & System Health */}
         <div className="row g-4">
           <div
-            className="col-12 col-lg-8 animate-up"
+            className="col-12 animate-up"
             style={{ animationDelay: "700ms" }}
-          >
-            <DashboardOngoingRecruitments
-              ongoingRecruitments={ongoingRecruitments}
-            />
-          </div>
-
-          <div
-            className="col-12 col-lg-4 animate-up"
-            style={{ animationDelay: "750ms" }}
           >
             <DashboardRecentActivity
               activities={enhancedRecentActivity}

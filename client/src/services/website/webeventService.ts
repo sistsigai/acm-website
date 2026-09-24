@@ -86,9 +86,16 @@ export interface UploadFileResponse {
   message: string;
   url: string;
   public_id: string;
+  resource_type?: string;
   originalName: string;
   size: number;
   folder: string;
+}
+
+export interface DeleteFileItem {
+  public_id?: string;
+  resource_type?: string;
+  url?: string;
 }
 
 export const uploadEventRegistrationFile = async (
@@ -130,3 +137,20 @@ export const uploadEventRegistrationFile = async (
     throw new Error("Unexpected error during file upload");
   }
 };
+
+export const deleteEventRegistrationFile = async (
+  input: DeleteFileItem | { files: DeleteFileItem[] }
+): Promise<{ success: boolean; message: string }> => {
+  try {
+    const payload = "files" in input ? input : input;
+    const response = await axiosInstance.post<{ success: boolean; message: string }>(
+      "/events/delete-file",
+      payload
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Cloudinary delete file error:", error);
+    return { success: false, message: "Delete failed" };
+  }
+};
+

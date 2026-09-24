@@ -148,3 +148,115 @@ export const toggleEventDisplay = async (
     );
   }
 };
+
+/* ---------------- EVENT ATTENDANCE & REGISTRATIONS ---------------- */
+
+export interface AttendeeRecord {
+  _id: string;
+  eventId: string;
+  name: string;
+  registerNo: string;
+  dept: string;
+  year: string;
+  section: string;
+  email: string;
+  phone: string;
+  answers?: Record<string, any>;
+  entry: boolean;
+  checkedInAt?: string | null;
+  qrUrl?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AttendanceMetrics {
+  totalRegistered: number;
+  totalPresent: number;
+  totalAbsent: number;
+  attendanceRate: number;
+}
+
+export interface GetRegistrationsResponse {
+  success: boolean;
+  registrations: AttendeeRecord[];
+  metrics: AttendanceMetrics;
+}
+
+export const getEventRegistrations = async (
+  eventId: string,
+  params?: { search?: string; status?: "all" | "present" | "absent" }
+): Promise<GetRegistrationsResponse> => {
+  try {
+    const res = await axiosInstance.get(`/admin/eventmanager/${eventId}/registrations`, {
+      params,
+    });
+    return res.data;
+  } catch (err: any) {
+    throw new Error(
+      err?.response?.data?.message || "Failed to fetch event registrations"
+    );
+  }
+};
+
+export interface ScanQrResponse {
+  success: boolean;
+  alreadyCheckedIn: boolean;
+  message: string;
+  registration: AttendeeRecord;
+  checkedInAt?: string;
+}
+
+export const scanAttendanceQr = async (
+  eventId: string,
+  qrData: string
+): Promise<ScanQrResponse> => {
+  try {
+    const res = await axiosInstance.post(`/admin/eventmanager/${eventId}/attendance/scan`, {
+      qrData,
+    });
+    return res.data;
+  } catch (err: any) {
+    throw new Error(
+      err?.response?.data?.message || "Failed to scan and verify QR ticket"
+    );
+  }
+};
+
+export const toggleRegistrationAttendance = async (
+  registrationId: string,
+  entry: boolean
+): Promise<{ success: boolean; message: string; registration: AttendeeRecord }> => {
+  try {
+    const res = await axiosInstance.put(
+      `/admin/eventmanager/registration/${registrationId}/attendance`,
+      { entry }
+    );
+    return res.data;
+  } catch (err: any) {
+    throw new Error(
+      err?.response?.data?.message || "Failed to update attendance status"
+    );
+  }
+};
+
+export const exportEventRegistrationsCsv = async (eventId: string, eventName: string): Promise<void> => {
+  try {
+    const res = await axiosInstance.get(`/admin/eventmanager/${eventId}/registrations/export`, {
+      responseType: "blob",
+    });
+    const blob = new Blob([res.data], { type: "text/csv;charset=utf-8;" });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    const cleanName = eventName.replace(/[^a-zA-Z0-9_-]/g, "_");
+    link.setAttribute("download", `${cleanName}_attendees.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  } catch (err: any) {
+    throw new Error(
+      err?.response?.data?.message || "Failed to download attendance CSV"
+    );
+  }
+};

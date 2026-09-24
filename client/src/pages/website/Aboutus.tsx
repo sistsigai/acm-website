@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion as m } from "framer-motion";
 import Tilt from 'react-vanilla-tilt';
 import { useLocation } from 'react-router-dom';
@@ -8,6 +8,13 @@ import { FaInstagram, FaLinkedin, FaTwitter, FaFacebook } from "react-icons/fa";
 // --- LOCAL IMAGES (Only for non-member content) ---
 import { getMembers, type Member } from '../../services/website/aboutservice';
 import { FloatingOrb } from '../../components/StatusMessage';
+import CustomSelect from '../../components/Admin/Members/CustomSelect';
+
+const UNIT_OPTIONS = [
+  { value: "volunteers", label: "Volunteers Unit" },
+  { value: "media", label: "Media Unit" },
+  { value: "research", label: "Research Unit" },
+];
 
 interface FrontendMember {
   id: string;
@@ -21,6 +28,76 @@ interface FrontendMember {
   additional?: string;
 }
 
+// --- HELPER SORT FUNCTION ---
+const sortOldestFirst = (a: Member, b: Member) => {
+  const aTime = parseInt(a._id.substring(0, 8), 16) * 1000;
+  const bTime = parseInt(b._id.substring(0, 8), 16) * 1000;
+  return aTime - bTime;
+};
+
+// --- REUSABLE CARD COMPONENT (Memoized outside to prevent unmounting/re-animating on state changes) ---
+const MemberCard = React.memo(({ member, isLarge = false }: { member: FrontendMember; isLarge?: boolean }) => {
+  return (
+    <m.div
+      variants={fadeIn("up", 0.15)}
+      initial="hidden"
+      whileInView="show"
+      viewport={{ once: false, amount: 0.2 }}
+    >
+      <Tilt
+        id="tilt-card"
+        options={{ scale: 1.05, speed: 1000, max: 15 }}
+        style={{
+          background: "transparent",
+          padding: 0,
+          margin: 0,
+          borderRadius: 0,
+          border: "none",
+          boxShadow: "none",
+          width: "auto",
+        }}
+      >
+        <div className={`member-card ${isLarge ? "large" : ""}`}>
+          <div className="card-img-wrapper">
+            <img
+              src={member.img}
+              alt={member.name}
+              onError={(e) => {
+                e.currentTarget.src = "https://via.placeholder.com/280x380?text=No+Image";
+              }}
+            />
+          </div>
+
+          <div className="card-content">
+            <div className="text-box">
+              <h3>{member.name}</h3>
+              <span>{member.designation}</span>
+            </div>
+
+            <div className="social-icons">
+              {member.social?.map((social, index) => (
+                <a
+                  key={index}
+                  href={social.link}
+                  className={`social-icon ${social.type}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={social.type}
+                >
+                  {social.type === "instagram" && <FaInstagram />}
+                  {social.type === "linkedin" && <FaLinkedin />}
+                  {social.type === "twitter" && <FaTwitter />}
+                  {social.type === "facebook" && <FaFacebook />}
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
+      </Tilt>
+    </m.div>
+  );
+});
+
 interface AboutProps { }
 
 const About: React.FC<AboutProps> = () => {
@@ -30,7 +107,6 @@ const About: React.FC<AboutProps> = () => {
   const [members, setMembers] = useState<Member[]>([]);
   const [showMessage, setShowMessage] = useState(false);
   const [messageText, setMessageText] = useState("");
-
 
   type SocialType = "instagram" | "linkedin" | "facebook";
 
@@ -65,10 +141,6 @@ const About: React.FC<AboutProps> = () => {
       setSelectedYear('2025-2026');
     }
   }, [location]);
-
-  const handleDropdownChange1 = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedUnit(event.target.value);
-  };
 
   // --- HELPER FUNCTIONS ---
   const convertSocialToArray = (
@@ -116,7 +188,6 @@ const About: React.FC<AboutProps> = () => {
     return filtered.map(convertToFrontendMember);
   };
 
-
   const getMembersByUnit = (unit: string): FrontendMember[] => {
     const keywords: Record<string, string[]> = {
       volunteers: ['volunteer'],
@@ -136,7 +207,7 @@ const About: React.FC<AboutProps> = () => {
     return 99; // fallback
   };
 
-  const getLeadershipData = (): FrontendMember[] => {
+  const leadershipData = useMemo(() => {
     return filterMembers(selectedYear, [
       "chairperson",
       "vice chairperson",
@@ -147,99 +218,30 @@ const About: React.FC<AboutProps> = () => {
         getLeadershipPriority(a.designation) -
         getLeadershipPriority(b.designation)
     );
-  };
+  }, [members, selectedYear]);
 
-  const getCoreTeamData = (): FrontendMember[] => {
+  const coreTeamData = useMemo(() => {
     return filterMembers(selectedYear, ['core team'], true);
-  };
+  }, [members, selectedYear]);
 
-
-  const getFacultyData = (): FrontendMember[] => {
+  const facultyData = useMemo(() => {
     return filterMembers(selectedYear, ['hod', 'faculty convener'], true);
-  };
+  }, [members, selectedYear]);
 
-
-  const getFacultyCoordinatorsData = (): FrontendMember[] => {
+  const facultyCoordinatorsData = useMemo(() => {
     return filterMembers(
       selectedYear,
       ['associate professor', 'faculty coordinator'],
       true
     );
-  };
+  }, [members, selectedYear]);
 
-
-  const getCardsData = (): FrontendMember[] => {
+  const unitCardsData = useMemo(() => {
     return getMembersByUnit(selectedUnit);
-  };
-
-  const sortOldestFirst = (a: Member, b: Member) => {
-    const aTime = parseInt(a._id.substring(0, 8), 16) * 1000;
-    const bTime = parseInt(b._id.substring(0, 8), 16) * 1000;
-
-    return aTime - bTime;
-  };
-
-
-  // --- REUSABLE CARD COMPONENT ---
-  const MemberCard = ({ member, isLarge = false }: { member: FrontendMember; isLarge?: boolean }) => {
-    return (
-      <m.div
-        variants={fadeIn("up", 0.15)}
-        initial="hidden"
-        whileInView="show"
-        viewport={{ once: false, amount: 0.3 }}
-        style={{ willChange: "opacity, transform" }}
-      >
-        <Tilt
-          id="tilt-card"
-          options={{ scale: 1.05, speed: 1000, max: 15 }}
-          style={{ transformStyle: "preserve-3d" }}
-        >
-          <div className={`member-card ${isLarge ? "large" : ""}`}>
-            <div className="card-img-wrapper">
-              <img
-                src={member.img}
-                alt={member.name}
-                onError={(e) => {
-                  e.currentTarget.src = "https://via.placeholder.com/280x380?text=No+Image";
-                }}
-              />
-            </div>
-
-            <div className="card-content">
-              <div className="text-box">
-                <h3>{member.name}</h3>
-                <span>{member.designation}</span>
-              </div>
-
-              <div className="social-icons">
-                {member.social?.map((social, index) => (
-                  <a
-                    key={index}
-                    href={social.link}
-                    className={`social-icon ${social.type}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {social.type === "instagram" && <FaInstagram />}
-                    {social.type === "linkedin" && <FaLinkedin />}
-                    {social.type === "twitter" && <FaTwitter />}
-                    {social.type === "facebook" && <FaFacebook />}
-                  </a>
-                ))}
-              </div>
-            </div>
-          </div>
-        </Tilt>
-      </m.div>
-    );
-  };
-
-
+  }, [members, selectedYear, selectedUnit]);
 
   return (
     <>
-
       {/* FLOATING MESSAGE */}
       <FloatingOrb
         isVisible={showMessage}
@@ -260,7 +262,6 @@ const About: React.FC<AboutProps> = () => {
         </m.h1>
 
         <div className='content1'>
-
           <div className='wrapper1'>
             <h3>
               The scope of SIGAI, ACM's Special Interest Group on Artificial Intelligence, consists of the study of intelligence and its realization in computer systems. SIGAI's mission is to promote and support AI-related conferences. Members receive reduced registration rates to all affiliated conferences. Members also receive proceedings from the major SIGAI-sponsored conferences.SIGAI publishes a quarterly newsletter, AI Matters, with ideas and announcements of interest to the AI community.
@@ -283,12 +284,10 @@ const About: React.FC<AboutProps> = () => {
               </a>
             </div>
           </div>
-
         </div>
       </div>
 
       <div className='bd'>
-
         {/* --- ENHANCED SECTION TITLE: LEADERSHIP --- */}
         <m.div
           className="section-title"
@@ -312,7 +311,7 @@ const About: React.FC<AboutProps> = () => {
           viewport={{ once: false }}
           className="grid-container leadership-grid"
         >
-          {getLeadershipData().map((member) => (
+          {leadershipData.map((member) => (
             <MemberCard key={member.id} member={member} isLarge />
           ))}
         </m.div>
@@ -322,7 +321,7 @@ const About: React.FC<AboutProps> = () => {
           <h4>OUR CORE UNIT ({selectedYear})</h4>
         </div>
         <div className='grid-container'>
-          {getCoreTeamData().map((member) => (
+          {coreTeamData.map((member) => (
             <MemberCard key={member.id} member={member} />
           ))}
         </div>
@@ -332,7 +331,7 @@ const About: React.FC<AboutProps> = () => {
           <h4>FACULTY CONVENER ({selectedYear})</h4>
         </div>
         <div className='grid-container'>
-          {getFacultyData().map((member) => (
+          {facultyData.map((member) => (
             <MemberCard key={member.id} member={member} />
           ))}
         </div>
@@ -342,7 +341,7 @@ const About: React.FC<AboutProps> = () => {
           <h4>FACULTY COORDINATORS ({selectedYear})</h4>
         </div>
         <div className='grid-container'>
-          {getFacultyCoordinatorsData().map((member) => (
+          {facultyCoordinatorsData.map((member) => (
             <MemberCard key={member.id} member={member} />
           ))}
         </div>
@@ -353,17 +352,21 @@ const About: React.FC<AboutProps> = () => {
         </div>
 
         <div className="dropdown-container">
-          <label htmlFor="unit-select" style={{ fontWeight: 'bold', color: 'white' }}>Select Unit: </label>
-          <select id="unit-select" onChange={handleDropdownChange1} value={selectedUnit}>
-            <option value="volunteers">Volunteers Unit</option>
-            <option value="media">Media Unit</option>
-            <option value="research">Research Unit</option>
-          </select>
+          <label style={{ fontWeight: 'bold', color: 'white', whiteSpace: 'nowrap' }}>Select Unit: </label>
+          <div style={{ width: '220px' }}>
+            <CustomSelect
+              value={selectedUnit}
+              options={UNIT_OPTIONS}
+              onChange={setSelectedUnit}
+              icon="bi-people"
+              label="Select Unit"
+            />
+          </div>
         </div>
 
         <div className='grid-container'>
-          {getCardsData().length > 0 ? (
-            getCardsData().map((member) => (
+          {unitCardsData.length > 0 ? (
+            unitCardsData.map((member) => (
               <MemberCard key={member.id} member={member} />
             ))
           ) : (
@@ -372,7 +375,6 @@ const About: React.FC<AboutProps> = () => {
             </div>
           )}
         </div>
-
       </div>
     </>
   );

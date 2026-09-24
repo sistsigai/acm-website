@@ -223,7 +223,7 @@ export const WebEventDetailModal: React.FC<WebEventDetailModalProps> = ({
                 </div>
 
                 {/* Venue */}
-                <div className="web-info-card" style={{ gridColumn: "span 1" }}>
+                <div className="web-info-card web-info-card-venue">
                   <div className="web-info-card-icon">
                     <FaMapMarkerAlt />
                   </div>

@@ -9,9 +9,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Dashboard from "./pages/Admin/Dashboard";
 import Members from "./pages/Admin/Members";
 import EventManager from "./pages/Admin/EventManager";
-import Recruitments from "./pages/Admin/Recruitments";
 import AdminSettings from "./pages/Admin/Adminsettings";
-import Query from "./pages/Admin/Query";
 import AdminLogin from "./pages/Admin/AdminLogin";
 
 /* ---------------- WEBSITE PAGES ---------------- */
@@ -39,7 +37,6 @@ import Genai from "./pages/website/Archives/genAi";
 import Digiart from "./pages/website/Archives/digitalart";
 import Spaceday from "./pages/website/Archives/spaceday";
 import Synergy from "./pages/website/Archives/synergy";
-import RecruitmentApplications from "./pages/Admin/RecruitmentApplications";
 import Insightx from "./pages/website/Archives/insightx";
 import HelloJava from "./pages/website/Archives/hellojava";
 import ThinkTankers from "./pages/website/Archives/ThinkTankers";
@@ -100,30 +97,9 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/admin/recruitments"
-          element={
-            <ProtectedRoute>
-              <Recruitments />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/recruitments/:recruitmentId/applications"
-          element={
-            <ProtectedRoute>
-              <RecruitmentApplications />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/query"
-          element={
-            <ProtectedRoute>
-              <Query />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/admin/recruitments" element={<Navigate to="/admin/dashboard" replace />} />
+        <Route path="/admin/recruitments/*" element={<Navigate to="/admin/dashboard" replace />} />
+        <Route path="/admin/query" element={<Navigate to="/admin/dashboard" replace />} />
         <Route
           path="/admin/settings"
           element={

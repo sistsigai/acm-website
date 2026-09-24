@@ -15,8 +15,6 @@ const Sidebar: React.FC<SidebarProps> = ({ active, onLogout }) => {
     { label: "Dashboard", icon: "bi-speedometer2", path: "/admin/dashboard" },
     { label: "Members", icon: "bi-people-fill", path: "/admin/members" },
     { label: "Events", icon: "bi-calendar-event-fill", path: "/admin/eventmanager" },
-    { label: "Recruitment", icon: "bi-person-plus-fill", path: "/admin/recruitments" },
-    { label: "Enquiry Messages", icon: "bi-envelope-fill", path: "/admin/query" },
     { label: "Settings", icon: "bi-gear-fill", path: "/admin/settings" },
   ];
 

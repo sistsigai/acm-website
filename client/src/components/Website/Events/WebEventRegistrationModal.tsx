@@ -1,12 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { motion as m, AnimatePresence } from "framer-motion";
 import { FaTimes, FaPaperPlane, FaExclamationTriangle } from "react-icons/fa";
-import DynamicFormRenderer from "../../FormRenderer/DynamicFormRenderer";
+import DynamicFormRenderer, { type FileUploadInfo } from "../../FormRenderer/DynamicFormRenderer";
 import { CustomDatePicker } from "../../CustomDatePicker";
 import { CustomTimePicker } from "../../CustomTimePicker";
 import type { ExtendedEventData } from "./WebEventCard";
-import type { EventRegistrationPayload } from "../../../services/website/webeventService";
+import {
+  type EventRegistrationPayload,
+  deleteEventRegistrationFile,
+} from "../../../services/website/webeventService";
 
 interface WebEventRegistrationModalProps {
   show: boolean;
@@ -32,6 +35,12 @@ export const WebEventRegistrationModal: React.FC<WebEventRegistrationModalProps>
   const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
   const [dynamicAnswers, setDynamicAnswers] = useState<Record<string, any>>({});
   const [dynamicErrors, setDynamicErrors] = useState<Record<string, string>>({});
+  const [uploadedFiles, setUploadedFiles] = useState<FileUploadInfo[]>([]);
+  const uploadedFilesRef = useRef<FileUploadInfo[]>([]);
+
+  useEffect(() => {
+    uploadedFilesRef.current = uploadedFiles;
+  }, [uploadedFiles]);
 
   useEffect(() => {
     if (show) {
@@ -42,6 +51,47 @@ export const WebEventRegistrationModal: React.FC<WebEventRegistrationModalProps>
       };
     }
   }, [show]);
+
+  const handleClose = () => {
+    // If there are uploaded files in this session that haven't been submitted, delete them from Cloudinary
+    if (uploadedFilesRef.current.length > 0) {
+      deleteEventRegistrationFile({ files: uploadedFilesRef.current }).catch((err) =>
+        console.error("Cleanup on modal close failed:", err)
+      );
+      setUploadedFiles([]);
+      uploadedFilesRef.current = [];
+    }
+    setDynamicAnswers({});
+    setFormData({});
+    setTouchedFields(new Set());
+    setFormErrors({});
+    setDynamicErrors({});
+    onClose();
+  };
+
+  // Handle escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && show) {
+        handleClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [show]);
+
+  // Clean up if user closes browser tab or navigates away before submitting
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (uploadedFilesRef.current.length > 0) {
+        const payload = JSON.stringify({ files: uploadedFilesRef.current });
+        const blob = new Blob([payload], { type: "application/json" });
+        navigator.sendBeacon?.("/api/events/delete-file", blob);
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, []);
 
   if (!show || !selectedEvent) return null;
 
@@ -94,7 +144,14 @@ export const WebEventRegistrationModal: React.FC<WebEventRegistrationModalProps>
       answers: answersMap,
     };
 
-    await onSubmit(payload);
+    try {
+      await onSubmit(payload);
+      // On successful submission, files are retained in Cloudinary
+      setUploadedFiles([]);
+      uploadedFilesRef.current = [];
+    } catch (err) {
+      throw err;
+    }
   };
 
   const handleLegacySubmit = async (e: React.FormEvent) => {
@@ -162,110 +219,129 @@ export const WebEventRegistrationModal: React.FC<WebEventRegistrationModalProps>
         role="dialog"
         aria-modal="true"
         aria-labelledby="reg-title"
+        onClick={handleClose}
       >
         <m.div
           className="reg-modal-content"
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.8, opacity: 0 }}
+          onClick={(e) => e.stopPropagation()}
         >
-          <button
-            className="modal-close-btn"
-            onClick={onClose}
-            aria-label="Close registration form"
-          >
-            <FaTimes />
-          </button>
-          <h2 id="reg-title" className="reg-title">
-            Event Registration
-          </h2>
+          {/* Static Modal Header */}
+          <div className="reg-modal-header">
+            <h2 id="reg-title" className="reg-title">
+              Event Registration
+            </h2>
+            <button
+              className="modal-close-btn"
+              onClick={handleClose}
+              aria-label="Close registration form"
+            >
+              <FaTimes />
+            </button>
+          </div>
 
-          {useDynamicForm && selectedEvent.customQuestions && selectedEvent.customQuestions.length > 0 ? (
-            <form onSubmit={handleDynamicSubmit} noValidate autoComplete="off">
-              <DynamicFormRenderer
-                questions={selectedEvent.customQuestions}
-                answers={dynamicAnswers}
-                errors={dynamicErrors}
-                eventId={selectedEvent._id}
-                onChange={(questionId, value) => {
-                  setDynamicAnswers((prev) => ({ ...prev, [questionId]: value }));
-                  if (dynamicErrors[questionId]) {
-                    setDynamicErrors((prev) => {
-                      const next = { ...prev };
-                      delete next[questionId];
-                      return next;
-                    });
-                  }
-                }}
-                disabled={isSubmitting}
-              />
-              <button type="submit" className="btn-submit-reg mt-3" disabled={isSubmitting}>
-                <FaPaperPlane />
-                {isSubmitting ? "Submitting..." : "Submit Registration"}
-              </button>
-            </form>
-          ) : (
-            <form onSubmit={handleLegacySubmit} noValidate autoComplete="off">
-              {selectedEvent.registrationQuestions?.map((question, idx) => {
-                const error = formErrors[question];
-                const isTouched = touchedFields.has(question);
-                const isDateQ = /date|dob|birth/i.test(question);
-                const isTimeQ = /time/i.test(question);
+          {/* Scrollable Modal Body */}
+          <div className="reg-modal-body">
+            {useDynamicForm && selectedEvent.customQuestions && selectedEvent.customQuestions.length > 0 ? (
+              <form onSubmit={handleDynamicSubmit} noValidate autoComplete="off">
+                <DynamicFormRenderer
+                  questions={selectedEvent.customQuestions}
+                  answers={dynamicAnswers}
+                  errors={dynamicErrors}
+                  eventId={selectedEvent._id}
+                  onFileUpload={(info) => {
+                    setUploadedFiles((prev) => [
+                      ...prev.filter((f) => f.url !== info.url),
+                      info,
+                    ]);
+                  }}
+                  onFileRemove={(info) => {
+                    setUploadedFiles((prev) =>
+                      prev.filter((f) => f.url !== info.url)
+                    );
+                  }}
+                  onChange={(questionId, value) => {
+                    setDynamicAnswers((prev) => ({ ...prev, [questionId]: value }));
+                    if (dynamicErrors[questionId]) {
+                      setDynamicErrors((prev) => {
+                        const next = { ...prev };
+                        delete next[questionId];
+                        return next;
+                      });
+                    }
+                  }}
+                  disabled={isSubmitting}
+                />
+                <button type="submit" className="btn-submit-reg mt-3" disabled={isSubmitting}>
+                  <FaPaperPlane />
+                  {isSubmitting ? "Submitting..." : "Submit Registration"}
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={handleLegacySubmit} noValidate autoComplete="off">
+                {selectedEvent.registrationQuestions?.map((question, idx) => {
+                  const error = formErrors[question];
+                  const isTouched = touchedFields.has(question);
+                  const isDateQ = /date|dob|birth/i.test(question);
+                  const isTimeQ = /time/i.test(question);
 
-                return (
-                  <div key={idx} className="reg-form-group">
-                    <label className="reg-label" htmlFor={`field-${idx}`}>
-                      {question} *
-                    </label>
-                    {isDateQ ? (
-                      <CustomDatePicker
-                        value={formData[question] || ""}
-                        onChange={(val) => {
-                          setFormData((prev) => ({ ...prev, [question]: val }));
-                          setTouchedFields((prev) => new Set(prev).add(question));
-                        }}
-                        isInvalid={isTouched && !!error}
-                        placeholder={`Select ${question}`}
-                        disabled={isSubmitting}
-                      />
-                    ) : isTimeQ ? (
-                      <CustomTimePicker
-                        value={formData[question] || ""}
-                        onChange={(val) => {
-                          setFormData((prev) => ({ ...prev, [question]: val }));
-                          setTouchedFields((prev) => new Set(prev).add(question));
-                        }}
-                        isInvalid={isTouched && !!error}
-                        placeholder={`Select ${question}`}
-                        disabled={isSubmitting}
-                      />
-                    ) : (
-                      <input
-                        id={`field-${idx}`}
-                        type="text"
-                        className={`reg-input ${isTouched && error ? "reg-input-error" : ""}`}
-                        value={formData[question] || ""}
-                        onChange={(e) =>
-                          setFormData((prev) => ({ ...prev, [question]: e.target.value }))
-                        }
-                        onBlur={() => setTouchedFields((prev) => new Set(prev).add(question))}
-                      />
-                    )}
-                    {isTouched && error && (
-                      <div className="reg-error-message">
-                        <FaExclamationTriangle size={12} />
-                        {error}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-              <button type="submit" className="btn-submit-reg" disabled={isSubmitting}>
-                <FaPaperPlane />
-                {isSubmitting ? "Submitting..." : "Submit Registration"}
-              </button>
-            </form>
-          )}
+                  return (
+                    <div key={idx} className="reg-form-group">
+                      <label className="reg-label" htmlFor={`field-${idx}`}>
+                        {question} *
+                      </label>
+                      {isDateQ ? (
+                        <CustomDatePicker
+                          value={formData[question] || ""}
+                          onChange={(val) => {
+                            setFormData((prev) => ({ ...prev, [question]: val }));
+                            setTouchedFields((prev) => new Set(prev).add(question));
+                          }}
+                          isInvalid={isTouched && !!error}
+                          placeholder={`Select ${question}`}
+                          disabled={isSubmitting}
+                        />
+                      ) : isTimeQ ? (
+                        <CustomTimePicker
+                          value={formData[question] || ""}
+                          onChange={(val) => {
+                            setFormData((prev) => ({ ...prev, [question]: val }));
+                            setTouchedFields((prev) => new Set(prev).add(question));
+                          }}
+                          isInvalid={isTouched && !!error}
+                          placeholder={`Select ${question}`}
+                          disabled={isSubmitting}
+                        />
+                      ) : (
+                        <input
+                          id={`field-${idx}`}
+                          type="text"
+                          className={`reg-input ${isTouched && error ? "reg-input-error" : ""}`}
+                          value={formData[question] || ""}
+                          onChange={(e) =>
+                            setFormData((prev) => ({ ...prev, [question]: e.target.value }))
+                          }
+                          onBlur={() => setTouchedFields((prev) => new Set(prev).add(question))}
+                        />
+                      )}
+                      {isTouched && error && (
+                        <div className="reg-error-message">
+                          <FaExclamationTriangle size={12} />
+                          {error}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+                <button type="submit" className="btn-submit-reg" disabled={isSubmitting}>
+                  <FaPaperPlane />
+                  {isSubmitting ? "Submitting..." : "Submit Registration"}
+                </button>
+              </form>
+            )}
+          </div>
         </m.div>
       </m.div>
     </AnimatePresence>,

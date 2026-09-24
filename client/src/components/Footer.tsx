@@ -1,11 +1,13 @@
 import React from 'react';
 
 const CopyrightFooter: React.FC = () => {
+  const currentYear = new Date().getFullYear();
+
   return (
     <>
       <div className='cpoy-cont'>
         <div className='Copyrights'>
-          <h2>© 2025 SIST ACM SIGAI STUDENT CHAPTER</h2>
+          <h2>© {currentYear} SIST ACM SIGAI STUDENT CHAPTER</h2>
           <p>
             Website developed by ADITYA SAI TEJA B |
             Designed by MANISRI VENKATESH |

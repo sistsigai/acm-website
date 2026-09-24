@@ -21,7 +21,7 @@ export const DashboardEngagementMetrics: React.FC<DashboardEngagementMetricsProp
 
       <div className="row g-4">
         {/* Registration Progress */}
-        <div className="col-12 col-md-6">
+        <div className="col-12 col-md-4">
           <div className="border border-secondary border-opacity-25 rounded-3 p-3">
             <div className="d-flex justify-content-between align-items-center mb-2">
               <h6 className="text-white m-0">Event Registrations Today</h6>
@@ -62,7 +62,7 @@ export const DashboardEngagementMetrics: React.FC<DashboardEngagementMetricsProp
         </div>
 
         {/* Most Popular Event */}
-        <div className="col-12 col-md-6">
+        <div className="col-12 col-md-4">
           <div className="border border-secondary border-opacity-25 rounded-3 p-3">
             <h6 className="text-white mb-2">Most Popular Event</h6>
             {topPerformers.topEvent ? (
@@ -82,7 +82,7 @@ export const DashboardEngagementMetrics: React.FC<DashboardEngagementMetricsProp
         </div>
 
         {/* Member Growth Rate */}
-        <div className="col-12 col-md-6">
+        <div className="col-12 col-md-4">
           <div className="border border-secondary border-opacity-25 rounded-3 p-3">
             <h6 className="text-white mb-2">Member Growth Rate</h6>
             <div className="d-flex align-items-center gap-3">
@@ -105,26 +105,6 @@ export const DashboardEngagementMetrics: React.FC<DashboardEngagementMetricsProp
                 <small className="text-secondary">vs yesterday</small>
               </div>
             </div>
-          </div>
-        </div>
-
-        {/* Top Recruitment */}
-        <div className="col-12 col-md-6">
-          <div className="border border-secondary border-opacity-25 rounded-3 p-3">
-            <h6 className="text-white mb-2">Top Recruitment</h6>
-            {topPerformers.topRecruitment ? (
-              <>
-                <h5 className="text-white fw-bold">{topPerformers.topRecruitment.title}</h5>
-                <div className="d-flex align-items-center gap-3">
-                  <span className="badge bg-warning text-dark">
-                    {topPerformers.topRecruitment.applicants} applicants
-                  </span>
-                  <small className="text-secondary">Most applied</small>
-                </div>
-              </>
-            ) : (
-              <p className="text-secondary m-0">No recruitment data</p>
-            )}
           </div>
         </div>
       </div>

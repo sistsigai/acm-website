@@ -486,6 +486,7 @@ export const EventStudioModal: React.FC<EventStudioModalProps> = ({
                           value={endTime}
                           placeholder="12:30 PM"
                           onChange={onEndTimeChange}
+                          align="right"
                         />
                       </div>
                     </div>

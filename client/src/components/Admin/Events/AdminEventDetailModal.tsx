@@ -11,6 +11,7 @@ import {
   FaEye,
   FaEyeSlash,
   FaListUl,
+  FaQrcode,
 } from "react-icons/fa";
 import { formatDateDDMMYYYY, type AdminEvent } from "./EventCard";
 
@@ -19,6 +20,7 @@ interface AdminEventDetailModalProps {
   onClose: () => void;
   onEdit: (event: AdminEvent) => void;
   onToggleDisplay: (id: string, currentDisplay: boolean) => void;
+  onOpenAttendees?: (event: AdminEvent) => void;
 }
 
 export const AdminEventDetailModal: React.FC<AdminEventDetailModalProps> = ({
@@ -26,6 +28,7 @@ export const AdminEventDetailModal: React.FC<AdminEventDetailModalProps> = ({
   onClose,
   onEdit,
   onToggleDisplay,
+  onOpenAttendees,
 }) => {
   if (!selectedEvent) return null;
 
@@ -260,6 +263,21 @@ export const AdminEventDetailModal: React.FC<AdminEventDetailModalProps> = ({
             </div>
 
             <div className="d-flex align-items-center" style={{ gap: "10px" }}>
+              {onOpenAttendees && (
+                <button
+                  type="button"
+                  className="btn btn-outline-info rounded-2 px-3 py-2 fw-medium d-inline-flex align-items-center"
+                  style={{ fontSize: "0.85rem", gap: "8px", borderColor: "rgba(56, 189, 248, 0.4)", color: "#38bdf8" }}
+                  onClick={() => {
+                    onClose();
+                    onOpenAttendees(selectedEvent);
+                  }}
+                >
+                  <FaQrcode size={14} />
+                  <span>Attendees & Scanner</span>
+                </button>
+              )}
+
               <button
                 type="button"
                 className="btn btn-outline-light rounded-2 px-3 py-2 fw-medium d-inline-flex align-items-center"
