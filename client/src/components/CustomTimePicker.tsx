@@ -6,6 +6,7 @@ interface CustomTimePickerProps {
   isInvalid?: boolean;
   placeholder?: string;
   disabled?: boolean;
+  placement?: "auto" | "top" | "bottom";
 }
 
 const HOURS = ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"];
@@ -17,9 +18,26 @@ export const CustomTimePicker: React.FC<CustomTimePickerProps> = ({
   isInvalid,
   placeholder = "Select Time",
   disabled = false,
+  placement = "auto",
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [dropUp, setDropUp] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Determine placement (top vs bottom)
+  useEffect(() => {
+    if (isOpen && containerRef.current) {
+      if (placement === "top") {
+        setDropUp(true);
+      } else if (placement === "bottom") {
+        setDropUp(false);
+      } else {
+        const rect = containerRef.current.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom;
+        setDropUp(spaceBelow < 290 && rect.top > 250);
+      }
+    }
+  }, [isOpen, placement]);
 
   // Parse current value
   const parseTime = (val: string) => {
@@ -126,11 +144,11 @@ export const CustomTimePicker: React.FC<CustomTimePickerProps> = ({
       {/* Simplified Dropdown Popover */}
       {isOpen && (
         <div
-          className="position-absolute mt-1 p-3 rounded-3 shadow-lg"
+          className="position-absolute p-3 rounded-3 shadow-lg"
           style={{
-            top: "100%",
+            [dropUp ? "bottom" : "top"]: dropUp ? "calc(100% + 6px)" : "calc(100% + 4px)",
             left: 0,
-            zIndex: 1065,
+            zIndex: 2000,
             width: "280px",
             background: "linear-gradient(165deg, #090d16 0%, #030712 100%)",
             border: "1px solid rgba(56, 189, 248, 0.25)",

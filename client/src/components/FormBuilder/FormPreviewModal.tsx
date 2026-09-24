@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import type { IQuestion } from "../../types/formBuilder";
+import { CustomDatePicker } from "../CustomDatePicker";
+import { CustomTimePicker } from "../CustomTimePicker";
 
 interface FormPreviewModalProps {
   title: string;
@@ -367,38 +369,78 @@ const FormPreviewModal: React.FC<FormPreviewModalProps> = ({
 
                         {/* File Upload */}
                         {q.type === "file" && (
-                          <div
-                            className="p-4 rounded-3 text-center cursor-pointer transition-all"
-                            style={{
-                              background: "rgba(15, 23, 42, 0.5)",
-                              border: "1px dashed rgba(99, 102, 241, 0.4)",
-                            }}
-                          >
-                            <i className="bi bi-cloud-arrow-up display-6 mb-2 d-block" style={{ color: "#818cf8" }}></i>
-                            <div className="small text-light fw-medium mb-1">Click to browse or drag & drop file here</div>
-                            <div className="text-secondary" style={{ fontSize: "0.75rem" }}>
-                              Max file size: {q.maxFileSize || 5} MB (PDF, DOCX, JPG, PNG)
+                          answers[q.id] ? (
+                            <div className="dynamic-file-uploaded-card">
+                              <div className="d-flex align-items-center gap-3 overflow-hidden">
+                                <div className="dynamic-file-icon flex-shrink-0">
+                                  <i className="bi bi-file-earmark-check-fill fs-3 text-info"></i>
+                                </div>
+                                <div className="d-flex flex-column overflow-hidden">
+                                  <span className="text-white fw-semibold text-truncate small">
+                                    {answers[q.id]}
+                                  </span>
+                                  <span
+                                    className="badge bg-success-subtle text-success border border-success-subtle d-inline-block mt-0.5"
+                                    style={{ fontSize: "0.7rem", padding: "2px 7px", width: "fit-content" }}
+                                  >
+                                    <i className="bi bi-check-circle-fill me-1"></i> Simulated Upload
+                                  </span>
+                                </div>
+                              </div>
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-outline-danger flex-shrink-0 d-inline-flex align-items-center gap-1 ms-2"
+                                style={{ fontSize: "0.75rem", padding: "4px 10px", borderRadius: "8px" }}
+                                onClick={() => handleInputChange(q.id, "")}
+                              >
+                                <i className="bi bi-trash3"></i>
+                                <span>Remove</span>
+                              </button>
                             </div>
-                          </div>
+                          ) : (
+                            <label
+                              className="dynamic-file-dropzone d-block mb-0 cursor-pointer"
+                              style={{ border: "1.5px dashed rgba(99, 102, 241, 0.4)" }}
+                            >
+                              <input
+                                type="file"
+                                style={{ display: "none" }}
+                                onChange={(e) => {
+                                  if (e.target.files && e.target.files.length > 0) {
+                                    handleInputChange(q.id, e.target.files[0].name);
+                                  }
+                                }}
+                              />
+                              <div className="d-flex flex-column align-items-center gap-1 py-1">
+                                <i className="bi bi-cloud-arrow-up fs-2 text-primary" style={{ color: "#818cf8" }}></i>
+                                <span className="text-white fw-semibold small">
+                                  Click to browse or drag & drop file here
+                                </span>
+                                <span className="text-secondary" style={{ fontSize: "0.74rem" }}>
+                                  Formats: {(q.allowedFormats || ["PDF", "DOCX", "JPG", "PNG"]).map((f) => f.toUpperCase()).join(", ")} (Max: {q.maxFileSize || 5} MB)
+                                </span>
+                              </div>
+                            </label>
+                          )
                         )}
 
                         {/* Date */}
                         {q.type === "date" && (
-                          <input
-                            type="date"
-                            className="form-control form-control-glass"
+                          <CustomDatePicker
                             value={answers[q.id] || ""}
-                            onChange={(e) => handleInputChange(q.id, e.target.value)}
+                            onChange={(dateStr) => handleInputChange(q.id, dateStr)}
+                            isInvalid={!!errors[q.id]}
+                            placeholder={q.placeholder || "Select Date"}
                           />
                         )}
 
                         {/* Time */}
                         {q.type === "time" && (
-                          <input
-                            type="time"
-                            className="form-control form-control-glass"
+                          <CustomTimePicker
                             value={answers[q.id] || ""}
-                            onChange={(e) => handleInputChange(q.id, e.target.value)}
+                            onChange={(timeStr) => handleInputChange(q.id, timeStr)}
+                            isInvalid={!!errors[q.id]}
+                            placeholder={q.placeholder || "Select Time"}
                           />
                         )}
 

@@ -1075,6 +1075,51 @@ input[type="number"]::-webkit-outer-spin-button:hover {
   box-shadow: 0 0 8px rgba(99, 102, 241, 0.4);
 }
 
+/* --- DYNAMIC FORM FILE UPLOADER --- */
+.dynamic-file-upload-wrapper {
+  width: 100%;
+}
+
+.dynamic-file-dropzone {
+  border: 1.5px dashed rgba(56, 189, 248, 0.35);
+  background: rgba(15, 23, 42, 0.45);
+  border-radius: 12px;
+  padding: 22px 18px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  user-select: none;
+}
+
+.dynamic-file-dropzone:hover {
+  background: rgba(56, 189, 248, 0.08);
+  border-color: #38bdf8;
+  transform: translateY(-1px);
+}
+
+.dynamic-file-dropzone.dragging {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: #38bdf8;
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.25);
+}
+
+.dynamic-file-dropzone.is-invalid {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.dynamic-file-uploaded-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  border-radius: 12px;
+  padding: 14px 18px;
+  gap: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+}
+
 /* --------------------------------------------------------------------------
    8. WEBSITE SHARED MODALS & INTERACTION STYLES
    -------------------------------------------------------------------------- */
@@ -2135,26 +2180,48 @@ input[type="number"]::-webkit-outer-spin-button:hover {
   display: flex;
   flex-direction: column;
   gap: 22px;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(56, 189, 248, 0.5) rgba(15, 23, 42, 0.5);
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
 }
 
 .web-event-modal-details-scroll::-webkit-scrollbar {
-  width: 7px;
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
 }
 
-.web-event-modal-details-scroll::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.5);
-  border-radius: 4px;
+/* Hide scrollbar line completely from all modals */
+.web-event-modal-content,
+.web-event-modal-details-col,
+.web-event-modal-details-scroll,
+.reg-modal-content,
+.modal-body,
+.modal-content,
+.admin-modal-body,
+.studio-modal-body,
+[class*="modal-body"],
+[class*="modal-content"],
+[class*="modal-scroll"] {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
 }
 
-.web-event-modal-details-scroll::-webkit-scrollbar-thumb {
-  background: rgba(56, 189, 248, 0.45);
-  border-radius: 4px;
-}
-
-.web-event-modal-details-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(56, 189, 248, 0.8);
+.web-event-modal-content::-webkit-scrollbar,
+.web-event-modal-details-col::-webkit-scrollbar,
+.web-event-modal-details-scroll::-webkit-scrollbar,
+.reg-modal-content::-webkit-scrollbar,
+.modal-body::-webkit-scrollbar,
+.modal-content::-webkit-scrollbar,
+.admin-modal-body::-webkit-scrollbar,
+.studio-modal-body::-webkit-scrollbar,
+[class*="modal-body"]::-webkit-scrollbar,
+[class*="modal-content"]::-webkit-scrollbar,
+[class*="modal-scroll"]::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
 }
 
 .web-modal-header {

@@ -192,7 +192,7 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
           style={{
             [dropUp ? "bottom" : "top"]: dropUp ? "calc(100% + 6px)" : "calc(100% + 4px)",
             left: 0,
-            zIndex: 1065,
+            zIndex: 2000,
             width: "280px",
             background: "linear-gradient(165deg, #090d16 0%, #030712 100%)",
             border: "1px solid rgba(56, 189, 248, 0.25)",

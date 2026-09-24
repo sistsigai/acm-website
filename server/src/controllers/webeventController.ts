@@ -5,6 +5,7 @@ import Registration from "../models/Registration";
 import QRCode from "qrcode";
 import { sendEventMail } from "../utils/sendMail";
 import cloudinary from "../utils/cloudinary";
+import streamifier from "streamifier";
 
 // --- VALIDATION TYPES AND RULES ---
 
@@ -598,6 +599,84 @@ export const registerForEvent = async (
       success: false,
       message: "Internal server error. Please try again later.",
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+/* ---------------- UPLOAD REGISTRATION FILE TO CLOUDINARY ---------------- */
+export const uploadEventRegistrationFile = async (
+  req: Request & { file?: any },
+  res: Response
+) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "No file provided",
+      });
+    }
+
+    const { eventId } = req.body;
+    if (!eventId || !mongoose.Types.ObjectId.isValid(eventId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Valid Event ID is required",
+      });
+    }
+
+    const event = await Event.findById(eventId).lean();
+    if (!event) {
+      return res.status(404).json({
+        success: false,
+        message: "Event not found",
+      });
+    }
+
+    // Build hierarchical folder: files/<eventName>
+    const sanitizedEventName = (event.name || "Event")
+      .trim()
+      .replace(/[^a-zA-Z0-9_\-\s]/g, "")
+      .replace(/\s+/g, "_");
+    const cloudinaryFolder = `files/${sanitizedEventName}`;
+
+    // Upload to Cloudinary using streamifier with resource_type: "auto"
+    const uploadResult = await new Promise<{ url: string; public_id: string }>(
+      (resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          {
+            folder: cloudinaryFolder,
+            resource_type: "auto",
+            use_filename: true,
+            unique_filename: true,
+          },
+          (error, result) => {
+            if (error || !result) return reject(error);
+            resolve({
+              url: result.secure_url,
+              public_id: result.public_id,
+            });
+          }
+        );
+
+        streamifier.createReadStream(req.file.buffer).pipe(stream);
+      }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "File uploaded successfully to event folder",
+      url: uploadResult.url,
+      public_id: uploadResult.public_id,
+      originalName: req.file.originalname,
+      size: req.file.size,
+      folder: cloudinaryFolder,
+    });
+  } catch (error: any) {
+    console.error("❌ Registration file upload error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to upload file to Cloudinary",
+      error: error.message,
     });
   }
 };

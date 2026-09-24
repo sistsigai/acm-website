@@ -79,3 +79,54 @@ export const submitEventRegistration = async (
     throw new Error("Unexpected error during registration");
   }
 };
+
+/* ---------------- UPLOAD REGISTRATION FILE ---------------- */
+export interface UploadFileResponse {
+  success: boolean;
+  message: string;
+  url: string;
+  public_id: string;
+  originalName: string;
+  size: number;
+  folder: string;
+}
+
+export const uploadEventRegistrationFile = async (
+  eventId: string,
+  file: File,
+  onProgress?: (progressPercent: number) => void
+): Promise<UploadFileResponse> => {
+  try {
+    const formData = new FormData();
+    formData.append("eventId", eventId);
+    formData.append("file", file);
+
+    const response = await axiosInstance.post<UploadFileResponse>(
+      "/events/upload-file",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+        onUploadProgress: (progressEvent) => {
+          if (progressEvent.total && onProgress) {
+            const percentCompleted = Math.round(
+              (progressEvent.loaded * 100) / progressEvent.total
+            );
+            onProgress(percentCompleted);
+          }
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(
+        error.response?.data?.message ||
+          "File upload failed. Please try again."
+      );
+    }
+    throw new Error("Unexpected error during file upload");
+  }
+};

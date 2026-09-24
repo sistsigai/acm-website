@@ -3,6 +3,8 @@ import { createPortal } from "react-dom";
 import { motion as m, AnimatePresence } from "framer-motion";
 import { FaTimes, FaPaperPlane, FaExclamationTriangle } from "react-icons/fa";
 import DynamicFormRenderer from "../../FormRenderer/DynamicFormRenderer";
+import { CustomDatePicker } from "../../CustomDatePicker";
+import { CustomTimePicker } from "../../CustomTimePicker";
 import type { ExtendedEventData } from "./WebEventCard";
 import type { EventRegistrationPayload } from "../../../services/website/webeventService";
 
@@ -184,6 +186,7 @@ export const WebEventRegistrationModal: React.FC<WebEventRegistrationModalProps>
                 questions={selectedEvent.customQuestions}
                 answers={dynamicAnswers}
                 errors={dynamicErrors}
+                eventId={selectedEvent._id}
                 onChange={(questionId, value) => {
                   setDynamicAnswers((prev) => ({ ...prev, [questionId]: value }));
                   if (dynamicErrors[questionId]) {
@@ -206,21 +209,48 @@ export const WebEventRegistrationModal: React.FC<WebEventRegistrationModalProps>
               {selectedEvent.registrationQuestions?.map((question, idx) => {
                 const error = formErrors[question];
                 const isTouched = touchedFields.has(question);
+                const isDateQ = /date|dob|birth/i.test(question);
+                const isTimeQ = /time/i.test(question);
+
                 return (
                   <div key={idx} className="reg-form-group">
                     <label className="reg-label" htmlFor={`field-${idx}`}>
                       {question} *
                     </label>
-                    <input
-                      id={`field-${idx}`}
-                      type="text"
-                      className={`reg-input ${isTouched && error ? "reg-input-error" : ""}`}
-                      value={formData[question] || ""}
-                      onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, [question]: e.target.value }))
-                      }
-                      onBlur={() => setTouchedFields((prev) => new Set(prev).add(question))}
-                    />
+                    {isDateQ ? (
+                      <CustomDatePicker
+                        value={formData[question] || ""}
+                        onChange={(val) => {
+                          setFormData((prev) => ({ ...prev, [question]: val }));
+                          setTouchedFields((prev) => new Set(prev).add(question));
+                        }}
+                        isInvalid={isTouched && !!error}
+                        placeholder={`Select ${question}`}
+                        disabled={isSubmitting}
+                      />
+                    ) : isTimeQ ? (
+                      <CustomTimePicker
+                        value={formData[question] || ""}
+                        onChange={(val) => {
+                          setFormData((prev) => ({ ...prev, [question]: val }));
+                          setTouchedFields((prev) => new Set(prev).add(question));
+                        }}
+                        isInvalid={isTouched && !!error}
+                        placeholder={`Select ${question}`}
+                        disabled={isSubmitting}
+                      />
+                    ) : (
+                      <input
+                        id={`field-${idx}`}
+                        type="text"
+                        className={`reg-input ${isTouched && error ? "reg-input-error" : ""}`}
+                        value={formData[question] || ""}
+                        onChange={(e) =>
+                          setFormData((prev) => ({ ...prev, [question]: e.target.value }))
+                        }
+                        onBlur={() => setTouchedFields((prev) => new Set(prev).add(question))}
+                      />
+                    )}
                     {isTouched && error && (
                       <div className="reg-error-message">
                         <FaExclamationTriangle size={12} />
