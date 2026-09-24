@@ -294,13 +294,26 @@ export const registerForEvent = async (
 
     // Additional validation: Check if event is closed
     const currentDate = new Date();
-    const eventDateTime = new Date(event.date + ' ' + event.time);
+    
+    // If a custom registration end date is specified, close at end of that date
+    if (event.registrationEndDate) {
+      const regEndDateTime = new Date(`${event.registrationEndDate}T23:59:59`);
+      if (!isNaN(regEndDateTime.getTime()) && currentDate > regEndDateTime) {
+        return res.status(400).json({
+          success: false,
+          message: "Event registration is closed. The registration deadline has passed.",
+        });
+      }
+    } else {
+      const startTimeStr = event.time ? event.time.split(/[-–—]|to/i)[0]?.trim() : "";
+      const eventDateTime = new Date(event.date + ' ' + startTimeStr);
 
-    if (eventDateTime < currentDate) {
-      return res.status(400).json({
-        success: false,
-        message: "Event registration is closed. The event has already passed.",
-      });
+      if (!isNaN(eventDateTime.getTime()) && eventDateTime < currentDate) {
+        return res.status(400).json({
+          success: false,
+          message: "Event registration is closed. The event has already passed.",
+        });
+      }
     }
 
     /* ---------------- DUPLICATE CHECK ---------------- */

@@ -13,12 +13,18 @@ export interface EventData {
   name: string;
   date: string;
   time: string;
+  registrationEndDate?: string;
   venue: string;
   description: string;
+  thumbnailUrl?: string;
+  thumbnailPublicId?: string;
+  posterUrl?: string;
+  posterPublicId?: string;
   contactPersons: ContactPerson[];
   registrationQuestions: string[];
   customQuestions?: IQuestion[];
   whatsappGroupLink?: string;
+  display?: boolean;
 }
 
 export interface EventRegistrationPayload {

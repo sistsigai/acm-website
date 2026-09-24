@@ -37,6 +37,7 @@ interface ValidationData {
   name?: string;
   date?: string;
   time?: string;
+  registrationEndDate?: string;
   venue?: string;
   description?: string;
   contactPersons?: any[];
@@ -70,13 +71,34 @@ const validateDate = (date: string): string | null => {
   return null;
 };
 
-const validateTime = (time: string): string | null => {
-  if (!time) return "Event time is required";
+const validateRegistrationEndDate = (regEndDate?: string, eventDate?: string): string | null => {
+  if (!regEndDate || !regEndDate.trim()) return "Registration deadline is required";
   
-  // Validate HH:MM AM/PM format
-  const timeRegex = /^(0[1-9]|1[0-2]):([0-5][0-9]) (AM|PM)$/;
-  if (!timeRegex.test(time.trim())) {
-    return "Time must be in HH:MM AM/PM format (e.g., 02:30 PM)";
+  const selectedRegEnd = new Date(`${regEndDate}T00:00:00`);
+  if (isNaN(selectedRegEnd.getTime())) {
+    return "Invalid registration deadline format";
+  }
+  
+  if (eventDate) {
+    const selectedEventDate = new Date(`${eventDate}T00:00:00`);
+    if (!isNaN(selectedEventDate.getTime()) && selectedRegEnd.getTime() > selectedEventDate.getTime()) {
+      return "Registration deadline cannot be after the event date";
+    }
+  }
+  
+  return null;
+};
+
+const validateTime = (time: string): string | null => {
+  if (!time || !time.trim()) return "Event time is required";
+  
+  const trimmed = time.trim();
+  // Support single time (e.g. "02:30 PM", "2:30 PM") and time ranges (e.g. "02:30 PM - 04:30 PM", "2:30 PM to 4:30 PM")
+  const singleTimeRegex = /^(0?[1-9]|1[0-2]):([0-5][0-9])\s*(AM|PM)$/i;
+  const timeRangeRegex = /^(0?[1-9]|1[0-2]):([0-5][0-9])\s*(AM|PM)\s*(-|–|—|to)\s*(0?[1-9]|1[0-2]):([0-5][0-9])\s*(AM|PM)$/i;
+
+  if (!singleTimeRegex.test(trimmed) && !timeRangeRegex.test(trimmed)) {
+    return "Time must be in HH:MM AM/PM format (e.g., 02:30 PM or 02:30 PM - 04:30 PM)";
   }
   
   return null;
@@ -137,17 +159,6 @@ const validateContactPersons = (contactPersons: any[]): string[] => {
   return errors;
 };
 
-// Required registration questions (must be present and unchanged)
-const REQUIRED_REGISTRATION_QUESTIONS = [
-  "Name",
-  "Register Number",
-  "Department",
-  "Year",
-  "Section",
-  "Email ID",
-  "Mobile Number"
-];
-
 const validateRegistrationQuestions = (questions: any[]): string[] => {
   const errors: string[] = [];
   
@@ -155,26 +166,13 @@ const validateRegistrationQuestions = (questions: any[]): string[] => {
     return ["Registration questions must be an array"];
   }
   
-  // Check if all required questions are present
-  const hasAllRequiredQuestions = REQUIRED_REGISTRATION_QUESTIONS.every(
-    (requiredQuestion, index) => questions[index] === requiredQuestion
-  );
-  
-  if (!hasAllRequiredQuestions) {
-    errors.push("Required registration questions cannot be modified or removed");
-  }
-  
-  // Validate all questions (required + custom)
+  // Validate all questions
   questions.forEach((question: any, index: number) => {
-    if (!question || !question.toString().trim()) {
+    const qText = typeof question === "object" && question !== null ? question.question : String(question || "");
+    if (!qText || !qText.toString().trim()) {
       errors[index] = `Question ${index + 1} cannot be empty`;
-    } else if (question.toString().length > 200) {
+    } else if (qText.toString().length > 200) {
       errors[index] = `Question ${index + 1} must be less than 200 characters`;
-    }
-    
-    // For custom questions (after required ones), validate minimum length
-    if (index >= REQUIRED_REGISTRATION_QUESTIONS.length && question.toString().length < 3) {
-      errors[index] = `Custom question ${index - REQUIRED_REGISTRATION_QUESTIONS.length + 1} must be at least 3 characters`;
     }
   });
   
@@ -219,6 +217,14 @@ const validateAllFields = (data: ValidationData, isUpdate: boolean = false): { e
     if (dateError) {
       errors.push(dateError);
       fieldErrors.date = dateError;
+    }
+  }
+  
+  if (!isUpdate || data.registrationEndDate !== undefined) {
+    const regEndError = validateRegistrationEndDate(data.registrationEndDate, data.date);
+    if (regEndError) {
+      errors.push(regEndError);
+      fieldErrors.registrationEndDate = regEndError;
     }
   }
   
@@ -345,6 +351,7 @@ export const addEvent = async (req: Request, res: Response): Promise<Response> =
       name,
       date,
       time,
+      registrationEndDate,
       venue,
       description,
       contactPersons,
@@ -362,6 +369,7 @@ export const addEvent = async (req: Request, res: Response): Promise<Response> =
       name,
       date,
       time,
+      registrationEndDate,
       venue,
       description,
       contactPersons,
@@ -378,11 +386,12 @@ export const addEvent = async (req: Request, res: Response): Promise<Response> =
       });
     }
 
-    // Ensure required questions are present
-    const finalRegistrationQuestions = [
-      ...REQUIRED_REGISTRATION_QUESTIONS,
-      ...(registrationQuestions?.slice(REQUIRED_REGISTRATION_QUESTIONS.length) || [])
-    ];
+    // Format registration questions from customQuestions or registrationQuestions
+    const finalRegistrationQuestions = Array.isArray(customQuestions) && customQuestions.length > 0
+      ? customQuestions.map((q: any) => (typeof q === "string" ? q : q.question || "")).filter(Boolean)
+      : Array.isArray(registrationQuestions)
+      ? registrationQuestions.map((q: any) => (typeof q === "string" ? q : q.question || "")).filter(Boolean)
+      : [];
 
     // Format phone numbers with +91 prefix and preserve role
     const formattedContactPersons = (contactPersons || []).map((contact: any) => ({
@@ -395,6 +404,7 @@ export const addEvent = async (req: Request, res: Response): Promise<Response> =
       name: (name || '').trim(),
       date,
       time: (time || '').trim(),
+      registrationEndDate: registrationEndDate?.trim() || null,
       venue: (venue || '').trim(),
       description: (description || '').trim(),
       contactPersons: formattedContactPersons,
@@ -503,6 +513,7 @@ export const updateEvent = async (req: Request, res: Response) => {
       name,
       date,
       time,
+      registrationEndDate,
       venue,
       description,
       contactPersons,
@@ -521,6 +532,7 @@ export const updateEvent = async (req: Request, res: Response) => {
       name: name !== undefined ? name : event.name,
       date: date !== undefined ? date : event.date,
       time: time !== undefined ? time : event.time,
+      registrationEndDate: registrationEndDate !== undefined ? registrationEndDate : (event.registrationEndDate || undefined),
       venue: venue !== undefined ? venue : event.venue,
       description: description !== undefined ? description : event.description,
       contactPersons: contactPersons !== undefined ? contactPersons : event.contactPersons,
@@ -548,6 +560,10 @@ export const updateEvent = async (req: Request, res: Response) => {
     if (time !== undefined) {
       event.time = String(time).trim();
     }
+
+    if (registrationEndDate !== undefined) {
+      event.registrationEndDate = registrationEndDate ? registrationEndDate.trim() : null;
+    }
     
     if (venue !== undefined) event.venue = venue.trim();
     if (description !== undefined) event.description = description.trim();
@@ -571,23 +587,16 @@ export const updateEvent = async (req: Request, res: Response) => {
     }
 
     if (registrationQuestions !== undefined) {
-      // Ensure required questions are not modified
-      const hasAllRequiredQuestions = REQUIRED_REGISTRATION_QUESTIONS.every(
-        (requiredQuestion, index) => registrationQuestions[index] === requiredQuestion
-      );
-      
-      if (!hasAllRequiredQuestions) {
-        return res.status(400).json({
-          success: false,
-          message: "Required registration questions cannot be modified or removed"
-        });
-      }
-      
-      event.registrationQuestions = registrationQuestions;
+      event.registrationQuestions = Array.isArray(registrationQuestions)
+        ? registrationQuestions.map((q: any) => (typeof q === "string" ? q : q.question || "")).filter(Boolean)
+        : [];
     }
 
     if (customQuestions !== undefined) {
       event.customQuestions = Array.isArray(customQuestions) ? customQuestions : [];
+      if (registrationQuestions === undefined) {
+        event.registrationQuestions = event.customQuestions.map((q: any) => q.question || "").filter(Boolean);
+      }
     }
 
     if (whatsappGroupLink !== undefined) {

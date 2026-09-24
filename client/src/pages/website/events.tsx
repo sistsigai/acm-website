@@ -7,8 +7,7 @@ import {
 } from "../../services/website/webeventService";
 import { GlobalLoader } from "../../components/GlobalLoader";
 import { FloatingOrb } from "../../components/StatusMessage";
-import EventFilterPills, { type EventFilterType } from "../../components/Website/Events/EventFilterPills";
-import WebEventCard, { parseEventDateTime, type ExtendedEventData } from "../../components/Website/Events/WebEventCard";
+import WebEventCard, { type ExtendedEventData } from "../../components/Website/Events/WebEventCard";
 import WebEventDetailModal from "../../components/Website/Events/WebEventDetailModal";
 import WebEventRegistrationModal from "../../components/Website/Events/WebEventRegistrationModal";
 
@@ -21,7 +20,6 @@ const Events: React.FC = () => {
   const [events, setEvents] = useState<ExtendedEventData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<EventFilterType>("all");
   const [selectedEvent, setSelectedEvent] = useState<ExtendedEventData | null>(null);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [globalLoading, setGlobalLoading] = useState(false);
@@ -69,20 +67,6 @@ const Events: React.FC = () => {
     fetchEvents();
   }, []);
 
-  // Filter calculations
-  const now = new Date();
-  const upcomingEvents = events.filter((e) => {
-    const dt = parseEventDateTime(e.date, e.time);
-    return !dt || dt >= now;
-  });
-  const pastEvents = events.filter((e) => {
-    const dt = parseEventDateTime(e.date, e.time);
-    return dt && dt < now;
-  });
-
-  const displayedEvents =
-    filter === "upcoming" ? upcomingEvents : filter === "past" ? pastEvents : events;
-
   // Handle registration submission
   const handleRegistrationSubmit = async (payload: EventRegistrationPayload) => {
     try {
@@ -104,7 +88,7 @@ const Events: React.FC = () => {
     return (
       <div className="events-page">
         <h1 className="page-title">
-          SIGAI <span className="highlight">EVENT'S HUB</span>
+          SIGAI <span className="highlight">EVENT</span>
         </h1>
         <div className="glitch-container">
           <div className="terminal-subtext">Loading events...</div>
@@ -145,23 +129,10 @@ const Events: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, ease: "easeOut" }}
       >
-        SIGAI <span className="highlight">EVENT'S HUB</span>
+        SIGAI <span className="highlight">EVENTS</span>
       </m.h1>
 
-      {/* Filter Tabs */}
-      {events.length > 0 && (
-        <EventFilterPills
-          filter={filter}
-          counts={{
-            all: events.length,
-            upcoming: upcomingEvents.length,
-            past: pastEvents.length,
-          }}
-          onFilterChange={setFilter}
-        />
-      )}
-
-      {displayedEvents.length === 0 ? (
+      {events.length === 0 ? (
         <m.div className="glitch-container" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <div className="glitch-404">404</div>
           <div className="error-msg">EVENT_DATA_NOT_FOUND</div>
@@ -177,7 +148,7 @@ const Events: React.FC = () => {
           initial="hidden"
           animate="visible"
         >
-          {displayedEvents.map((event) => (
+          {events.map((event) => (
             <WebEventCard
               key={event._id}
               event={event}

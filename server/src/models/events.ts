@@ -31,6 +31,7 @@ export interface EventDocument extends Document {
   name: string;
   date: string;
   time: string;
+  registrationEndDate?: string | null;
   venue: string;
   description: string;
   contactPersons: ContactPerson[];
@@ -86,6 +87,7 @@ const EventSchema = new Schema<EventDocument>(
     name: { type: String, required: true },
     date: { type: String, required: true },
     time: { type: String, required: true },
+    registrationEndDate: { type: String, default: null },
     venue: { type: String, required: true },
     description: { type: String, required: true },
 

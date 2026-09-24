@@ -12,6 +12,7 @@ export interface CreateEventPayload {
   name: string;
   date: string;
   time: string;
+  registrationEndDate?: string;
   venue: string;
   description: string;
   contactPersons: ContactPerson[];

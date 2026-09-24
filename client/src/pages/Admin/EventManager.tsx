@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
+import { motion as m, AnimatePresence } from "framer-motion";
 import AdminLayout from "../../components/AdminLayout";
 import {
   createEvent,
@@ -23,16 +24,8 @@ import AdminEventDetailModal from "../../components/Admin/Events/AdminEventDetai
 import ConfirmModal from "../../components/Common/ConfirmModal";
 import { DEFAULT_INITIAL_EVENT_QUESTIONS } from "../../types/formBuilder";
 
-// Required registration questions (cannot be edited/removed)
-const REQUIRED_REGISTRATION_QUESTIONS = [
-  "Name",
-  "Register Number",
-  "Department",
-  "Year",
-  "Section",
-  "Email ID",
-  "Mobile Number",
-];
+// Default registration questions derived from form builder defaults (Name, Register Number, Email ID, Phone Number)
+const INITIAL_REGISTRATION_QUESTIONS = DEFAULT_INITIAL_EVENT_QUESTIONS.map((q) => q.question);
 
 const EventManager: React.FC = () => {
   /* Events list */
@@ -102,6 +95,7 @@ const EventManager: React.FC = () => {
     name: "",
     date: "",
     time: "",
+    registrationEndDate: "",
     venue: "",
     description: "",
     thumbnailUrl: "",
@@ -109,7 +103,7 @@ const EventManager: React.FC = () => {
     posterUrl: "",
     posterPublicId: "",
     contactPersons: [{ name: "", phone: "", role: "Student Coordinator" }],
-    registrationQuestions: REQUIRED_REGISTRATION_QUESTIONS,
+    registrationQuestions: INITIAL_REGISTRATION_QUESTIONS,
     customQuestions: DEFAULT_INITIAL_EVENT_QUESTIONS,
     whatsappGroupLink: "",
     display: true,
@@ -142,6 +136,25 @@ const EventManager: React.FC = () => {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       if (selected < today) return "Event date cannot be in the past";
+    }
+    return "";
+  };
+
+  const validateRegistrationEndDate = (regEndDate?: string, eventDate?: string, isEditing: boolean = false): string => {
+    if (!regEndDate || regEndDate.trim() === "") return "Registration deadline is required";
+    const selectedReg = new Date(regEndDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (!isEditing && selectedReg < today) {
+      return "Registration deadline cannot be in the past";
+    }
+
+    if (eventDate) {
+      const selectedEvent = new Date(eventDate);
+      if (selectedReg > selectedEvent) {
+        return "Registration deadline cannot be after the event date";
+      }
     }
     return "";
   };
@@ -201,6 +214,9 @@ const EventManager: React.FC = () => {
     const dateErr = validateDate(form.date, Boolean(editingId));
     if (dateErr) errors.date = dateErr;
 
+    const regEndErr = validateRegistrationEndDate(form.registrationEndDate, form.date, Boolean(editingId));
+    if (regEndErr) errors.registrationEndDate = regEndErr;
+
     const timeErr = validateTime(startTime, endTime);
     if (timeErr) errors.time = timeErr;
 
@@ -249,7 +265,8 @@ const EventManager: React.FC = () => {
         form.date &&
         startTime &&
         form.venue &&
-        form.venue.trim().length >= 2
+        form.venue.trim().length >= 2 &&
+        validateRegistrationEndDate(form.registrationEndDate, form.date, Boolean(editingId)) === ""
     );
   };
 
@@ -281,15 +298,17 @@ const EventManager: React.FC = () => {
       const nameErr = validateName(form.name);
       const descErr = validateDescription(form.description);
       const dateErr = validateDate(form.date, Boolean(editingId));
+      const regEndErr = validateRegistrationEndDate(form.registrationEndDate, form.date, Boolean(editingId));
       const timeErr = validateTime(startTime, endTime);
       const venueErr = validateVenue(form.venue);
 
-      if (nameErr || descErr || dateErr || timeErr || venueErr) {
+      if (nameErr || descErr || dateErr || regEndErr || timeErr || venueErr) {
         setValidationErrors((prev) => ({
           ...prev,
           name: nameErr,
           description: descErr,
           date: dateErr,
+          registrationEndDate: regEndErr,
           time: timeErr,
           venue: venueErr,
         }));
@@ -364,6 +383,7 @@ const EventManager: React.FC = () => {
       name: "",
       date: "",
       time: "",
+      registrationEndDate: "",
       venue: "",
       description: "",
       thumbnailUrl: "",
@@ -371,7 +391,7 @@ const EventManager: React.FC = () => {
       posterUrl: "",
       posterPublicId: "",
       contactPersons: [{ name: "", phone: "", role: "Student Coordinator" }],
-      registrationQuestions: REQUIRED_REGISTRATION_QUESTIONS,
+      registrationQuestions: INITIAL_REGISTRATION_QUESTIONS,
       customQuestions: DEFAULT_INITIAL_EVENT_QUESTIONS,
       whatsappGroupLink: "",
       display: true,
@@ -440,6 +460,7 @@ const EventManager: React.FC = () => {
       name: event.name || "",
       date: event.date || "",
       time: event.time || "",
+      registrationEndDate: event.registrationEndDate || "",
       venue: event.venue || "",
       description: event.description || "",
       thumbnailUrl: event.thumbnailUrl || "",
@@ -454,7 +475,7 @@ const EventManager: React.FC = () => {
               role: cp.role || "Student Coordinator",
             }))
           : [{ name: "", phone: "", role: "Student Coordinator" }],
-      registrationQuestions: event.registrationQuestions || REQUIRED_REGISTRATION_QUESTIONS,
+      registrationQuestions: event.registrationQuestions || INITIAL_REGISTRATION_QUESTIONS,
       customQuestions:
         event.customQuestions && event.customQuestions.length > 0
           ? event.customQuestions
@@ -692,47 +713,75 @@ const EventManager: React.FC = () => {
       onCloseToast={() => setToast((prev) => ({ ...prev, show: false }))}
     >
       <div className="mobile-offset">
-        {/* Header */}
-        <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-5 gap-3">
+        {/* Animated Header */}
+        <m.div
+          className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3"
+          initial={{ opacity: 0, y: -12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: "easeOut" }}
+        >
           <div>
-            <h2 className="fw-bold text-white mb-1">Events Dashboard</h2>
-            <p className="text-secondary m-0">Manage your schedule, media, and registrations</p>
+            <h2 className="fw-bold text-white mb-1" style={{ letterSpacing: "-0.3px" }}>Events Dashboard</h2>
+            <p className="text-secondary m-0 small">Manage your schedule, media, and registrations</p>
           </div>
-          <button
+          <m.button
             className="btn btn-primary px-4 py-2 fw-semibold shadow-lg d-flex align-items-center gap-2"
             onClick={handleCreateEvent}
             style={{ borderRadius: "12px" }}
+            whileHover={{ scale: 1.03, boxShadow: "0 0 25px rgba(56, 189, 248, 0.4)" }}
+            whileTap={{ scale: 0.97 }}
+            transition={{ type: "spring", stiffness: 350, damping: 20 }}
           >
             <i className="bi bi-plus-lg"></i>
             <span>Create Event</span>
-          </button>
-        </div>
+          </m.button>
+        </m.div>
 
-        {/* Events Grid */}
-        <div className="row g-4">
+        {/* Animated Events Grid */}
+        <m.div
+          className="row g-4"
+          initial="hidden"
+          animate="show"
+          variants={{
+            hidden: { opacity: 0 },
+            show: {
+              opacity: 1,
+              transition: {
+                staggerChildren: 0.07,
+              },
+            },
+          }}
+        >
           {events.length === 0 && (
-            <div className="col-12 text-center py-5">
+            <m.div
+              className="col-12 text-center py-5"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.4 }}
+            >
               <i className="bi bi-calendar-x display-1 text-white opacity-50 mb-3 d-block"></i>
               <h4 className="text-white fw-semibold">No events found</h4>
               <p className="text-white-50">Create a new event to get started!</p>
-            </div>
+            </m.div>
           )}
 
-          {events.map((event, index) => (
-            <EventCard
-              key={event._id}
-              event={event}
-              index={index}
-              onToggleDisplay={handleToggleDisplay}
-              onEdit={handleEditEvent}
-              onDelete={(ev) => {
-                setEventToDelete(ev);
-                setShowDeleteModal(true);
-              }}
-              onViewDetails={(ev) => setSelectedDetailEvent(ev)}
-            />
-          ))}
-        </div>
+          <AnimatePresence mode="popLayout">
+            {events.map((event, index) => (
+              <EventCard
+                key={event._id}
+                event={event}
+                index={index}
+                onToggleDisplay={handleToggleDisplay}
+                onEdit={handleEditEvent}
+                onDelete={(ev) => {
+                  setEventToDelete(ev);
+                  setShowDeleteModal(true);
+                }}
+                onViewDetails={(ev) => setSelectedDetailEvent(ev)}
+              />
+            ))}
+          </AnimatePresence>
+        </m.div>
       </div>
 
       {/* Admin Event Detail Split Popup Modal */}
@@ -779,7 +828,18 @@ const EventManager: React.FC = () => {
         }}
         onDateChange={(val) => {
           setForm({ ...form, date: val });
-          setValidationErrors({ ...validationErrors, date: validateDate(val, Boolean(editingId)) });
+          setValidationErrors({
+            ...validationErrors,
+            date: validateDate(val, Boolean(editingId)),
+            registrationEndDate: validateRegistrationEndDate(form.registrationEndDate, val, Boolean(editingId)),
+          });
+        }}
+        onRegistrationEndDateChange={(val) => {
+          setForm({ ...form, registrationEndDate: val });
+          setValidationErrors({
+            ...validationErrors,
+            registrationEndDate: validateRegistrationEndDate(val, form.date, Boolean(editingId)),
+          });
         }}
         onStartTimeChange={(val) => {
           setStartTime(val);

@@ -175,25 +175,31 @@ const FormBuilder: React.FC<FormBuilderProps> = ({
 
   return (
     <div className="form-builder-container">
-      {/* Sticky Top Toolbar */}
+      {/* Sticky Floating Action Toolbar */}
       <div
         className="d-flex align-items-center justify-content-between p-2.5 mb-3 rounded-3 flex-wrap gap-2"
         style={{
-          background: "#080c16",
-          border: "1px solid #1e293b",
+          position: "sticky",
+          top: 0,
+          zIndex: 100,
+          background: "rgba(8, 12, 22, 0.94)",
+          backdropFilter: "blur(14px)",
+          border: "1px solid rgba(56, 189, 248, 0.25)",
+          boxShadow: "0 8px 24px -4px rgba(0, 0, 0, 0.8), 0 0 15px rgba(56, 189, 248, 0.1)",
         }}
       >
         <div className="d-flex align-items-center gap-2">
           <span
-            className="badge px-3 py-2 rounded-2 fw-semibold d-inline-flex align-items-center gap-1.5"
+            className="badge px-3 py-2 rounded-2 fw-semibold d-inline-flex align-items-center"
             style={{
               background: "rgba(56, 189, 248, 0.12)",
               color: "#38bdf8",
               border: "1px solid rgba(56, 189, 248, 0.28)",
               fontSize: "0.82rem",
+              gap: "8px",
             }}
           >
-            <i className="bi bi-ui-checks-grid"></i>
+            <i className="bi bi-ui-checks-grid me-2"></i>
             <span>
               {questions.length} Question{questions.length === 1 ? "" : "s"}
             </span>
@@ -205,18 +211,19 @@ const FormBuilder: React.FC<FormBuilderProps> = ({
           <div className="position-relative" ref={addMenuRef}>
             <button
               type="button"
-              className="btn btn-sm btn-primary d-inline-flex align-items-center gap-1.5 px-3 py-1.5 rounded-2 fw-semibold"
+              className="btn btn-sm btn-primary d-inline-flex align-items-center px-3 py-1.5 rounded-2 fw-semibold"
               style={{
                 background: "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)",
                 border: "none",
                 fontSize: "0.82rem",
                 boxShadow: "0 4px 12px rgba(37, 99, 235, 0.3)",
+                gap: "8px",
               }}
               onClick={() => setIsAddMenuOpen((prev) => !prev)}
             >
-              <i className="bi bi-plus-lg"></i>
+              <i className="bi bi-plus-lg me-1"></i>
               <span>Add Question</span>
-              <i className={`bi ${isAddMenuOpen ? "bi-chevron-up" : "bi-chevron-down"} small opacity-75`}></i>
+              <i className={`bi ${isAddMenuOpen ? "bi-chevron-up" : "bi-chevron-down"} small opacity-75 ms-1`}></i>
             </button>
 
             {isAddMenuOpen && (
@@ -225,11 +232,11 @@ const FormBuilder: React.FC<FormBuilderProps> = ({
                 style={{
                   top: "calc(100% + 6px)",
                   right: 0,
-                  zIndex: 1100,
+                  zIndex: 1200,
                   minWidth: "210px",
                   background: "#0f172a",
                   borderRadius: "10px",
-                  boxShadow: "0 15px 35px rgba(0,0,0,0.8), 0 0 15px rgba(56, 189, 248, 0.15)",
+                  boxShadow: "0 15px 35px rgba(0,0,0,0.85), 0 0 20px rgba(56, 189, 248, 0.2)",
                 }}
               >
                 <div className="px-3 py-1 text-uppercase text-secondary fw-bold" style={{ fontSize: "0.68rem", letterSpacing: "0.5px" }}>
@@ -239,11 +246,11 @@ const FormBuilder: React.FC<FormBuilderProps> = ({
                   <button
                     key={item.type}
                     type="button"
-                    className="dropdown-item d-flex align-items-center gap-2.5 py-2 px-3 text-white"
+                    className="dropdown-item d-flex align-items-center py-2 px-3 text-white"
                     onClick={() => handleAddQuestion(item.type)}
-                    style={{ fontSize: "0.82rem", cursor: "pointer" }}
+                    style={{ fontSize: "0.82rem", cursor: "pointer", gap: "10px" }}
                   >
-                    <i className={`bi ${item.icon}`} style={{ color: item.color, width: "18px" }}></i>
+                    <i className={`bi ${item.icon} me-2`} style={{ color: item.color, width: "18px" }}></i>
                     <span>{item.label}</span>
                   </button>
                 ))}
@@ -255,12 +262,12 @@ const FormBuilder: React.FC<FormBuilderProps> = ({
           {questions.length > 0 && (
             <button
               type="button"
-              className="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1 py-1.5 px-2.5 rounded-2"
-              style={{ fontSize: "0.82rem" }}
+              className="btn btn-sm btn-outline-secondary d-inline-flex align-items-center py-1.5 px-2.5 rounded-2"
+              style={{ fontSize: "0.82rem", gap: "6px" }}
               onClick={handleCollapseAll}
               title={allCollapsed ? "Expand all questions" : "Collapse all questions"}
             >
-              <i className={`bi ${allCollapsed ? "bi-arrows-expand" : "bi-arrows-collapse"}`}></i>
+              <i className={`bi ${allCollapsed ? "bi-arrows-expand" : "bi-arrows-collapse"} me-1`}></i>
               <span className="d-none d-sm-inline">{allCollapsed ? "Expand All" : "Collapse All"}</span>
             </button>
           )}
@@ -268,11 +275,11 @@ const FormBuilder: React.FC<FormBuilderProps> = ({
           {/* Live Preview Button */}
           <button
             type="button"
-            className="btn btn-sm btn-outline-light d-inline-flex align-items-center gap-1 py-1.5 px-2.5 rounded-2"
-            style={{ fontSize: "0.82rem" }}
+            className="btn btn-sm btn-outline-light d-inline-flex align-items-center py-1.5 px-2.5 rounded-2"
+            style={{ fontSize: "0.82rem", gap: "6px" }}
             onClick={() => setShowPreviewModal(true)}
           >
-            <i className="bi bi-eye"></i>
+            <i className="bi bi-eye me-1"></i>
             <span className="d-none d-sm-inline">Preview</span>
           </button>
 
@@ -323,11 +330,11 @@ const FormBuilder: React.FC<FormBuilderProps> = ({
 
           <button
             type="button"
-            className="btn btn-primary px-3 py-1.5 d-inline-flex align-items-center gap-2 rounded-2"
-            style={{ background: "#2563eb", borderColor: "#2563eb", fontSize: "0.85rem" }}
+            className="btn btn-primary px-3 py-1.5 d-inline-flex align-items-center rounded-2"
+            style={{ background: "#2563eb", borderColor: "#2563eb", fontSize: "0.85rem", gap: "8px" }}
             onClick={() => handleAddQuestion("text")}
           >
-            <i className="bi bi-plus-lg"></i> Add First Question
+            <i className="bi bi-plus-lg me-1.5"></i> Add First Question
           </button>
         </div>
       ) : (
@@ -424,15 +431,16 @@ const FormBuilder: React.FC<FormBuilderProps> = ({
                 </button>
                 <button
                   type="button"
-                  className="btn btn-danger rounded-2 px-3.5 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5"
+                  className="btn btn-danger rounded-2 px-3.5 py-1.5 fw-semibold d-inline-flex align-items-center"
                   style={{
                     background: "linear-gradient(135deg, #ef4444, #dc2626)",
                     border: "none",
                     fontSize: "0.85rem",
+                    gap: "8px",
                   }}
                   onClick={handleConfirmClearAll}
                 >
-                  <i className="bi bi-trash"></i>
+                  <i className="bi bi-trash me-1.5"></i>
                   Clear All
                 </button>
               </div>

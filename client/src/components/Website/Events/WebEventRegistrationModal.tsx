@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { motion as m, AnimatePresence } from "framer-motion";
 import { FaTimes, FaPaperPlane, FaExclamationTriangle } from "react-icons/fa";
 import DynamicFormRenderer from "../../FormRenderer/DynamicFormRenderer";
@@ -29,6 +30,16 @@ export const WebEventRegistrationModal: React.FC<WebEventRegistrationModalProps>
   const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
   const [dynamicAnswers, setDynamicAnswers] = useState<Record<string, any>>({});
   const [dynamicErrors, setDynamicErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (show) {
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = prevOverflow;
+      };
+    }
+  }, [show]);
 
   if (!show || !selectedEvent) return null;
 
@@ -139,7 +150,7 @@ export const WebEventRegistrationModal: React.FC<WebEventRegistrationModalProps>
     await onSubmit(payload);
   };
 
-  return (
+  return createPortal(
     <AnimatePresence>
       <m.div
         className="reg-modal-backdrop"
@@ -227,7 +238,8 @@ export const WebEventRegistrationModal: React.FC<WebEventRegistrationModalProps>
           )}
         </m.div>
       </m.div>
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };
 

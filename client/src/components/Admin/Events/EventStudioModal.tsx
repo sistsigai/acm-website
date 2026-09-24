@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { motion as m, AnimatePresence } from "framer-motion";
 import FormBuilder from "../../FormBuilder/FormBuilder";
 import { CustomDatePicker } from "../../CustomDatePicker";
 import { CustomTimePicker } from "../../CustomTimePicker";
@@ -12,6 +13,7 @@ export interface EventFormData {
   name: string;
   date: string;
   time: string;
+  registrationEndDate?: string;
   venue: string;
   description: string;
   thumbnailUrl?: string;
@@ -29,6 +31,7 @@ export interface ValidationErrors {
   name?: string;
   date?: string;
   time?: string;
+  registrationEndDate?: string;
   venue?: string;
   description?: string;
   poster?: string;
@@ -65,6 +68,7 @@ interface EventStudioModalProps {
   onNameChange: (val: string) => void;
   onDescriptionChange: (val: string) => void;
   onDateChange: (val: string) => void;
+  onRegistrationEndDateChange: (val: string) => void;
   onStartTimeChange: (val: string) => void;
   onEndTimeChange: (val: string) => void;
   onVenueChange: (val: string) => void;
@@ -110,6 +114,7 @@ export const EventStudioModal: React.FC<EventStudioModalProps> = ({
   onNameChange,
   onDescriptionChange,
   onDateChange,
+  onRegistrationEndDateChange,
   onStartTimeChange,
   onEndTimeChange,
   onVenueChange,
@@ -184,178 +189,207 @@ export const EventStudioModal: React.FC<EventStudioModalProps> = ({
   ];
 
   return (
-    <div
-      className="admin-modal-overlay"
-      onClick={(e) => {
-        if (e.target === e.currentTarget && !isSubmitting) {
-          onClose();
-        }
-      }}
-    >
-      <div
-        className="admin-modal-container p-3 p-md-4"
-        style={{
-          maxWidth: "1020px",
-          width: "95%",
-          maxHeight: "92vh",
-          display: "flex",
-          flexDirection: "column",
-          background: "linear-gradient(165deg, #0f172a 0%, #090d16 100%)",
-          borderRadius: "16px",
-          boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.08)",
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Modal Header */}
-        <div className="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom border-dark border-opacity-50 flex-shrink-0">
-          <div className="d-flex align-items-center gap-3">
-            <div
-              className="d-flex align-items-center justify-content-center flex-shrink-0"
-              style={{
-                width: 42,
-                height: 42,
-                borderRadius: "12px",
-                background: "rgba(56, 189, 248, 0.15)",
-                border: "1px solid rgba(56, 189, 248, 0.3)",
-                color: "#38bdf8",
-              }}
-            >
-              <i className={`bi ${editingId ? "bi-calendar-check" : "bi-calendar-plus"} fs-5`}></i>
-            </div>
-            <div>
-              <h5 className="m-0 fw-bold text-white tracking-tight" style={{ fontSize: "1.2rem" }}>
-                {editingId ? "Edit Event Details" : "Create New Event"}
-              </h5>
-              <p className="text-secondary small mb-0 mt-0.5" style={{ fontSize: "0.8rem" }}>
-                Configure event schedule, venue, media posters, coordinators, and registration form
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={isSubmitting}
-            className="btn btn-sm btn-link text-secondary text-decoration-none p-2 rounded-circle"
-            style={{ lineHeight: 1 }}
-            aria-label="Close dialog"
-          >
-            <i className="bi bi-x-lg fs-6"></i>
-          </button>
-        </div>
-
-        {/* Section Steps Navigation Bar (Clean & Numberless) */}
-        <div
-          className="d-flex mb-3 p-1 rounded-3 flex-shrink-0"
-          style={{
-            background: "#060911",
-            border: "1px solid #1e293b",
-            gap: "6px",
-            minHeight: "46px",
+    <AnimatePresence>
+      {show && (
+        <m.div
+          className="admin-modal-overlay"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !isSubmitting) {
+              onClose();
+            }
           }}
         >
-          {sectionsConfig.map((sec) => {
-            const isActive = activeSection === sec.id;
-            const isAccessible = canAccessSection(sec.id);
-
-            return (
-              <button
-                key={sec.id}
-                type="button"
-                className="btn flex-fill py-2 px-2.5 rounded-2 fw-medium d-flex align-items-center justify-content-center border-0 position-relative text-nowrap"
-                style={{
-                  background: isActive
-                    ? "linear-gradient(135deg, rgba(37, 99, 235, 0.25) 0%, rgba(59, 130, 246, 0.12) 100%)"
-                    : "transparent",
-                  border: isActive
-                    ? "1px solid rgba(59, 130, 246, 0.5)"
-                    : "1px solid transparent",
-                  color: isActive ? "#ffffff" : isAccessible ? "#94a3b8" : "#475569",
-                  boxShadow: isActive
-                    ? "0 4px 14px -2px rgba(37, 99, 235, 0.35), inset 0 1px 0 0 rgba(255, 255, 255, 0.1)"
-                    : "none",
-                  transition: "all 0.25s ease",
-                  fontSize: "0.84rem",
-                  gap: "8px",
-                  opacity: isAccessible ? 1 : 0.55,
-                  cursor: isAccessible ? "pointer" : "not-allowed",
-                }}
-                onClick={() => {
-                  if (isAccessible) {
-                    onSectionClick(sec.id);
-                  }
-                }}
-              >
+          <m.div
+            className="admin-modal-container p-3 p-md-4"
+            initial={{ scale: 0.94, opacity: 0, y: 15 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.94, opacity: 0, y: 15 }}
+            transition={{ type: "spring", stiffness: 320, damping: 25 }}
+            style={{
+              maxWidth: "1020px",
+              width: "95%",
+              maxHeight: "92vh",
+              display: "flex",
+              flexDirection: "column",
+              background: "linear-gradient(165deg, #0f172a 0%, #090d16 100%)",
+              borderRadius: "16px",
+              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.08)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom border-dark border-opacity-50 flex-shrink-0">
+              <div className="d-flex align-items-center gap-3">
                 <div
                   className="d-flex align-items-center justify-content-center flex-shrink-0"
                   style={{
-                    width: 24,
-                    height: 24,
-                    borderRadius: "6px",
-                    background: isActive
-                      ? "rgba(56, 189, 248, 0.2)"
-                      : sec.isCompleted && !isActive
-                        ? "rgba(34, 197, 94, 0.15)"
-                        : "rgba(255, 255, 255, 0.05)",
-                    color: isActive
-                      ? "#38bdf8"
-                      : sec.isCompleted && !isActive
-                        ? "#4ade80"
-                        : isAccessible
-                          ? "#64748b"
-                          : "#334155",
-                    border: `1px solid ${isActive
-                        ? "rgba(56, 189, 248, 0.4)"
-                        : sec.isCompleted && !isActive
-                          ? "rgba(34, 197, 94, 0.3)"
-                          : "rgba(255, 255, 255, 0.05)"
-                      }`,
-                    fontSize: "0.75rem",
+                    width: 42,
+                    height: 42,
+                    borderRadius: "12px",
+                    background: "rgba(56, 189, 248, 0.15)",
+                    border: "1px solid rgba(56, 189, 248, 0.3)",
+                    color: "#38bdf8",
                   }}
                 >
-                  {sec.isCompleted && !isActive ? (
-                    <i className="bi bi-check2 fw-bold"></i>
-                  ) : !isAccessible ? (
-                    <i className="bi bi-lock-fill"></i>
-                  ) : (
-                    <i className={`bi ${sec.icon}`}></i>
-                  )}
+                  <i className={`bi ${editingId ? "bi-calendar-check" : "bi-calendar-plus"} fs-5`}></i>
                 </div>
-                <span className="fw-semibold">{sec.label}</span>
-                {sec.count !== undefined && (
-                  <span
-                    className="badge px-1.5 py-0.5 ms-1"
-                    style={{
-                      fontSize: "0.7rem",
-                      background: isActive ? "rgba(56, 189, 248, 0.2)" : "rgba(255, 255, 255, 0.06)",
-                      color: isActive ? "#38bdf8" : "#94a3b8",
-                      border: `1px solid ${isActive ? "rgba(56, 189, 248, 0.4)" : "rgba(255, 255, 255, 0.08)"}`,
-                      borderRadius: "6px",
-                      fontWeight: 600,
-                    }}
-                  >
-                    {sec.count}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
+                <div>
+                  <h5 className="m-0 fw-bold text-white tracking-tight" style={{ fontSize: "1.2rem" }}>
+                    {editingId ? "Edit Event Details" : "Create New Event"}
+                  </h5>
+                  <p className="text-secondary small mb-0 mt-0.5" style={{ fontSize: "0.8rem" }}>
+                    Configure event schedule, venue, media posters, coordinators, and registration form
+                  </p>
+                </div>
+              </div>
+              <m.button
+                type="button"
+                onClick={onClose}
+                disabled={isSubmitting}
+                className="btn btn-sm btn-link text-secondary text-decoration-none p-2 rounded-circle"
+                style={{ lineHeight: 1 }}
+                whileHover={{ scale: 1.15, rotate: 90, color: "#f87171" }}
+                whileTap={{ scale: 0.9 }}
+                aria-label="Close dialog"
+              >
+                <i className="bi bi-x-lg fs-6"></i>
+              </m.button>
+            </div>
 
-        {/* Modal Body - Focused Single-Section View */}
-        <div
-          className="admin-modal-body-scroll flex-grow-1 pe-1 d-flex flex-column"
-          style={{ overflowY: activeSection === "form" ? "auto" : "visible", minHeight: "360px" }}
-        >
-          {/* SECTION: Event Information & Schedule */}
-          {activeSection === "info" && (
+            {/* Section Steps Navigation Bar (Clean & Numberless) */}
             <div
-              className="p-3 p-md-4 rounded-3 h-100 d-flex flex-column"
+              className="d-flex mb-3 p-1 rounded-3 flex-shrink-0 position-relative"
               style={{
                 background: "#060911",
                 border: "1px solid #1e293b",
-                animation: "fadeIn 0.25s ease-out",
+                gap: "6px",
+                minHeight: "46px",
               }}
             >
+              {sectionsConfig.map((sec) => {
+                const isActive = activeSection === sec.id;
+                const isAccessible = canAccessSection(sec.id);
+
+                return (
+                  <m.button
+                    key={sec.id}
+                    type="button"
+                    className="btn flex-fill py-2 px-2.5 rounded-2 fw-medium d-flex align-items-center justify-content-center border-0 position-relative text-nowrap"
+                    whileHover={isAccessible ? { scale: 1.02 } : {}}
+                    whileTap={isAccessible ? { scale: 0.98 } : {}}
+                    style={{
+                      background: "transparent",
+                      color: isActive ? "#ffffff" : isAccessible ? "#94a3b8" : "#475569",
+                      transition: "color 0.2s ease, opacity 0.2s ease",
+                      fontSize: "0.84rem",
+                      gap: "8px",
+                      opacity: isAccessible ? 1 : 0.55,
+                      cursor: isAccessible ? "pointer" : "not-allowed",
+                      zIndex: 1,
+                    }}
+                    onClick={() => {
+                      if (isAccessible) {
+                        onSectionClick(sec.id);
+                      }
+                    }}
+                  >
+                    {isActive && (
+                      <m.div
+                        layoutId="activeStudioTab"
+                        className="position-absolute top-0 start-0 w-100 h-100 rounded-2"
+                        style={{
+                          background: "linear-gradient(135deg, rgba(37, 99, 235, 0.28) 0%, rgba(59, 130, 246, 0.14) 100%)",
+                          border: "1px solid rgba(59, 130, 246, 0.5)",
+                          boxShadow: "0 4px 14px -2px rgba(37, 99, 235, 0.35), inset 0 1px 0 0 rgba(255, 255, 255, 0.1)",
+                          zIndex: -1,
+                        }}
+                        transition={{ type: "spring", stiffness: 400, damping: 32 }}
+                      />
+                    )}
+
+                    <div
+                      className="d-flex align-items-center justify-content-center flex-shrink-0"
+                      style={{
+                        width: 24,
+                        height: 24,
+                        borderRadius: "6px",
+                        background: isActive
+                          ? "rgba(56, 189, 248, 0.2)"
+                          : sec.isCompleted && !isActive
+                            ? "rgba(34, 197, 94, 0.15)"
+                            : "rgba(255, 255, 255, 0.05)",
+                        color: isActive
+                          ? "#38bdf8"
+                          : sec.isCompleted && !isActive
+                            ? "#4ade80"
+                            : isAccessible
+                              ? "#64748b"
+                              : "#334155",
+                        border: `1px solid ${isActive
+                            ? "rgba(56, 189, 248, 0.4)"
+                            : sec.isCompleted && !isActive
+                              ? "rgba(34, 197, 94, 0.3)"
+                              : "rgba(255, 255, 255, 0.05)"
+                          }`,
+                        fontSize: "0.75rem",
+                        transition: "all 0.25s ease",
+                      }}
+                    >
+                      {sec.isCompleted && !isActive ? (
+                        <i className="bi bi-check2 fw-bold"></i>
+                      ) : !isAccessible ? (
+                        <i className="bi bi-lock-fill"></i>
+                      ) : (
+                        <i className={`bi ${sec.icon}`}></i>
+                      )}
+                    </div>
+                    <span className="fw-semibold">{sec.label}</span>
+                    {sec.count !== undefined && (
+                      <span
+                        className="badge px-1.5 py-0.5 ms-1"
+                        style={{
+                          fontSize: "0.7rem",
+                          background: isActive ? "rgba(56, 189, 248, 0.2)" : "rgba(255, 255, 255, 0.06)",
+                          color: isActive ? "#38bdf8" : "#94a3b8",
+                          border: `1px solid ${isActive ? "rgba(56, 189, 248, 0.4)" : "rgba(255, 255, 255, 0.08)"}`,
+                          borderRadius: "6px",
+                          fontWeight: 600,
+                          transition: "all 0.25s ease",
+                        }}
+                      >
+                        {sec.count}
+                      </span>
+                    )}
+                  </m.button>
+                );
+              })}
+            </div>
+
+            {/* Modal Body - Focused Single-Section View */}
+            <div
+              className="admin-modal-body-scroll flex-grow-1 pe-1 d-flex flex-column overflow-hidden position-relative"
+              style={{ minHeight: "360px" }}
+            >
+              <AnimatePresence mode="wait">
+                {/* SECTION: Event Information & Schedule */}
+                {activeSection === "info" && (
+                  <m.div
+                    key="info"
+                    initial={{ opacity: 0, x: 12 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -12 }}
+                    transition={{ duration: 0.2, ease: "easeOut" }}
+                    className="p-3 p-md-4 rounded-3 h-100 d-flex flex-column"
+                    style={{
+                      background: "#060911",
+                      border: "1px solid #1e293b",
+                      overflowY: "auto",
+                    }}
+                  >
               <div className="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom border-secondary border-opacity-20 flex-shrink-0">
                 <i className="bi bi-info-circle-fill text-primary"></i>
                 <span className="fw-semibold text-white" style={{ fontSize: "0.95rem" }}>
@@ -460,6 +494,31 @@ export const EventStudioModal: React.FC<EventStudioModalProps> = ({
                     )}
                   </div>
 
+                  {/* Registration Deadline Field */}
+                  <div>
+                    <div className="d-flex align-items-center justify-content-between mb-1">
+                      <label className="admin-form-label mb-0">
+                        Registration Deadline <span className="text-danger">*</span>
+                      </label>
+                    </div>
+                    <CustomDatePicker
+                      value={form.registrationEndDate || ""}
+                      minDate={minDate}
+                      maxDate={form.date || undefined}
+                      placement="top"
+                      isInvalid={Boolean(validationErrors.registrationEndDate)}
+                      placeholder="Select registration deadline"
+                      onChange={onRegistrationEndDateChange}
+                    />
+                    {validationErrors.registrationEndDate ? (
+                      <div className="text-danger small mt-1">{validationErrors.registrationEndDate}</div>
+                    ) : (
+                      <div className="small text-secondary mt-1" style={{ fontSize: "0.72rem" }}>
+                        Registrations will automatically close after this date.
+                      </div>
+                    )}
+                  </div>
+
                   <div>
                     <label className="admin-form-label">
                       Venue Location <span className="text-danger">*</span>
@@ -485,17 +544,22 @@ export const EventStudioModal: React.FC<EventStudioModalProps> = ({
                   </div>
                 </div>
               </div>
-            </div>
+            </m.div>
           )}
 
           {/* SECTION: Event Media */}
           {activeSection === "media" && (
-            <div
+            <m.div
+              key="media"
+              initial={{ opacity: 0, x: 12 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -12 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
               className="p-3 p-md-4 rounded-3 h-100 d-flex flex-column"
               style={{
                 background: "#060911",
                 border: "1px solid #1e293b",
-                animation: "fadeIn 0.25s ease-out",
+                overflowY: "auto",
               }}
             >
               <div className="d-flex align-items-center mb-3 pb-2 border-bottom border-secondary border-opacity-20 flex-shrink-0">
@@ -661,11 +725,11 @@ export const EventStudioModal: React.FC<EventStudioModalProps> = ({
                   </div>
                 </div>
 
-                {/* Event Poster (Compulsory · 3:4 / 1810×2560 Portrait) */}
+                {/* Event Poster (Compulsory · 1810 × 2560 Portrait) */}
                 <div className="col-12 col-md-6 d-flex flex-column">
                   <div className="d-flex justify-content-between align-items-center mb-2">
                     <label className="admin-form-label mb-0">
-                      Event Poster <span className="text-danger">*</span> <span className="text-secondary opacity-75 fw-normal">(3:4 Portrait)</span>
+                      Event Poster <span className="text-danger">*</span> <span className="text-secondary opacity-75 fw-normal">(1810 × 2560 Portrait)</span>
                     </label>
                     <span className="text-secondary" style={{ fontSize: "0.72rem" }}>
                       High-res portrait · Max 8MB
@@ -691,19 +755,19 @@ export const EventStudioModal: React.FC<EventStudioModalProps> = ({
                           style={{
                             height: "180px",
                             maxWidth: "100%",
-                            aspectRatio: "3 / 4",
+                            aspectRatio: "1810 / 2560",
                             objectFit: "contain",
                             borderRadius: "8px",
                             cursor: "pointer",
                           }}
-                          onClick={() => onPreviewImage({ src: posterPreview, title: "Event Poster Preview", ratio: "3:4 Portrait" })}
+                          onClick={() => onPreviewImage({ src: posterPreview, title: "Event Poster Preview", ratio: "1810 × 2560 Portrait" })}
                         />
                         <div className="d-flex align-items-center gap-2 mt-3">
                           <button
                             type="button"
                             className="btn btn-sm btn-outline-info py-1 px-2.5"
                             style={{ fontSize: "0.75rem", borderRadius: "6px" }}
-                            onClick={() => onPreviewImage({ src: posterPreview, title: "Event Poster Preview", ratio: "3:4 Portrait" })}
+                            onClick={() => onPreviewImage({ src: posterPreview, title: "Event Poster Preview", ratio: "1810 × 2560 Portrait" })}
                             disabled={isUploadingPoster}
                           >
                             <i className="bi bi-eye"></i> Preview
@@ -820,17 +884,22 @@ export const EventStudioModal: React.FC<EventStudioModalProps> = ({
                   )}
                 </div>
               </div>
-            </div>
+            </m.div>
           )}
 
           {/* SECTION: Coordinators & WhatsApp Community Link */}
           {activeSection === "contacts" && (
-            <div
+            <m.div
+              key="contacts"
+              initial={{ opacity: 0, x: 12 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -12 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
               className="p-3 p-md-4 rounded-3 h-100 d-flex flex-column"
               style={{
                 background: "#060911",
                 border: "1px solid #1e293b",
-                animation: "fadeIn 0.25s ease-out",
+                overflowY: "auto",
               }}
             >
               <div className="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom border-secondary border-opacity-20 flex-shrink-0">
@@ -984,17 +1053,22 @@ export const EventStudioModal: React.FC<EventStudioModalProps> = ({
                   </p>
                 </div>
               </div>
-            </div>
+            </m.div>
           )}
 
           {/* SECTION: Registration Form Builder */}
           {activeSection === "form" && (
-            <div
+            <m.div
+              key="form"
+              initial={{ opacity: 0, x: 12 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -12 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
               className="p-3 p-md-4 rounded-3 h-100 d-flex flex-column"
               style={{
                 background: "#060911",
                 border: "1px solid #1e293b",
-                animation: "fadeIn 0.25s ease-out",
+                overflowY: "auto",
               }}
             >
               <div className="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom border-secondary border-opacity-20 flex-shrink-0">
@@ -1034,52 +1108,61 @@ export const EventStudioModal: React.FC<EventStudioModalProps> = ({
                   formDescription={form.description || "Please fill in the details below to register for this event."}
                 />
               </div>
-            </div>
+            </m.div>
           )}
-        </div>
+        </AnimatePresence>
+      </div>
 
         {/* Modal Footer */}
         <div className="d-flex justify-content-between align-items-center pt-3 mt-3 border-top border-dark border-opacity-50 flex-shrink-0">
           <div>
             {activeSection === "info" ? (
-              <button
+              <m.button
                 type="button"
                 className="btn-admin-secondary px-4 py-2"
                 onClick={onClose}
                 disabled={isSubmitting}
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
               >
                 Cancel
-              </button>
+              </m.button>
             ) : (
-              <button
+              <m.button
                 type="button"
                 className="btn-admin-outline d-inline-flex align-items-center gap-2 px-3 py-2"
                 onClick={onPreviousSection}
                 disabled={isSubmitting}
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
               >
                 <i className="bi bi-arrow-left"></i>
                 <span>Previous</span>
-              </button>
+              </m.button>
             )}
           </div>
 
           <div className="d-flex align-items-center gap-2">
             {activeSection !== "form" ? (
-              <button
+              <m.button
                 type="button"
                 className="btn-admin-primary px-4 py-2 d-inline-flex align-items-center gap-2"
                 onClick={onNextSection}
                 disabled={isSubmitting || isUploadingThumbnail || isUploadingPoster}
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
               >
                 <span>Next: {getNextSectionLabel()}</span>
                 <i className="bi bi-arrow-right"></i>
-              </button>
+              </m.button>
             ) : (
-              <button
+              <m.button
                 type="button"
                 className="btn-admin-primary px-4 py-2 d-inline-flex align-items-center gap-2"
                 onClick={onSave}
                 disabled={hasValidationErrors || isSubmitting || isUploadingThumbnail || isUploadingPoster}
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
               >
                 {isSubmitting ? (
                   <span className="d-inline-flex align-items-center gap-2">
@@ -1092,12 +1175,14 @@ export const EventStudioModal: React.FC<EventStudioModalProps> = ({
                     <span>{editingId ? "Save Changes" : "Create Event"}</span>
                   </span>
                 )}
-              </button>
+              </m.button>
             )}
           </div>
         </div>
-      </div>
-    </div>
+      </m.div>
+    </m.div>
+  )}
+</AnimatePresence>
   );
 };
 

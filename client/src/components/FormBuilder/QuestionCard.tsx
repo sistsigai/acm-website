@@ -304,22 +304,23 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
           <div className="position-relative" ref={typeMenuRef}>
             <button
               type="button"
-              className="btn btn-sm d-flex align-items-center gap-2 rounded-2"
+              className="btn btn-sm d-flex align-items-center rounded-2"
               style={{
                 background: "rgba(15, 23, 42, 0.8)",
                 border: "1px solid rgba(255, 255, 255, 0.12)",
                 color: "#f8fafc",
                 fontSize: "0.82rem",
                 padding: "5px 10px",
+                gap: "8px",
               }}
               onClick={(e) => {
                 e.stopPropagation();
                 setIsTypeMenuOpen((prev) => !prev);
               }}
             >
-              <i className={`bi ${currentTypeInfo.icon}`} style={{ color: currentTypeInfo.badgeColor }}></i>
+              <i className={`bi ${currentTypeInfo.icon} me-1.5`} style={{ color: currentTypeInfo.badgeColor }}></i>
               <span>{currentTypeInfo.label}</span>
-              <i className={`bi ${isTypeMenuOpen ? "bi-chevron-up" : "bi-chevron-down"} small opacity-50 ms-1`}></i>
+              <i className={`bi ${isTypeMenuOpen ? "bi-chevron-up" : "bi-chevron-down"} small opacity-50 ms-1.5`}></i>
             </button>
 
             {isTypeMenuOpen && (
@@ -339,14 +340,14 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
                   <button
                     key={item.type}
                     type="button"
-                    className={`dropdown-item d-flex align-items-center gap-2 py-1.5 px-3 ${question.type === item.type ? "active" : ""}`}
+                    className={`dropdown-item d-flex align-items-center py-1.5 px-3 ${question.type === item.type ? "active" : ""}`}
                     onClick={(e) => {
                       e.stopPropagation();
                       handleTypeChange(item.type);
                     }}
-                    style={{ fontSize: "0.82rem", cursor: "pointer" }}
+                    style={{ fontSize: "0.82rem", cursor: "pointer", gap: "8px" }}
                   >
-                    <i className={`bi ${item.icon}`} style={{ color: item.badgeColor, width: "18px" }}></i>
+                    <i className={`bi ${item.icon} me-2`} style={{ color: item.badgeColor, width: "18px" }}></i>
                     <span>{item.label}</span>
                   </button>
                 ))}
@@ -558,29 +559,29 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
                 <div className="d-flex align-items-center gap-2 flex-wrap mt-2.5 pt-1">
                   <button
                     type="button"
-                    className="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1 py-1 px-2.5 rounded-2"
-                    style={{ fontSize: "0.78rem" }}
+                    className="btn btn-sm btn-outline-primary d-inline-flex align-items-center py-1 px-2.5 rounded-2"
+                    style={{ fontSize: "0.78rem", gap: "6px" }}
                     onClick={handleAddOption}
                   >
-                    <i className="bi bi-plus-circle"></i> Add Option
+                    <i className="bi bi-plus-circle me-1.5"></i> Add Option
                   </button>
 
                   <button
                     type="button"
-                    className="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1 py-1 px-2.5 rounded-2"
-                    style={{ fontSize: "0.78rem" }}
+                    className="btn btn-sm btn-outline-secondary d-inline-flex align-items-center py-1 px-2.5 rounded-2"
+                    style={{ fontSize: "0.78rem", gap: "6px" }}
                     onClick={handleAddOtherOption}
                   >
-                    <i className="bi bi-plus-square"></i> Add &quot;Other&quot;
+                    <i className="bi bi-plus-square me-1.5"></i> Add &quot;Other&quot;
                   </button>
 
                   <button
                     type="button"
-                    className="btn btn-sm btn-outline-info d-inline-flex align-items-center gap-1 py-1 px-2.5 rounded-2"
-                    style={{ fontSize: "0.78rem" }}
+                    className="btn btn-sm btn-outline-info d-inline-flex align-items-center py-1 px-2.5 rounded-2"
+                    style={{ fontSize: "0.78rem", gap: "6px" }}
                     onClick={() => setShowBulkAdd(!showBulkAdd)}
                   >
-                    <i className="bi bi-list-nested"></i> {showBulkAdd ? "Close Bulk Add" : "Bulk Paste Options"}
+                    <i className="bi bi-list-nested me-1.5"></i> {showBulkAdd ? "Close Bulk Add" : "Bulk Paste Options"}
                   </button>
                 </div>
 
