@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { motion as m, AnimatePresence } from "framer-motion";
 import Cropper from "react-easy-crop";
 import type { Area, Point } from "react-easy-crop";
@@ -28,6 +28,20 @@ export const EventCropperModal: React.FC<EventCropperModalProps> = ({
   onSave,
   onCancel,
 }) => {
+  // Trigger window resize event on mount/show so react-easy-crop calculates 100% exact container dimensions immediately
+  useEffect(() => {
+    if (show && imageToCrop) {
+      const t1 = setTimeout(() => window.dispatchEvent(new Event("resize")), 20);
+      const t2 = setTimeout(() => window.dispatchEvent(new Event("resize")), 100);
+      const t3 = setTimeout(() => window.dispatchEvent(new Event("resize")), 250);
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+        clearTimeout(t3);
+      };
+    }
+  }, [show, imageToCrop, cropTarget]);
+
   return (
     <AnimatePresence>
       {show && imageToCrop && (
@@ -37,16 +51,19 @@ export const EventCropperModal: React.FC<EventCropperModalProps> = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
+          transition={{ duration: 0.15 }}
           onClick={onCancel}
         >
           <m.div
             className="event-crop-modal p-4 m-2"
-            style={{ maxWidth: "760px", width: "100%" }}
-            initial={{ scale: 0.94, opacity: 0, y: 15 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.94, opacity: 0, y: 15 }}
-            transition={{ type: "spring", stiffness: 320, damping: 25 }}
+            style={{ maxWidth: "780px", width: "100%" }}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 12 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            onAnimationComplete={() => {
+              window.dispatchEvent(new Event("resize"));
+            }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
@@ -93,13 +110,14 @@ export const EventCropperModal: React.FC<EventCropperModalProps> = ({
             <div
               className="position-relative overflow-hidden rounded-3 mb-3"
               style={{
-                height: cropTarget === "thumbnail" ? "400px" : "460px",
+                height: cropTarget === "thumbnail" ? "420px" : "480px",
                 background: "#020617",
                 border: "1px solid rgba(255, 255, 255, 0.12)",
                 boxShadow: "inset 0 0 40px rgba(0,0,0,0.8)",
               }}
             >
               <Cropper
+                key={`${cropTarget}-${imageToCrop.substring(0, 32)}`}
                 image={imageToCrop}
                 crop={crop}
                 zoom={zoom}
@@ -111,6 +129,16 @@ export const EventCropperModal: React.FC<EventCropperModalProps> = ({
                 onCropComplete={onCropComplete}
                 onZoomChange={onZoomChange}
                 showGrid={true}
+                style={{
+                  containerStyle: {
+                    background: "#020617",
+                  },
+                  cropAreaStyle: {
+                    border: "2px solid #38bdf8",
+                    boxShadow: "0 0 0 9999em rgba(2, 6, 23, 0.65)",
+                    borderRadius: "3px",
+                  },
+                }}
               />
             </div>
 
