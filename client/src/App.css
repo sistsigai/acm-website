@@ -200,6 +200,26 @@ body::-webkit-scrollbar {
   }
 }
 
+@keyframes scannerModalFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scannerModalSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(32px) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 @keyframes modalScaleIn {
   from {
     transform: scale(0.98);
