@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { Link } from "react-router-dom";
 import { motion as m, AnimatePresence } from "framer-motion";
 import AdminLayout from "../../components/AdminLayout";
 import {
@@ -771,21 +770,6 @@ const EventManager: React.FC = () => {
             <p className="text-secondary m-0">Manage schedule, media, and attendee registrations</p>
           </div>
           <div className="d-flex align-items-center gap-2">
-            <Link
-              to="/admin/scanner"
-              className="btn btn-outline-info px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2 text-decoration-none shadow-sm"
-              style={{
-                borderRadius: "12px",
-                borderColor: "rgba(56, 189, 248, 0.4)",
-                background: "rgba(56, 189, 248, 0.08)",
-                color: "#38bdf8",
-              }}
-              title="Open Mobile Attendance QR Scanner"
-            >
-              <i className="bi bi-qr-code-scan"></i>
-              <span>Mobile Scanner</span>
-            </Link>
-
             <button
               type="button"
               className="btn btn-primary px-4 py-2 fw-semibold shadow-lg d-flex align-items-center gap-2"

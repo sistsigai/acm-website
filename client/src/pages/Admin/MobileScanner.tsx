@@ -260,11 +260,10 @@ const MobileScanner: React.FC = () => {
           />
         </div>
 
-        {/* Scan Result Bottom Sheet */}
+        {/* Scan Result Overlay Modal */}
         <ScanResultOverlay
           result={scanResult}
           onDismiss={handleDismissResult}
-          autoResumeSeconds={2.5}
         />
       </div>
     );
