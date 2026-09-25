@@ -21,18 +21,53 @@ export const CameraScanner: React.FC<CameraScannerProps> = ({
   const [hasTorch, setHasTorch] = useState(false);
   const lastScanTime = useRef<number>(0);
 
-  // Handle successful scan with debounce
-  const handleDecoded = useCallback(
-    (decodedText: string) => {
-      const now = Date.now();
-      if (now - lastScanTime.current < 2000 || isPaused) {
-        return;
+  const isPausedRef = useRef(isPaused);
+  const onScanRef = useRef(onScan);
+
+  useEffect(() => {
+    isPausedRef.current = isPaused;
+    if (scannerRef.current) {
+      if (isPaused) {
+        try {
+          if (scannerRef.current.isScanning) {
+            scannerRef.current.pause(true);
+          }
+        } catch {}
+      } else {
+        try {
+          if (scannerRef.current.isScanning) {
+            scannerRef.current.resume();
+          }
+        } catch {}
       }
-      lastScanTime.current = now;
-      onScan(decodedText);
-    },
-    [isPaused, onScan]
-  );
+    }
+  }, [isPaused]);
+
+  useEffect(() => {
+    onScanRef.current = onScan;
+  }, [onScan]);
+
+  // Handle successful scan with single-fire lock
+  const handleDecoded = useCallback((decodedText: string) => {
+    if (isPausedRef.current) {
+      return;
+    }
+    const now = Date.now();
+    if (now - lastScanTime.current < 2500) {
+      return;
+    }
+    lastScanTime.current = now;
+    isPausedRef.current = true; // Lock immediately
+
+    // Pause hardware stream
+    if (scannerRef.current && scannerRef.current.isScanning) {
+      try {
+        scannerRef.current.pause(true);
+      } catch {}
+    }
+
+    onScanRef.current(decodedText);
+  }, []);
 
   // Start Scanner
   const startCamera = useCallback(async () => {
@@ -53,7 +88,7 @@ export const CameraScanner: React.FC<CameraScannerProps> = ({
       scannerRef.current = html5QrCode;
 
       const qrConfig = {
-        fps: 20,
+        fps: 15,
         qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
           const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
           const qrEdge = Math.max(220, Math.min(Math.floor(minEdge * 0.75), 280));

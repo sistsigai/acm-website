@@ -1,5 +1,6 @@
 import React from "react";
-import { m, AnimatePresence } from "framer-motion";
+import { createPortal } from "react-dom";
+import { motion, AnimatePresence } from "framer-motion";
 
 export type ScanStatusType = "success" | "already_checked_in" | "invalid";
 
@@ -34,7 +35,7 @@ export const ScanResultOverlay: React.FC<ScanResultOverlayProps> = ({
     ? {
         bg: "#052e16",
         border: "#22c55e",
-        glow: "rgba(34, 197, 94, 0.35)",
+        glow: "rgba(34, 197, 94, 0.4)",
         iconBg: "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)",
         textColor: "#4ade80",
         badgeBg: "rgba(34, 197, 94, 0.2)",
@@ -50,7 +51,7 @@ export const ScanResultOverlay: React.FC<ScanResultOverlayProps> = ({
     ? {
         bg: "#2e1a05",
         border: "#f59e0b",
-        glow: "rgba(245, 158, 11, 0.35)",
+        glow: "rgba(245, 158, 11, 0.4)",
         iconBg: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
         textColor: "#fbbf24",
         badgeBg: "rgba(245, 158, 11, 0.2)",
@@ -65,7 +66,7 @@ export const ScanResultOverlay: React.FC<ScanResultOverlayProps> = ({
     : {
         bg: "#2e0808",
         border: "#ef4444",
-        glow: "rgba(239, 68, 68, 0.35)",
+        glow: "rgba(239, 68, 68, 0.4)",
         iconBg: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
         textColor: "#f87171",
         badgeBg: "rgba(239, 68, 68, 0.2)",
@@ -78,36 +79,36 @@ export const ScanResultOverlay: React.FC<ScanResultOverlayProps> = ({
         btnShadow: "0 6px 20px rgba(59, 130, 246, 0.4)",
       };
 
-  return (
+  return createPortal(
     <AnimatePresence>
-      <m.div
+      <motion.div
         className="position-fixed d-flex align-items-center justify-content-center p-3"
         style={{
           inset: 0,
-          background: "rgba(0, 0, 0, 0.82)",
-          backdropFilter: "blur(12px)",
-          WebkitBackdropFilter: "blur(12px)",
-          zIndex: 9999,
+          background: "rgba(0, 0, 0, 0.85)",
+          backdropFilter: "blur(14px)",
+          WebkitBackdropFilter: "blur(14px)",
+          zIndex: 99999,
         }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onDismiss}
       >
-        <m.div
+        <motion.div
           className="w-100 rounded-4 overflow-hidden position-relative"
           style={{
             maxWidth: "420px",
             background: "#0c1322",
             border: `2px solid ${themeConfig.border}`,
-            boxShadow: `0 25px 60px -10px rgba(0, 0, 0, 0.95), 0 0 35px ${themeConfig.glow}`,
+            boxShadow: `0 25px 60px -10px rgba(0, 0, 0, 0.95), 0 0 40px ${themeConfig.glow}`,
             color: "#f8fafc",
             padding: "24px 20px 22px",
           }}
-          initial={{ y: 50, opacity: 0, scale: 0.92 }}
+          initial={{ y: 40, opacity: 0, scale: 0.92 }}
           animate={{ y: 0, opacity: 1, scale: 1 }}
-          exit={{ y: 50, opacity: 0, scale: 0.92 }}
-          transition={{ type: "spring", damping: 26, stiffness: 320 }}
+          exit={{ y: 40, opacity: 0, scale: 0.92 }}
+          transition={{ type: "spring", damping: 25, stiffness: 320 }}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Top Status Icon */}
@@ -238,11 +239,11 @@ export const ScanResultOverlay: React.FC<ScanResultOverlayProps> = ({
             <span>Scan Next Ticket</span>
             <i className="bi bi-arrow-right fs-5 ms-1"></i>
           </button>
-        </m.div>
-      </m.div>
-    </AnimatePresence>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>,
+    document.body
   );
 };
 
 export default ScanResultOverlay;
-
