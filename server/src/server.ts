@@ -39,6 +39,7 @@ const isDevelopment = !isProduction;
 const app: Application = express();
 
 // ========== SECURITY ENHANCEMENTS ==========
+// Registered security & route middlewares
 app.use(helmet());
 
 app.use((req: Request, res: Response, next: NextFunction) => {

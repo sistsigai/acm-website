@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { motion as m, AnimatePresence, type Variants } from "framer-motion";
-import { FaMedium, FaSearch, } from "react-icons/fa";
+import { motion as m, AnimatePresence } from "framer-motion";
+import { FaMedium, FaSearch } from "react-icons/fa";
 import { fetchMediumBlogs } from '../../services/website/blogService';
+import { fadeIn } from '../../components/transitions';
 
 // --- TYPES ---
 interface BlogPost {
@@ -11,6 +12,43 @@ interface BlogPost {
     pubDate: string;
     thumbnail?: string;
 }
+
+// --- MEMOIZED BLOG CARD (With continuous scroll animation) ---
+const BlogCard = React.memo(({ post }: { post: BlogPost }) => {
+    return (
+        <m.div
+            className="blog-card"
+            variants={fadeIn("up", 0.15)}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: false, amount: 0.2 }}
+            whileHover={{ y: -8 }}
+        >
+            <div className="post-date">
+                {post.pubDate.split(" ")[0]}
+            </div>
+
+            <h3 className="post-title">{post.title}</h3>
+
+            <p className="post-excerpt">{post.content}</p>
+
+            {post.thumbnail && (
+                <div className="blog-image">
+                    <img src={post.thumbnail} alt={post.title} loading="lazy" />
+                </div>
+            )}
+
+            <a
+                href={post.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="read-more-btn"
+            >
+                Read Full Article
+            </a>
+        </m.div>
+    );
+});
 
 const Blogs: React.FC = () => {
     const [posts, setPosts] = useState<BlogPost[]>([]);
@@ -34,25 +72,8 @@ const Blogs: React.FC = () => {
         post.title.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    // --- ANIMATION VARIANTS ---
-    const containerVariants: Variants = {
-        hidden: { opacity: 0 },
-        show: { opacity: 1, transition: { staggerChildren: 0.1 } }
-    };
-
-    const itemVariants: Variants = {
-        hidden: { y: 30, opacity: 0 },
-        show: {
-            y: 0,
-            opacity: 1,
-            transition: { type: "spring" as const, stiffness: 60 }
-        }
-    };
-
     return (
         <div className="blog-page">
-
-
             {/* --- HEADER --- */}
             <div className="page-header">
                 <m.h1
@@ -98,46 +119,11 @@ const Blogs: React.FC = () => {
             </m.div>
 
             {/* --- BLOG POSTS --- */}
-            <m.div
-                className="blog-grid"
-                variants={containerVariants}
-                initial="hidden"
-                animate="show"
-            >
+            <div className="blog-grid">
                 <AnimatePresence>
                     {filteredPosts.length > 0 ? (
                         filteredPosts.map((post, index) => (
-                            <m.div
-                                key={`${post.link}-${index}`}
-                                className="blog-card"
-                                variants={itemVariants}
-                                initial="hidden"
-                                animate="show"
-                                exit={{ opacity: 0, y: -20 }}
-                            >
-                                <div className="post-date">
-                                    {post.pubDate.split(" ")[0]}
-                                </div>
-
-                                <h3 className="post-title">{post.title}</h3>
-
-                                <p className="post-excerpt">{post.content}</p>
-
-                                {post.thumbnail && (
-                                    <div className="blog-image">
-                                        <img src={post.thumbnail} alt={post.title} />
-                                    </div>
-                                )}
-
-                                <a
-                                    href={post.link}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="read-more-btn"
-                                >
-                                    Read Full Article
-                                </a>
-                            </m.div>
+                            <BlogCard key={`${post.link}-${index}`} post={post} />
                         ))
                     ) : (
                         <m.div
@@ -154,9 +140,7 @@ const Blogs: React.FC = () => {
                         </m.div>
                     )}
                 </AnimatePresence>
-            </m.div>
-
-
+            </div>
         </div>
     );
 };

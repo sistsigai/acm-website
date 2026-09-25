@@ -154,20 +154,17 @@ export const DeadlineBigCountdownBadge: React.FC<{
 };
 
 const cardItemVariants: Variants = {
-  hidden: { opacity: 0, y: 25, scale: 0.96 },
+  hidden: { opacity: 0, y: 20 },
   visible: {
     opacity: 1,
     y: 0,
-    scale: 1,
     transition: {
-      type: "spring",
-      damping: 20,
-      stiffness: 260,
+      duration: 0.45,
+      ease: "easeOut",
     },
   },
   exit: {
     opacity: 0,
-    scale: 0.92,
     y: 15,
     transition: { duration: 0.25 },
   },
@@ -192,7 +189,7 @@ export const WebEventCard: React.FC<WebEventCardProps> = ({ event, onSelect }) =
         y: -6,
         boxShadow: "0 22px 45px -10px rgba(0, 0, 0, 0.9), 0 0 30px rgba(56, 189, 248, 0.25)",
       }}
-      transition={{ type: "spring", stiffness: 300, damping: 22 }}
+      transition={{ duration: 0.25, ease: "easeOut" }}
     >
       {/* Full Background Image Cover */}
       <div className="admin-card-bg-cover">

@@ -7,7 +7,6 @@ import { FaInstagram, FaLinkedin, FaFacebook } from "react-icons/fa";
 
 // --- LOCAL IMAGES (Only for non-member content) ---
 import { getMembers, type Member } from '../../services/website/aboutservice';
-import { FloatingOrb } from '../../components/StatusMessage';
 import CustomSelect from '../../components/Admin/Members/CustomSelect';
 
 const UNIT_OPTIONS = [
@@ -102,8 +101,6 @@ const About: React.FC = () => {
   const location = useLocation();
   const [selectedYear, setSelectedYear] = useState<string>('2025-2026');
   const [members, setMembers] = useState<Member[]>([]);
-  const [showMessage, setShowMessage] = useState(false);
-  const [messageText, setMessageText] = useState("");
 
   type SocialType = "instagram" | "linkedin" | "facebook";
 
@@ -120,8 +117,6 @@ const About: React.FC = () => {
         setMembers(data);
       } catch (err) {
         console.error("Error fetching members:", err);
-        setMessageText("Failed to load team members. Please try again later.");
-        setShowMessage(true);
       }
     };
 
@@ -239,14 +234,6 @@ const About: React.FC = () => {
 
   return (
     <>
-      {/* FLOATING MESSAGE */}
-      <FloatingOrb
-        isVisible={showMessage}
-        message={messageText}
-        type="error"
-        onClose={() => setShowMessage(false)}
-      />
-
       <div className='about1' id='about'>
         {/* ENHANCED MAIN TITLE */}
         <m.h1

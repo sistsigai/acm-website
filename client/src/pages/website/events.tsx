@@ -6,7 +6,6 @@ import {
   type EventRegistrationPayload,
 } from "../../services/website/webeventService";
 import { GlobalLoader } from "../../components/GlobalLoader";
-import { FloatingOrb } from "../../components/StatusMessage";
 import WebEventCard, { type ExtendedEventData } from "../../components/Website/Events/WebEventCard";
 import WebEventDetailModal from "../../components/Website/Events/WebEventDetailModal";
 import WebEventRegistrationModal from "../../components/Website/Events/WebEventRegistrationModal";
@@ -25,25 +24,6 @@ const Events: React.FC = () => {
   const [globalLoading, setGlobalLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Toast state
-  const [toast, setToast] = useState<{
-    visible: boolean;
-    message: string;
-    type: "success" | "error" | "info";
-  }>({
-    visible: false,
-    message: "",
-    type: "info",
-  });
-
-  const showToast = (message: string, type: "success" | "error" | "info" = "info") => {
-    setToast({ visible: true, message, type });
-  };
-
-  const hideToast = () => {
-    setToast((prev) => ({ ...prev, visible: false }));
-  };
-
   // Fetch events
   useEffect(() => {
     const fetchEvents = async () => {
@@ -57,7 +37,6 @@ const Events: React.FC = () => {
         }
       } catch {
         setError("Failed to load events");
-        showToast("Failed to load events", "error");
       } finally {
         setGlobalLoading(false);
         setLoading(false);
@@ -73,11 +52,9 @@ const Events: React.FC = () => {
       setIsSubmitting(true);
       setGlobalLoading(true);
       await submitEventRegistration(payload);
-      showToast("Successfully registered for the event!", "success");
       setShowRegisterModal(false);
     } catch (err: any) {
-      const msg = err?.response?.data?.message || err.message || "Registration failed";
-      showToast(msg, "error");
+      console.error("Registration failed", err);
     } finally {
       setIsSubmitting(false);
       setGlobalLoading(false);
@@ -115,13 +92,6 @@ const Events: React.FC = () => {
   return (
     <div className="events-page">
       <GlobalLoader isLoading={globalLoading} />
-
-      <FloatingOrb
-        isVisible={toast.visible}
-        message={toast.message}
-        type={toast.type}
-        onClose={hideToast}
-      />
 
       <m.h1
         className="text-gradient"
@@ -173,7 +143,6 @@ const Events: React.FC = () => {
         isSubmitting={isSubmitting}
         onClose={() => setShowRegisterModal(false)}
         onSubmit={handleRegistrationSubmit}
-        showToast={showToast}
       />
     </div>
   );

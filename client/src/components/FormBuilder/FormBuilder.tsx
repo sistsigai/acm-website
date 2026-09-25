@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import type { IQuestion, QuestionType } from "../../types/formBuilder";
+import { DEFAULT_INITIAL_EVENT_QUESTIONS, isCompulsoryQuestion } from "../../types/formBuilder";
 import QuestionCard from "./QuestionCard";
 import FormPreviewModal from "./FormPreviewModal";
 
@@ -113,7 +114,11 @@ const FormBuilder: React.FC<FormBuilderProps> = ({
 
   const handleUpdateQuestion = (index: number, updatedQuestion: IQuestion) => {
     const updated = [...questions];
-    updated[index] = updatedQuestion;
+    if (isCompulsoryQuestion(updatedQuestion)) {
+      updated[index] = { ...updatedQuestion, required: true, isCompulsory: true };
+    } else {
+      updated[index] = updatedQuestion;
+    }
     onChange(updated);
   };
 
@@ -123,6 +128,7 @@ const FormBuilder: React.FC<FormBuilderProps> = ({
       ...target,
       id: `q_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
       question: target.question ? `${target.question} (Copy)` : "",
+      isCompulsory: false, // Duplicated copies are not compulsory
       options: target.options
         ? target.options.map((o) => ({
             ...o,
@@ -138,6 +144,8 @@ const FormBuilder: React.FC<FormBuilderProps> = ({
   };
 
   const handleDeleteQuestion = (index: number) => {
+    const target = questions[index];
+    if (target && isCompulsoryQuestion(target)) return;
     const updated = questions.filter((_, i) => i !== index);
     onChange(updated);
     if (activeQuestionId === questions[index]?.id) {
@@ -164,8 +172,8 @@ const FormBuilder: React.FC<FormBuilderProps> = ({
   };
 
   const handleConfirmClearAll = () => {
-    onChange([]);
-    setActiveQuestionId(null);
+    onChange(DEFAULT_INITIAL_EVENT_QUESTIONS);
+    setActiveQuestionId(DEFAULT_INITIAL_EVENT_QUESTIONS[0]?.id || null);
     setCollapsedIds(new Set());
     setShowClearConfirmModal(false);
   };
@@ -414,10 +422,9 @@ const FormBuilder: React.FC<FormBuilderProps> = ({
               >
                 <i className="bi bi-trash3-fill fs-3"></i>
               </div>
-              <h5 className="fw-bold mb-2 text-white">Clear All Questions?</h5>
+              <h5 className="fw-bold mb-2 text-white">Reset Questions?</h5>
               <p className="text-secondary mb-4 small" style={{ lineHeight: 1.5 }}>
-                Are you sure you want to remove all {questions.length} question
-                {questions.length > 1 ? "s" : ""}? This action cannot be undone.
+                Are you sure you want to reset all custom questions? The 3 compulsory questions (<strong>Full Name</strong>, <strong>Register Number</strong>, and <strong>Email ID</strong>) will remain preserved as default.
               </p>
 
               <div className="d-flex gap-2 justify-content-center">
@@ -440,8 +447,8 @@ const FormBuilder: React.FC<FormBuilderProps> = ({
                   }}
                   onClick={handleConfirmClearAll}
                 >
-                  <i className="bi bi-trash me-1.5"></i>
-                  Clear All
+                  <i className="bi bi-arrow-counterclockwise me-1.5"></i>
+                  Reset to Default
                 </button>
               </div>
             </div>

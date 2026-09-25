@@ -22,7 +22,135 @@ const Insightx = () => {
     const sliderImages = [...images, ...images];
 
     return (
-        <div className="synergy-page" style={{ backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.85)), url(${insightxBg})` }}>
+        <div className="synergy-page">
+            <style>{`
+        .synergy-page {
+          width: 100%;
+          padding: 120px 0 60px;
+          color: #fff;
+          font-family: 'Poppins', sans-serif;
+          overflow-x: hidden;
+          min-height: 100vh;
+
+          /* --- BACKGROUND IMAGE SETUP --- */
+          background: linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.85)), url(${insightxBg});
+          background-size: cover;
+          background-position: center;
+          background-attachment: scroll; 
+          background-repeat: no-repeat;
+        }
+
+        /* --- TYPOGRAPHY & HEADERS --- */
+        .page-header, .section-header {
+            text-align: center; margin-bottom: 40px; padding: 0 20px;
+        }
+
+        .text-gradient {
+            background: linear-gradient(135deg, #fff 0%, var(--primary-blue, var(--primary-blue)) 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            font-weight: 900;
+            letter-spacing: -2px;
+            font-size: clamp(2.5rem, 6vw, 4.5rem);
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 800;
+            margin: 80px 0 40px;
+            text-align: center;
+        }
+
+        .highlight-blue {
+            color: var(--primary-blue); /* Primary Blue */
+        }
+
+        p.content-text {
+            color: #cbd5e1;
+            font-size: 1.1rem;
+            line-height: 1.8;
+            max-width: 1000px;
+            margin: 0 auto 30px;
+            text-align: justify;
+            font-weight: 300;
+            padding: 0 20px;
+        }
+
+        strong {
+            color: #fff;
+            font-weight: 600;
+        }
+
+        /* --- MARQUEE STYLES --- */
+        .marquee-container {
+            width: 100%;
+            height: 400px;
+            margin: 60px 0 100px;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            align-items: center;
+            mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+            -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+        }
+
+        .marquee-track {
+            display: flex;
+            gap: 30px;
+            width: max-content;
+            animation: scroll 50s linear infinite; 
+        }
+        
+        .marquee-container:hover .marquee-track {
+            animation-play-state: paused;
+        }
+
+        .marquee-item {
+            height: 400px;
+            width: 600px;
+            border-radius: 16px;
+            overflow: hidden;
+            flex-shrink: 0;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            transition: transform 0.3s ease;
+        }
+        
+        .marquee-item:hover {
+            transform: scale(0.98);
+        }
+
+        .marquee-item img {
+            width: 100%; height: 100%; object-fit: cover;
+            filter: grayscale(60%) brightness(0.8);
+            transition: all 0.5s ease;
+            transform: scale(1);
+        }
+
+        .marquee-item:hover img {
+            filter: grayscale(0%) brightness(1);
+            transform: scale(1.1);
+        }
+
+        @keyframes scroll {
+            0% { transform: translateX(0); }
+            /* Adjusted for roughly 12 unique images */
+            100% { transform: translateX(calc(-630px * 12)); }
+        }
+
+        /* --- RESPONSIVE --- */
+        @media (max-width: 900px) {
+            .marquee-item { width: 350px; height: 280px; }
+            .marquee-container { height: 280px; }
+            
+            @keyframes scroll {
+                0% { transform: translateX(0); }
+                100% { transform: translateX(calc(-380px * 12)); }
+            }
+            
+            .text-gradient { font-size: 2.5rem; }
+        }
+      `}</style>
 
             {/* --- TITLE SECTION --- */}
             <div className="page-header">
@@ -74,7 +202,7 @@ const Insightx = () => {
                 variants={fadeIn("up", 0.2)}
                 initial="hidden"
                 whileInView="show"
-                viewport={{ once: false, amount: 0.1 }}
+                viewport={{ once: true, amount: 0.3 }}
             >
                 KEY <span className="highlight-blue">HIGHLIGHTS</span>
             </m.h2>
@@ -85,9 +213,9 @@ const Insightx = () => {
                     variants={fadeIn("up", 0.2)}
                     initial="hidden"
                     whileInView="show"
-                    viewport={{ once: false }}
+                    viewport={{ once: true }}
                 >
-                    The event began with our core unit members, <strong>Ms. Janllyn Avantikha and Ms. Vaishnavi Battina</strong>, introducing our Student Chapter to the audience, followed by a speech from our honorable Head of the Department, <strong>Dr. Vigneshwari.</strong>
+                    The event featured several engaging technical and non-technical activities that encouraged students to showcase their creativity, teamwork, and problem-solving skills. One of the major attractions was <strong>"Data Pix,"</strong> where participants combined data science with storytelling by analyzing datasets using Python and presenting their ideas creatively through Canva and PowerPoint presentations. Students actively participated and explored innovative approaches to solving real-world problems.
                 </m.p>
 
                 <m.p
@@ -95,9 +223,9 @@ const Insightx = () => {
                     variants={fadeIn("up", 0.2)}
                     initial="hidden"
                     whileInView="show"
-                    viewport={{ once: false }}
+                    viewport={{ once: true }}
                 >
-                    The first round of the event was a non-technical fun activity, "Trash to Treasure." All the students were divided into teams and provided with a bunch of trash and chart paper. They were tasked with creating something innovative from the materials they were given. The students showed immense enthusiasm and worked wonders with their creations. The results were evaluated by our faculty coordinators, <strong>Dr. R. Sathyabama Krishna and Dr. Anu Barathi</strong>. Two winners were selected from the teams.
+                    Following this was <strong>"Debug Dominion,"</strong> a coding-based competition that tested logical thinking and collaboration among teams. Participants worked together in assigned roles such as Problem Solver, Code Checker, and Planner to identify bugs and review code efficiently. The event created a competitive atmosphere that strengthened both technical knowledge and team coordination skills among students.
                 </m.p>
 
                 <m.p
@@ -105,9 +233,9 @@ const Insightx = () => {
                     variants={fadeIn("up", 0.2)}
                     initial="hidden"
                     whileInView="show"
-                    viewport={{ once: false }}
+                    viewport={{ once: true }}
                 >
-                    Following this was an orientation session where the members of our Student Chapter took the stage to explain the various future opportunities available to students after graduation. <strong>Ms. Sri Soundharya</strong>, Secretary of the Student Chapter, gave a detailed explanation of the current placement opportunities and how to aim for them. <strong>Ms. Sushree Sonali Patra</strong>, a core unit member, discussed entrepreneurship opportunities, highlighting its advantages and drawbacks with real-life examples. <strong>Ms. Vaishnavi Battina</strong>, another core unit member, familiarized the students with post-graduation degrees available to them, their eligibility criteria, and how to approach them. The students found this session extremely informative.
+                    The symposium also included an insightful guest talk on <strong>"Trends Shaping the Future"</strong> delivered by <strong>Mr. Arun C.</strong> The session focused on the Big Data Revolution and highlighted the growing importance of data-driven technologies across industries. Students gained valuable insights into emerging trends, practical applications of big data, and the role of analytics in modern decision-making.
                 </m.p>
 
                 <m.p
@@ -115,9 +243,9 @@ const Insightx = () => {
                     variants={fadeIn("up", 0.2)}
                     initial="hidden"
                     whileInView="show"
-                    viewport={{ once: false }}
+                    viewport={{ once: true }}
                 >
-                    <strong>Ms. Deekshitha</strong>, Treasurer of the Student Chapter, engaged with the students and spoke about the anxiety surrounding career decisions, offering advice on how to handle it and passionately pursue one's dreams.
+                    Several non-technical competitions added excitement and energy to the event. <strong>"Enchanting Quest"</strong> engaged students in an adventurous treasure hunt where teams solved clues and challenges to reach the final destination. <strong>"Guess It"</strong> entertained participants through interactive visual puzzles that tested their creativity and reasoning abilities. <strong>"Stack 'N' Conquer"</strong> further promoted communication and teamwork through unique cup-stacking challenges conducted under time pressure.
                 </m.p>
 
                 <m.p
@@ -125,9 +253,19 @@ const Insightx = () => {
                     variants={fadeIn("up", 0.2)}
                     initial="hidden"
                     whileInView="show"
-                    viewport={{ once: false }}
+                    viewport={{ once: true }}
                 >
-                    Overall, the event was a great success, and all the students thoroughly enjoyed it. We are thankful to all the dignitaries, faculty coordinators, student coordinators, and freshers who attended the event, contributing to its success. We look forward to organizing more such events in the future.
+                    The <strong>Free Fire</strong> and <strong>BGMI</strong> tournaments also attracted enthusiastic participation from gaming enthusiasts. Teams competed strategically through multiple rounds, showcasing coordination, precision, and gaming skills in intense battle royale matches.
+                </m.p>
+
+                <m.p
+                    className="content-text"
+                    variants={fadeIn("up", 0.2)}
+                    initial="hidden"
+                    whileInView="show"
+                    viewport={{ once: true }}
+                >
+                    Overall, the event successfully created an engaging platform for students to learn, compete, interact, and collaborate, making InsightX'24 a memorable experience for everyone involved.
                 </m.p>
             </div>
 

@@ -239,6 +239,21 @@ export const toggleRegistrationAttendance = async (
   }
 };
 
+export const deleteEventRegistration = async (
+  registrationId: string
+): Promise<{ success: boolean; message: string }> => {
+  try {
+    const res = await axiosInstance.delete(
+      `/admin/eventmanager/registration/${registrationId}`
+    );
+    return res.data;
+  } catch (err: any) {
+    throw new Error(
+      err?.response?.data?.message || "Failed to delete attendee registration"
+    );
+  }
+};
+
 export const exportEventRegistrationsCsv = async (eventId: string, eventName: string): Promise<void> => {
   try {
     const res = await axiosInstance.get(`/admin/eventmanager/${eventId}/registrations/export`, {

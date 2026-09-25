@@ -586,14 +586,6 @@ export const registerForEvent = async (
                     <td style="font-weight: 600;">${registerNo}</td>
                   </tr>
                   <tr>
-                    <td style="color: #94a3b8; font-weight: 500;">Department</td>
-                    <td style="font-weight: 600;">${dept}</td>
-                  </tr>
-                  <tr>
-                    <td style="color: #94a3b8; font-weight: 500;">Class</td>
-                    <td style="font-weight: 600;">Year ${year} - Section ${section}</td>
-                  </tr>
-                  <tr>
                     <td style="color: #94a3b8; font-weight: 500;">Event</td>
                     <td style="font-weight: 600;">${event.name}</td>
                   </tr>

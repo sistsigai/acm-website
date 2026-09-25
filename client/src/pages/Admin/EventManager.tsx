@@ -24,7 +24,7 @@ import AdminEventDetailModal from "../../components/Admin/Events/AdminEventDetai
 import EventAttendeesModal from "../../components/Admin/Events/EventAttendeesModal";
 import ConfirmModal from "../../components/Common/ConfirmModal";
 import CustomSelect from "../../components/Common/CustomSelect";
-import { DEFAULT_INITIAL_EVENT_QUESTIONS } from "../../types/formBuilder";
+import { DEFAULT_INITIAL_EVENT_QUESTIONS, ensureCompulsoryQuestions } from "../../types/formBuilder";
 
 // Default registration questions derived from form builder defaults (Name, Register Number, Email ID, Phone Number)
 const INITIAL_REGISTRATION_QUESTIONS = DEFAULT_INITIAL_EVENT_QUESTIONS.map((q) => q.question);
@@ -491,10 +491,7 @@ const EventManager: React.FC = () => {
             }))
           : [{ name: "", phone: "", role: "Student Coordinator" }],
       registrationQuestions: event.registrationQuestions || INITIAL_REGISTRATION_QUESTIONS,
-      customQuestions:
-        event.customQuestions && event.customQuestions.length > 0
-          ? event.customQuestions
-          : DEFAULT_INITIAL_EVENT_QUESTIONS,
+      customQuestions: ensureCompulsoryQuestions(event.customQuestions || []),
       whatsappGroupLink: event.whatsappGroupLink || "",
       display: event.display !== false,
     });

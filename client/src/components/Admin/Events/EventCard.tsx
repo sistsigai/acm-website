@@ -216,7 +216,7 @@ export const EventCard: React.FC<EventCardProps> = ({
                 whileTap={{ scale: 0.98 }}
                 aria-label={`View details for ${event.name}`}
               >
-                <FaInfoCircle size={14} />
+                <FaInfoCircle size={16} />
                 <span>View Details</span>
               </m.button>
 
@@ -225,7 +225,7 @@ export const EventCard: React.FC<EventCardProps> = ({
                   type="button"
                   className="admin-card-btn-icon btn-attendees"
                   onClick={() => onOpenAttendees(event)}
-                  whileHover={{ scale: 1.1, y: -1 }}
+                  whileHover={{ scale: 1.08, y: -1 }}
                   whileTap={{ scale: 0.92 }}
                   title="Attendees & QR Attendance Scanner"
                   aria-label="Attendees and QR Attendance Scanner"
@@ -235,7 +235,7 @@ export const EventCard: React.FC<EventCardProps> = ({
                     color: "#38bdf8",
                   }}
                 >
-                  <FaQrcode size={13} />
+                  <FaQrcode size={18} />
                 </m.button>
               )}
 
@@ -243,24 +243,24 @@ export const EventCard: React.FC<EventCardProps> = ({
                 type="button"
                 className="admin-card-btn-icon btn-edit"
                 onClick={() => onEdit(event)}
-                whileHover={{ scale: 1.1, y: -1 }}
+                whileHover={{ scale: 1.08, y: -1 }}
                 whileTap={{ scale: 0.92 }}
                 title="Edit Event"
                 aria-label="Edit Event"
               >
-                <FaPencilAlt size={13} />
+                <FaPencilAlt size={16} />
               </m.button>
 
               <m.button
                 type="button"
                 className="admin-card-btn-icon btn-delete"
                 onClick={() => onDelete(event)}
-                whileHover={{ scale: 1.1, y: -1 }}
+                whileHover={{ scale: 1.08, y: -1 }}
                 whileTap={{ scale: 0.92 }}
                 title="Delete Event"
                 aria-label="Delete Event"
               >
-                <FaTrashAlt size={13} />
+                <FaTrashAlt size={16} />
               </m.button>
             </div>
           </div>

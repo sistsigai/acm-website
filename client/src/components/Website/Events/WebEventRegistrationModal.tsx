@@ -5,6 +5,7 @@ import { FaTimes, FaPaperPlane, FaExclamationTriangle } from "react-icons/fa";
 import DynamicFormRenderer, { type FileUploadInfo } from "../../FormRenderer/DynamicFormRenderer";
 import { CustomDatePicker } from "../../CustomDatePicker";
 import { CustomTimePicker } from "../../CustomTimePicker";
+import { GlobalLoader } from "../../GlobalLoader";
 import type { ExtendedEventData } from "./WebEventCard";
 import {
   type EventRegistrationPayload,
@@ -18,7 +19,7 @@ interface WebEventRegistrationModalProps {
   isSubmitting: boolean;
   onClose: () => void;
   onSubmit: (payload: EventRegistrationPayload) => Promise<void>;
-  showToast: (message: string, type?: "success" | "error" | "info") => void;
+  showToast?: (message: string, type?: "success" | "error" | "info") => void;
 }
 
 export const WebEventRegistrationModal: React.FC<WebEventRegistrationModalProps> = ({
@@ -28,7 +29,7 @@ export const WebEventRegistrationModal: React.FC<WebEventRegistrationModalProps>
   isSubmitting,
   onClose,
   onSubmit,
-  showToast,
+  showToast = () => {},
 }) => {
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -209,10 +210,17 @@ export const WebEventRegistrationModal: React.FC<WebEventRegistrationModalProps>
     await onSubmit(payload);
   };
 
-  return createPortal(
-    <AnimatePresence>
-      <m.div
-        className="reg-modal-backdrop"
+  return (
+    <>
+      <GlobalLoader
+        isLoading={isSubmitting}
+        message="Submitting Registration..."
+        submessage="Please wait, do not close or refresh this page"
+      />
+      {createPortal(
+        <AnimatePresence>
+          <m.div
+            className="reg-modal-backdrop"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -346,6 +354,8 @@ export const WebEventRegistrationModal: React.FC<WebEventRegistrationModalProps>
       </m.div>
     </AnimatePresence>,
     document.body
+  )}
+  </>
   );
 };
 

@@ -3,6 +3,7 @@ import { motion as m, AnimatePresence } from "framer-motion";
 import FormBuilder from "../../FormBuilder/FormBuilder";
 import { CustomDatePicker } from "../../CustomDatePicker";
 import { CustomTimePicker } from "../../CustomTimePicker";
+import { GlobalLoader } from "../../GlobalLoader";
 import type { IQuestion } from "../../../types/formBuilder";
 import type { ContactPerson } from "./EventCard";
 
@@ -189,9 +190,15 @@ export const EventStudioModal: React.FC<EventStudioModalProps> = ({
   ];
 
   return (
-    <AnimatePresence>
-      {show && (
-        <m.div
+    <>
+      <GlobalLoader
+        isLoading={isSubmitting}
+        message={editingId ? "Updating Event..." : "Creating Event..."}
+        submessage="Please wait while event configuration is saved"
+      />
+      <AnimatePresence>
+        {show && (
+          <m.div
           className="admin-modal-overlay"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -1184,6 +1191,7 @@ export const EventStudioModal: React.FC<EventStudioModalProps> = ({
     </m.div>
   )}
 </AnimatePresence>
+</>
   );
 };
 

@@ -1,6 +1,7 @@
-import { motion as m, type Variants } from "framer-motion";
+import React, { useRef } from "react";
+import { motion as m } from "framer-motion";
 import { useNavigate, type To } from 'react-router-dom';
-import { useRef } from "react";
+import { fadeIn } from '../../components/transitions';
 
 // --- Timeline Data ---
 const timelineData = [
@@ -18,35 +19,34 @@ const timelineData = [
   },
 ];
 
-// --- Animation Variants ---
-const containerVariants: Variants = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.3,
-      delayChildren: 0.1,
-    },
-  },
-};
+// --- REUSABLE CARD (Memoized with continuous scroll animation) ---
+const RootsCard = React.memo(({ item, index, onVisit }: { item: typeof timelineData[0]; index: number; onVisit: (link: To) => void }) => {
+  const direction = index % 2 === 0 ? "left" : "right";
 
-const itemVariants = (direction: "left" | "right"): Variants => ({
-  hidden: {
-    opacity: 0,
-    y: 50,
-    x: direction === "left" ? -50 : 50
-  },
-  show: {
-    opacity: 1,
-    y: 0,
-    x: 0,
-    transition: {
-      type: "spring",
-      stiffness: 50,
-      damping: 14,
-      mass: 1
-    }
-  },
+  return (
+    <m.div
+      className="timeline-item"
+      variants={fadeIn(direction === "left" ? "left" : "right", 0.15)}
+      initial="hidden"
+      whileInView="show"
+      viewport={{ once: false, amount: 0.2 }}
+    >
+      <div className="timeline-dot"></div>
+
+      <div className="timeline-content">
+        <span className="timeline-year">{item.year}</span>
+        <h2>{item.title}</h2>
+        <p>{item.description}</p>
+
+        <button
+          onClick={() => onVisit(item.link)}
+          className="timeline-visit-button"
+        >
+          View Batch
+        </button>
+      </div>
+    </m.div>
+  );
 });
 
 const Ourroots = () => {
@@ -61,59 +61,38 @@ const Ourroots = () => {
     <>
       <div className='timeline-page' ref={ref}>
         {/* Title Section */}
-        <m.h1
-          className="text-gradient"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-        >
-          OUR ROOTS & TIMELINE
-        </m.h1>
+        <div className="page-header">
+          <m.h1
+            className="text-gradient"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+          >
+            OUR ROOTS
+          </m.h1>
+        </div>
 
         {/* Timeline Wrapper */}
-        <m.div
-          className="timeline-container"
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, margin: "-100px" }}
-        >
+        <div className="timeline-container">
           {/* The Center Gradient Line */}
           <m.div
             className="timeline-line"
+            style={{ transformOrigin: "top" }}
             initial={{ scaleY: 0 }}
             whileInView={{ scaleY: 1 }}
-            transition={{ duration: 1.5, ease: "easeInOut" }}
-            viewport={{ once: true }}
+            viewport={{ once: false }}
+            transition={{ duration: 1.2, ease: "easeInOut" }}
           />
 
-          {timelineData.map((item, index) => {
-            const direction = index % 2 === 0 ? 'left' : 'right';
-
-            return (
-              <m.div
-                key={index}
-                className="timeline-item"
-                variants={itemVariants(direction)}
-              >
-                <div className="timeline-dot"></div>
-
-                <div className="timeline-content">
-                  <span className="timeline-year">{item.year}</span>
-                  <h2>{item.title}</h2>
-                  <p>{item.description}</p>
-
-                  <button
-                    onClick={() => handleVisitClick(item.link)}
-                    className="timeline-visit-button"
-                  >
-                    View Batch
-                  </button>
-                </div>
-              </m.div>
-            );
-          })}
-        </m.div>
+          {timelineData.map((item, index) => (
+            <RootsCard
+              key={index}
+              item={item}
+              index={index}
+              onVisit={handleVisitClick}
+            />
+          ))}
+        </div>
       </div>
     </>
   );

@@ -212,33 +212,13 @@ export const exportEventRegistrationsCsv = async (req: Request, res: Response) =
 
     const registrations = await Registration.find({ eventId }).sort({ createdAt: 1 }).lean();
 
-    // Determine custom question columns
-    const customKeysSet = new Set<string>();
-    registrations.forEach((r: any) => {
-      if (r.answers) {
-        if (r.answers instanceof Map) {
-          for (const key of r.answers.keys()) customKeysSet.add(key);
-        } else if (typeof r.answers === "object") {
-          for (const key of Object.keys(r.answers)) customKeysSet.add(key);
-        }
-      }
-    });
-    const customKeys = Array.from(customKeysSet);
-
-    // Build CSV header
+    // Build CSV header with exact requested columns
     const headers = [
-      "Registration ID",
       "Full Name",
       "Register No",
-      "Department",
-      "Year",
-      "Section",
       "Email Address",
-      "Phone Number",
       "Attendance Status",
       "Checked-In Timestamp",
-      "Registration Date",
-      ...customKeys,
     ];
 
     const escapeCsv = (val: any) => {
@@ -257,19 +237,20 @@ export const exportEventRegistrationsCsv = async (req: Request, res: Response) =
           ? r.answers
           : {};
 
+      const fullName = r.name || answersMap["Full Name"] || answersMap["fullname"] || "N/A";
+      const registerNo = r.registerNo || answersMap["Register Number"] || answersMap["Register No"] || answersMap["regno"] || "N/A";
+      const email = r.email || answersMap["Email ID"] || answersMap["Email Address"] || answersMap["email"] || "N/A";
+      const attendanceStatus = r.entry ? "Present" : "Absent";
+      const checkedInTime = r.checkedInAt
+        ? new Date(r.checkedInAt).toLocaleString()
+        : "N/A";
+
       const row = [
-        escapeCsv(r._id),
-        escapeCsv(r.name),
-        escapeCsv(r.registerNo),
-        escapeCsv(r.dept),
-        escapeCsv(r.year),
-        escapeCsv(r.section),
-        escapeCsv(r.email),
-        escapeCsv(r.phone),
-        escapeCsv(r.entry ? "Present" : "Absent"),
-        escapeCsv(r.checkedInAt ? new Date(r.checkedInAt).toLocaleString() : "N/A"),
-        escapeCsv(new Date(r.createdAt).toLocaleString()),
-        ...customKeys.map((k) => escapeCsv(answersMap[k] || "")),
+        escapeCsv(fullName),
+        escapeCsv(registerNo),
+        escapeCsv(email),
+        escapeCsv(attendanceStatus),
+        escapeCsv(checkedInTime),
       ];
       rows.push(row.join(","));
     }
@@ -292,3 +273,31 @@ export const exportEventRegistrationsCsv = async (req: Request, res: Response) =
     });
   }
 };
+
+/* ---------------- DELETE REGISTRATION ---------------- */
+export const deleteEventRegistration = async (req: Request, res: Response) => {
+  try {
+    const { registrationId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(registrationId)) {
+      return res.status(400).json({ success: false, message: "Invalid registration ID" });
+    }
+
+    const registration = await Registration.findByIdAndDelete(registrationId);
+    if (!registration) {
+      return res.status(404).json({ success: false, message: "Registration record not found" });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Attendee registration deleted successfully",
+    });
+  } catch (error: any) {
+    console.error("Error deleting attendee registration:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to delete attendee registration",
+    });
+  }
+};
+

@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import type { IQuestion, QuestionType, IQuestionOption } from "../../types/formBuilder";
+import { isCompulsoryQuestion } from "../../types/formBuilder";
 
 interface QuestionCardProps {
   question: IQuestion;
@@ -210,6 +211,8 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
     onChange({ ...question, allowedFormats: updatedFormats });
   };
 
+  const isCompulsory = isCompulsoryQuestion(question);
+
   return (
     <div
       className={`question-card ${isActive ? "active-card" : ""}`}
@@ -264,6 +267,21 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
             {index + 1}
           </div>
 
+          {isCompulsory && (
+            <span
+              className="badge px-2 py-0.5"
+              style={{
+                background: "rgba(56, 189, 248, 0.15)",
+                color: "#38bdf8",
+                border: "1px solid rgba(56, 189, 248, 0.3)",
+                fontSize: "0.68rem",
+                fontWeight: 600,
+              }}
+            >
+              Compulsory
+            </span>
+          )}
+
           {isCollapsed ? (
             <div
               className="fw-semibold text-white text-truncate cursor-pointer flex-grow-1"
@@ -274,7 +292,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
               }}
             >
               {question.question || <span className="text-secondary italic">Untitled Question</span>}
-              {question.required && <span className="text-danger ms-1">*</span>}
+              {(question.required || isCompulsory) && <span className="text-danger ms-1">*</span>}
             </div>
           ) : (
             <input
@@ -305,6 +323,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
             <button
               type="button"
               className="btn btn-sm d-flex align-items-center rounded-2"
+              disabled={isCompulsory}
               style={{
                 background: "rgba(15, 23, 42, 0.8)",
                 border: "1px solid rgba(255, 255, 255, 0.12)",
@@ -312,15 +331,22 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
                 fontSize: "0.82rem",
                 padding: "5px 10px",
                 gap: "8px",
+                opacity: isCompulsory ? 0.75 : 1,
+                cursor: isCompulsory ? "not-allowed" : "pointer",
               }}
               onClick={(e) => {
                 e.stopPropagation();
-                setIsTypeMenuOpen((prev) => !prev);
+                if (!isCompulsory) {
+                  setIsTypeMenuOpen((prev) => !prev);
+                }
               }}
+              title={isCompulsory ? "Type is locked for compulsory fields" : undefined}
             >
               <i className={`bi ${currentTypeInfo.icon} me-1.5`} style={{ color: currentTypeInfo.badgeColor }}></i>
               <span>{currentTypeInfo.label}</span>
-              <i className={`bi ${isTypeMenuOpen ? "bi-chevron-up" : "bi-chevron-down"} small opacity-50 ms-1.5`}></i>
+              {!isCompulsory && (
+                <i className={`bi ${isTypeMenuOpen ? "bi-chevron-up" : "bi-chevron-down"} small opacity-50 ms-1.5`}></i>
+              )}
             </button>
 
             {isTypeMenuOpen && (
@@ -398,12 +424,20 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
             <button
               type="button"
               className="btn btn-sm btn-icon text-danger p-1"
-              title="Delete Question"
+              disabled={isCompulsory}
+              title={isCompulsory ? "Compulsory question cannot be deleted" : "Delete Question"}
               onClick={(e) => {
                 e.stopPropagation();
-                onDelete();
+                if (!isCompulsory) {
+                  onDelete();
+                }
               }}
-              style={{ width: "28px", height: "28px" }}
+              style={{
+                width: "28px",
+                height: "28px",
+                opacity: isCompulsory ? 0.25 : 1,
+                cursor: isCompulsory ? "not-allowed" : "pointer",
+              }}
             >
               <i className="bi bi-trash3"></i>
             </button>
@@ -835,16 +869,22 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
                 className="form-check-input"
                 type="checkbox"
                 id={`req_toggle_${question.id}`}
-                checked={question.required}
+                checked={isCompulsory ? true : question.required}
+                disabled={isCompulsory}
                 onChange={handleRequiredToggle}
-                style={{ cursor: "pointer", width: "32px", height: "18px" }}
+                style={{
+                  cursor: isCompulsory ? "not-allowed" : "pointer",
+                  width: "32px",
+                  height: "18px",
+                  opacity: isCompulsory ? 0.75 : 1,
+                }}
               />
               <label
                 className="form-check-label text-white small user-select-none fw-medium"
                 htmlFor={`req_toggle_${question.id}`}
-                style={{ cursor: "pointer", fontSize: "0.82rem" }}
+                style={{ cursor: isCompulsory ? "not-allowed" : "pointer", fontSize: "0.82rem" }}
               >
-                Required Question
+                {isCompulsory ? "Required (Compulsory)" : "Required Question"}
               </label>
             </div>
           </div>

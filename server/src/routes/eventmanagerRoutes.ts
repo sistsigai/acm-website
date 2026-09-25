@@ -15,6 +15,7 @@ import {
   getEventRegistrations,
   scanAttendanceQr,
   toggleRegistrationAttendance,
+  deleteEventRegistration,
   exportEventRegistrationsCsv,
 } from "../controllers/eventAttendanceController";
 
@@ -24,15 +25,17 @@ router.post("/upload-image", upload.single("image"), verifyAdminToken, uploadEve
 router.post("/delete-image", verifyAdminToken, deleteEventImage);
 router.post("/add", verifyAdminToken, addEvent);
 router.get("/getAll", verifyAdminToken, getAllEvents);
+/* --- Event Attendance & Registrations (Defined before generic :id routes) --- */
+router.put("/registration/:registrationId/attendance", verifyAdminToken, toggleRegistrationAttendance);
+router.delete("/registration/:registrationId", verifyAdminToken, deleteEventRegistration);
+router.get("/:eventId/registrations/export", verifyAdminToken, exportEventRegistrationsCsv);
+router.get("/:eventId/registrations", verifyAdminToken, getEventRegistrations);
+router.post("/:eventId/attendance/scan", verifyAdminToken, scanAttendanceQr);
+
+/* --- Generic Event CRUD with :id --- */
 router.delete("/:id", verifyAdminToken, deleteEvent);
 router.put("/:id", verifyAdminToken, updateEvent);
 router.put("/:id/display", verifyAdminToken, toggleEventDisplay);
-
-/* --- Event Attendance & Registrations --- */
-router.get("/:eventId/registrations", verifyAdminToken, getEventRegistrations);
-router.post("/:eventId/attendance/scan", verifyAdminToken, scanAttendanceQr);
-router.put("/registration/:registrationId/attendance", verifyAdminToken, toggleRegistrationAttendance);
-router.get("/:eventId/registrations/export", verifyAdminToken, exportEventRegistrationsCsv);
 
 export default router;
 

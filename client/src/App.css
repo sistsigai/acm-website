@@ -1345,7 +1345,6 @@ input[type="number"]::-webkit-outer-spin-button:hover {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.6);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: column;
   position: relative;
@@ -1373,9 +1372,7 @@ input[type="number"]::-webkit-outer-spin-button:hover {
 }
 
 .event-card:hover {
-  transform: translateY(-4px);
   border-color: rgba(56, 189, 248, 0.45);
-  box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.9), 0 0 25px rgba(56, 189, 248, 0.2);
 }
 
 .event-card:hover::before {
@@ -1680,14 +1677,15 @@ input[type="number"]::-webkit-outer-spin-button:hover {
   background: rgba(56, 189, 248, 0.08);
   border: 1px solid rgba(56, 189, 248, 0.25);
   color: #e2e8f0;
-  font-size: 0.82rem;
+  font-size: 0.88rem;
   font-weight: 600;
-  padding: 8px 14px;
-  border-radius: 10px;
+  height: 42px;
+  padding: 0 16px;
+  border-radius: 12px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
+  gap: 8px;
   transition: all 0.2s ease;
   letter-spacing: 0.3px;
 }
@@ -1701,9 +1699,9 @@ input[type="number"]::-webkit-outer-spin-button:hover {
 }
 
 .admin-card-btn-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1712,10 +1710,18 @@ input[type="number"]::-webkit-outer-spin-button:hover {
   color: #94a3b8;
   transition: all 0.2s ease;
   padding: 0;
+  font-size: 1rem;
 }
 
 .admin-card-btn-icon:hover {
   transform: translateY(-1px);
+}
+
+.admin-card-btn-icon.btn-attendees:hover {
+  background: rgba(56, 189, 248, 0.2) !important;
+  border-color: #38bdf8 !important;
+  color: #38bdf8 !important;
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.3);
 }
 
 .admin-card-btn-icon.btn-edit:hover {
@@ -1741,7 +1747,7 @@ input[type="number"]::-webkit-outer-spin-button:hover {
   height: 100%;
   background: rgba(0, 0, 0, 0.85);
   backdrop-filter: blur(8px);
-  z-index: 1050;
+  z-index: 1100;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -4351,6 +4357,9 @@ p.about-paragraph {
   overflow-x: hidden;
   background: transparent;
   position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .timeline-main-title {
@@ -4374,6 +4383,7 @@ p.about-paragraph {
 .timeline-container {
   position: relative;
   max-width: 1200px;
+  width: 100%;
   margin: 0 auto;
   padding: 20px 0;
 }
@@ -5106,7 +5116,7 @@ p.about-paragraph {
   padding: 35px;
   position: relative;
   overflow: hidden;
-  transition: all 0.4s ease;
+  transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
   display: flex;
   flex-direction: column;
   backdrop-filter: blur(10px);
@@ -5114,7 +5124,6 @@ p.about-paragraph {
 }
 
 .blog-card:hover {
-  transform: translateY(-8px);
   border-color: var(--primary-blue);
   box-shadow: 0 20px 50px rgba(59, 130, 246, 0.15);
   background: rgba(255, 255, 255, 0.05);

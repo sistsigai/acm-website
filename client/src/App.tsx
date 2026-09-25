@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from "react-router-dom";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, lazy, Suspense } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { AuthProvider } from "./context/AuthContext";
 import { ToastProvider } from "./context/ToastContext";
@@ -31,18 +31,31 @@ import LogoLoading from "./components/logoLoader";
 import "./App.css";
 
 /* ---------------- OTHERS ---------------- */
-import Inaugural from "./pages/website/Archives/inaugural";
-import Azure from "./pages/website/Archives/azure";
-import Genai from "./pages/website/Archives/genAi";
-import Digiart from "./pages/website/Archives/digitalart";
-import Spaceday from "./pages/website/Archives/spaceday";
-import Synergy from "./pages/website/Archives/synergy";
-import Insightx from "./pages/website/Archives/insightx";
-import HelloJava from "./pages/website/Archives/hellojava";
-import ThinkTankers from "./pages/website/Archives/ThinkTankers";
-import IdeaToLaunch from "./pages/website/Archives/ideatolaunch";
-import Linkedin from "./pages/website/Archives/linkedin";
-import Harmonix from "./pages/website/Archives/harmonix";
+const Inaugural      = lazy(() => import("./pages/website/Archives/inaugural"));
+const Azure          = lazy(() => import("./pages/website/Archives/azure"));
+const Genai          = lazy(() => import("./pages/website/Archives/genAi"));
+const Digiart        = lazy(() => import("./pages/website/Archives/digitalart"));
+const Spaceday       = lazy(() => import("./pages/website/Archives/spaceday"));
+const Synergy        = lazy(() => import("./pages/website/Archives/synergy"));
+const Insightx       = lazy(() => import("./pages/website/Archives/insightx"));
+const HelloJava      = lazy(() => import("./pages/website/Archives/hellojava"));
+const ThinkTankers   = lazy(() => import("./pages/website/Archives/ThinkTankers"));
+const IdeaToLaunch   = lazy(() => import("./pages/website/Archives/ideatolaunch"));
+const Linkedin       = lazy(() => import("./pages/website/Archives/linkedin"));
+const Harmonix       = lazy(() => import("./pages/website/Archives/harmonix"));
+const Gitready       = lazy(() => import("./pages/website/Archives/Gitready"));
+const Quicktrain     = lazy(() => import("./pages/website/Archives/Quicktrain"));
+const CareerCompass  = lazy(() => import("./pages/website/Archives/CareerCompass"));
+const Technopoly     = lazy(() => import("./pages/website/Archives/Technopoly"));
+const MindAuction    = lazy(() => import("./pages/website/Archives/MindAuction"));
+const AgileEngineering = lazy(() => import("./pages/website/Archives/AgileEngineering"));
+const Cognibot       = lazy(() => import("./pages/website/Archives/Cognibot"));
+const ResumeBuilding = lazy(() => import("./pages/website/Archives/ResumeBuilding"));
+const TechUNO        = lazy(() => import("./pages/website/Archives/TechUNO"));
+const SpaceZ         = lazy(() => import("./pages/website/Archives/SpaceZ"));
+const StartupXcel    = lazy(() => import("./pages/website/Archives/StartupXcel"));
+const CyberSprint    = lazy(() => import("./pages/website/Archives/CyberSprint"));
+const Techmemeathon  = lazy(() => import("./pages/website/Archives/Techmemeathon"));
 
 function App() {
   const location = useLocation();
@@ -136,22 +149,37 @@ function App() {
               <Route path="/about" element={<About />} />
               <Route path="/membership" element={<Membership />} />
               <Route path="/archives" element={<Archives />} />
-              <Route path="/archives/inaugural" element={<Inaugural />} />
-              <Route path="/archives/azure" element={<Azure />} />
-              <Route path="/archives/genai" element={<Genai />} />
-              <Route path="/archives/digiart" element={<Digiart />} />
-              <Route path="/archives/spaceday" element={<Spaceday />} />
-              <Route path="/archives/synergy" element={<Synergy />} />
-              <Route path="/archives/insightx" element={<Insightx />} />
-              <Route path="/archives/hellojava" element={<HelloJava />} />
-              <Route path="/archives/thinktankers" element={<ThinkTankers />} />
-              <Route path="/archives/ideatolaunch" element={<IdeaToLaunch />} />
-              <Route path="/archives/linkedin" element={<Linkedin />} />
-              <Route path="/archives/harmonix" element={<Harmonix />} />
               <Route path="/blogs" element={<Blogs />} />
               <Route path="/our-roots" element={<Ourroots />} />
               <Route path="/join-us" element={<JoinUs />} />
               <Route path="/events" element={<Events />} />
+
+
+              <Route path="/archives/inaugural" element={<Suspense fallback={<LogoLoading />}><Inaugural /></Suspense>} />
+              <Route path="/archives/azure" element={<Suspense fallback={<LogoLoading />}><Azure /></Suspense>} />
+              <Route path="/archives/genai" element={<Suspense fallback={<LogoLoading />}><Genai /></Suspense>} />
+              <Route path="/archives/digiart" element={<Suspense fallback={<LogoLoading />}><Digiart /></Suspense>} />
+              <Route path="/archives/spaceday" element={<Suspense fallback={<LogoLoading />}><Spaceday /></Suspense>} />
+              <Route path="/archives/synergy" element={<Suspense fallback={<LogoLoading />}><Synergy /></Suspense>} />
+              <Route path="/archives/insightx" element={<Suspense fallback={<LogoLoading />}><Insightx /></Suspense>} />
+              <Route path="/archives/hellojava" element={<Suspense fallback={<LogoLoading />}><HelloJava /></Suspense>} />
+              <Route path="/archives/thinktankers" element={<Suspense fallback={<LogoLoading />}><ThinkTankers /></Suspense>} />
+              <Route path="/archives/ideatolaunch" element={<Suspense fallback={<LogoLoading />}><IdeaToLaunch /></Suspense>} />
+              <Route path="/archives/linkedin" element={<Suspense fallback={<LogoLoading />}><Linkedin /></Suspense>} />
+              <Route path="/archives/harmonix" element={<Suspense fallback={<LogoLoading />}><Harmonix /></Suspense>} />
+              <Route path="/archives/Gitready" element={<Suspense fallback={<LogoLoading />}><Gitready /></Suspense>} />
+              <Route path="/archives/Quicktrain" element={<Suspense fallback={<LogoLoading />}><Quicktrain /></Suspense>} />
+              <Route path="/archives/CareerCompass" element={<Suspense fallback={<LogoLoading />}><CareerCompass /></Suspense>} />
+              <Route path="/archives/Technopoly" element={<Suspense fallback={<LogoLoading />}><Technopoly /></Suspense>} />
+              <Route path="/archives/MindAuction" element={<Suspense fallback={<LogoLoading />}><MindAuction /></Suspense>} />
+              <Route path="/archives/AgileEngineering" element={<Suspense fallback={<LogoLoading />}><AgileEngineering /></Suspense>} />
+              <Route path="/archives/Cognibot" element={<Suspense fallback={<LogoLoading />}><Cognibot /></Suspense>} />
+              <Route path="/archives/ResumeBuilding" element={<Suspense fallback={<LogoLoading />}><ResumeBuilding /></Suspense>} />
+              <Route path="/archives/Techuno" element={<Suspense fallback={<LogoLoading />}><TechUNO /></Suspense>} />
+              <Route path="/archives/SpaceZ" element={<Suspense fallback={<LogoLoading />}><SpaceZ /></Suspense>} />
+              <Route path="/archives/StartupXcel" element={<Suspense fallback={<LogoLoading />}><StartupXcel /></Suspense>} />
+              <Route path="/archives/CyberSprint" element={<Suspense fallback={<LogoLoading />}><CyberSprint /></Suspense>} />
+              <Route path="/archives/Techmemeathon" element={<Suspense fallback={<LogoLoading />}><Techmemeathon /></Suspense>} />
             </Routes>
           </motion.div>
         )}
