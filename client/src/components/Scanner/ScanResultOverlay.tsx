@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { m, AnimatePresence } from "framer-motion";
 
 export type ScanStatusType = "success" | "already_checked_in" | "invalid";
@@ -11,40 +11,20 @@ export interface ScanResultData {
   email?: string;
   phone?: string;
   dept?: string;
+  year?: string;
+  section?: string;
   checkedInAt?: string;
 }
 
 interface ScanResultOverlayProps {
   result: ScanResultData | null;
   onDismiss: () => void;
-  autoResumeSeconds?: number;
 }
 
 export const ScanResultOverlay: React.FC<ScanResultOverlayProps> = ({
   result,
   onDismiss,
-  autoResumeSeconds = 3,
 }) => {
-  const [timeLeft, setTimeLeft] = useState(autoResumeSeconds);
-
-  useEffect(() => {
-    if (!result) return;
-    setTimeLeft(autoResumeSeconds);
-
-    const interval = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          onDismiss();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [result, autoResumeSeconds, onDismiss]);
-
   if (!result) return null;
 
   const isSuccess = result.status === "success";
@@ -54,46 +34,60 @@ export const ScanResultOverlay: React.FC<ScanResultOverlayProps> = ({
     ? {
         bg: "#052e16",
         border: "#22c55e",
+        glow: "rgba(34, 197, 94, 0.35)",
+        iconBg: "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)",
         textColor: "#4ade80",
         badgeBg: "rgba(34, 197, 94, 0.2)",
         badgeText: "#4ade80",
         badgeBorder: "rgba(34, 197, 94, 0.4)",
-        icon: "bi-check-circle-fill",
-        title: "Check-in Successful",
+        icon: "bi-check-lg",
+        title: "Attendance Verified",
+        btnBg: "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)",
+        btnText: "#022c22",
+        btnShadow: "0 6px 20px rgba(34, 197, 94, 0.45)",
       }
     : isAlready
     ? {
         bg: "#2e1a05",
         border: "#f59e0b",
+        glow: "rgba(245, 158, 11, 0.35)",
+        iconBg: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
         textColor: "#fbbf24",
         badgeBg: "rgba(245, 158, 11, 0.2)",
         badgeText: "#fbbf24",
         badgeBorder: "rgba(245, 158, 11, 0.4)",
-        icon: "bi-exclamation-triangle-fill",
+        icon: "bi-exclamation-lg",
         title: "Already Checked In",
+        btnBg: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
+        btnText: "#451a03",
+        btnShadow: "0 6px 20px rgba(245, 158, 11, 0.4)",
       }
     : {
         bg: "#2e0808",
         border: "#ef4444",
+        glow: "rgba(239, 68, 68, 0.35)",
+        iconBg: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
         textColor: "#f87171",
         badgeBg: "rgba(239, 68, 68, 0.2)",
         badgeText: "#f87171",
         badgeBorder: "rgba(239, 68, 68, 0.4)",
-        icon: "bi-x-circle-fill",
+        icon: "bi-x-lg",
         title: "Invalid Ticket",
+        btnBg: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
+        btnText: "#ffffff",
+        btnShadow: "0 6px 20px rgba(59, 130, 246, 0.4)",
       };
 
   return (
     <AnimatePresence>
       <m.div
-        className="position-fixed d-flex align-items-end justify-content-center"
+        className="position-fixed d-flex align-items-center justify-content-center p-3"
         style={{
           inset: 0,
-          background: "rgba(0, 0, 0, 0.75)",
-          backdropFilter: "blur(8px)",
-          WebkitBackdropFilter: "blur(8px)",
+          background: "rgba(0, 0, 0, 0.82)",
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
           zIndex: 9999,
-          padding: "16px",
         }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -101,117 +95,123 @@ export const ScanResultOverlay: React.FC<ScanResultOverlayProps> = ({
         onClick={onDismiss}
       >
         <m.div
-          className="w-100 p-4 rounded-4 overflow-hidden position-relative"
+          className="w-100 rounded-4 overflow-hidden position-relative"
           style={{
-            maxWidth: "500px",
+            maxWidth: "420px",
             background: "#0c1322",
             border: `2px solid ${themeConfig.border}`,
-            boxShadow: `0 25px 50px -12px rgba(0, 0, 0, 0.9), 0 0 30px ${themeConfig.border}33`,
+            boxShadow: `0 25px 60px -10px rgba(0, 0, 0, 0.95), 0 0 35px ${themeConfig.glow}`,
             color: "#f8fafc",
+            padding: "24px 20px 22px",
           }}
-          initial={{ y: 80, opacity: 0, scale: 0.95 }}
+          initial={{ y: 50, opacity: 0, scale: 0.92 }}
           animate={{ y: 0, opacity: 1, scale: 1 }}
-          exit={{ y: 80, opacity: 0, scale: 0.95 }}
-          transition={{ type: "spring", damping: 25, stiffness: 300 }}
+          exit={{ y: 50, opacity: 0, scale: 0.92 }}
+          transition={{ type: "spring", damping: 26, stiffness: 320 }}
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Top Progress Bar */}
-          <div
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              height: "4px",
-              background: "rgba(255, 255, 255, 0.1)",
-            }}
-          >
-            <m.div
+          {/* Top Status Icon */}
+          <div className="text-center mb-3">
+            <div
+              className="d-inline-flex align-items-center justify-content-center rounded-circle mb-2"
               style={{
-                height: "100%",
-                background: themeConfig.textColor,
-              }}
-              initial={{ width: "100%" }}
-              animate={{ width: "0%" }}
-              transition={{ duration: autoResumeSeconds, ease: "linear" }}
-            />
-          </div>
-
-          {/* Status Header Badge */}
-          <div className="d-flex align-items-center justify-content-between mb-3">
-            <span
-              className="badge px-3 py-2 d-inline-flex align-items-center gap-2 rounded-pill"
-              style={{
-                background: themeConfig.badgeBg,
-                border: `1px solid ${themeConfig.badgeBorder}`,
-                color: themeConfig.badgeText,
-                fontSize: "0.82rem",
-                fontWeight: 600,
+                width: "60px",
+                height: "60px",
+                background: themeConfig.iconBg,
+                color: themeConfig.btnText,
+                fontSize: "1.8rem",
+                boxShadow: `0 0 24px ${themeConfig.border}`,
               }}
             >
-              <i className={`bi ${themeConfig.icon} fs-6`}></i>
-              <span>{themeConfig.title}</span>
-            </span>
+              <i className={`bi ${themeConfig.icon} fw-bold`}></i>
+            </div>
 
-            <button
-              type="button"
-              className="btn btn-sm btn-link text-secondary text-decoration-none p-1"
-              onClick={onDismiss}
-              aria-label="Close result"
+            <h4
+              className="fw-bold mb-1 tracking-tight"
+              style={{
+                color: themeConfig.textColor,
+                fontSize: "1.35rem",
+              }}
             >
-              <i className="bi bi-x-lg fs-5"></i>
-            </button>
+              {themeConfig.title}
+            </h4>
+
+            <p className="text-secondary small mb-0" style={{ fontSize: "0.85rem", color: "#94a3b8" }}>
+              {result.message}
+            </p>
           </div>
 
           {/* Attendee Details Card */}
           {result.name ? (
             <div
-              className="p-3 rounded-3 mb-3"
+              className="rounded-4 p-3 mb-3.5"
               style={{
-                background: "rgba(255, 255, 255, 0.03)",
-                border: "1px solid rgba(255, 255, 255, 0.08)",
+                background: "linear-gradient(145deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%)",
+                border: "1px solid rgba(255, 255, 255, 0.1)",
               }}
             >
-              <h4 className="fw-bold text-white mb-1 tracking-tight" style={{ fontSize: "1.35rem" }}>
-                {result.name}
-              </h4>
+              {/* Full Name */}
+              <div className="mb-2.5">
+                <span className="text-secondary small text-uppercase fw-bold tracking-wider d-block mb-1" style={{ fontSize: "0.7rem", color: "#64748b" }}>
+                  Attendee Name
+                </span>
+                <h5 className="fw-bold text-white mb-0 text-truncate" style={{ fontSize: "1.2rem", letterSpacing: "-0.01em" }}>
+                  {result.name}
+                </h5>
+              </div>
 
-              <div className="d-flex flex-wrap align-items-center gap-3 mt-2 text-secondary small font-monospace">
-                {result.registerNo && (
-                  <div className="text-info fw-bold d-flex align-items-center gap-1.5" style={{ fontSize: "0.95rem" }}>
+              {/* Register Number Chip */}
+              {result.registerNo && (
+                <div className="mb-2.5">
+                  <span className="text-secondary small text-uppercase fw-bold tracking-wider d-block mb-1" style={{ fontSize: "0.7rem", color: "#64748b" }}>
+                    Register Number
+                  </span>
+                  <div
+                    className="d-inline-flex align-items-center gap-2 px-3 py-1.5 rounded-3 fw-bold font-monospace"
+                    style={{
+                      background: "rgba(56, 189, 248, 0.15)",
+                      border: "1px solid rgba(56, 189, 248, 0.35)",
+                      color: "#38bdf8",
+                      fontSize: "1rem",
+                      letterSpacing: "0.5px",
+                    }}
+                  >
                     <i className="bi bi-person-badge"></i>
                     <span>{result.registerNo}</span>
                   </div>
-                )}
-                {result.dept && (
-                  <div className="text-light">
-                    <span>{result.dept}</span>
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
 
-              {/* Email & Contact */}
-              <div className="mt-3 pt-2 border-top border-secondary border-opacity-25 d-flex flex-column gap-1.5 small text-secondary">
-                {result.email && (
-                  <div className="d-flex align-items-center gap-2 text-truncate font-monospace">
-                    <i className="bi bi-envelope text-white-50"></i>
-                    <span className="text-truncate text-light">{result.email}</span>
-                  </div>
-                )}
-                {result.phone && (
-                  <div className="d-flex align-items-center gap-2 font-monospace">
-                    <i className="bi bi-telephone-fill text-success"></i>
-                    <span className="text-light">{result.phone}</span>
-                  </div>
-                )}
-              </div>
+              {/* Department & Year (if present) */}
+              {(result.dept || result.year) && (
+                <div className="pt-2 border-top border-secondary border-opacity-25 d-flex align-items-center justify-content-between small text-secondary">
+                  <span>Department</span>
+                  <span className="text-light fw-medium">
+                    {[result.dept, result.year, result.section].filter(Boolean).join(" • ")}
+                  </span>
+                </div>
+              )}
+
+              {/* Timestamp */}
+              {result.checkedInAt && (
+                <div className="pt-2 mt-2 border-top border-secondary border-opacity-25 d-flex align-items-center justify-content-between small text-secondary">
+                  <span>Checked in at</span>
+                  <span className="text-white font-monospace fw-semibold">
+                    {new Date(result.checkedInAt).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      second: "2-digit",
+                    })}
+                  </span>
+                </div>
+              )}
             </div>
           ) : (
             <div
-              className="p-3 rounded-3 mb-3 text-center"
+              className="rounded-4 p-3 mb-3.5 text-center"
               style={{
-                background: "rgba(239, 68, 68, 0.08)",
-                border: "1px solid rgba(239, 68, 68, 0.2)",
+                background: "rgba(239, 68, 68, 0.1)",
+                border: "1px solid rgba(239, 68, 68, 0.25)",
               }}
             >
               <p className="text-danger fw-semibold mb-0" style={{ fontSize: "0.92rem" }}>
@@ -220,31 +220,23 @@ export const ScanResultOverlay: React.FC<ScanResultOverlayProps> = ({
             </div>
           )}
 
-          {/* Timestamp Notice */}
-          {result.checkedInAt && (
-            <div className="d-flex align-items-center justify-content-between text-secondary small mb-3 px-1">
-              <span>Time of Check-in:</span>
-              <span className="text-white font-monospace fw-semibold">
-                {new Date(result.checkedInAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-              </span>
-            </div>
-          )}
-
-          {/* Action Button */}
+          {/* Large Prominent Next Scan CTA Button */}
           <button
             type="button"
-            className="btn w-100 py-2.5 rounded-3 fw-semibold text-white d-flex align-items-center justify-content-center gap-2"
+            className="w-100 py-3 rounded-pill fw-bold d-flex align-items-center justify-content-center gap-2 border-0 transition"
             style={{
-              background: isSuccess
-                ? "linear-gradient(135deg, #16a34a 0%, #059669 100%)"
-                : "linear-gradient(135deg, #2563eb 0%, #0891b2 100%)",
-              border: "none",
-              fontSize: "0.92rem",
+              background: themeConfig.btnBg,
+              color: themeConfig.btnText,
+              boxShadow: themeConfig.btnShadow,
+              fontSize: "1rem",
+              letterSpacing: "0.2px",
+              cursor: "pointer",
             }}
             onClick={onDismiss}
           >
-            <i className="bi bi-qr-code-scan fs-6"></i>
-            <span>Scan Next Ticket ({timeLeft}s)</span>
+            <i className="bi bi-qr-code-scan fs-5"></i>
+            <span>Scan Next Ticket</span>
+            <i className="bi bi-arrow-right fs-5 ms-1"></i>
           </button>
         </m.div>
       </m.div>
@@ -253,3 +245,4 @@ export const ScanResultOverlay: React.FC<ScanResultOverlayProps> = ({
 };
 
 export default ScanResultOverlay;
+

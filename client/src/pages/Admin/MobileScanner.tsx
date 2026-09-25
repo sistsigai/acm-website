@@ -129,6 +129,8 @@ const MobileScanner: React.FC = () => {
             email: attendee?.email,
             phone: attendee?.phone,
             dept: attendee?.dept,
+            year: attendee?.year,
+            section: attendee?.section,
             checkedInAt: res.checkedInAt || attendee?.checkedInAt || undefined,
           });
         } else {
@@ -141,6 +143,8 @@ const MobileScanner: React.FC = () => {
             email: attendee?.email,
             phone: attendee?.phone,
             dept: attendee?.dept,
+            year: attendee?.year,
+            section: attendee?.section,
             checkedInAt: res.checkedInAt || new Date().toISOString(),
           });
         }
@@ -260,11 +264,10 @@ const MobileScanner: React.FC = () => {
           />
         </div>
 
-        {/* Scan Result Bottom Sheet */}
+        {/* Scan Result Overlay Modal */}
         <ScanResultOverlay
           result={scanResult}
           onDismiss={handleDismissResult}
-          autoResumeSeconds={2.5}
         />
       </div>
     );
