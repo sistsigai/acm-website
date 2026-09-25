@@ -55,7 +55,12 @@ const defaultAllowedOrigins = [
     'http://localhost:5173',
     'http://127.0.0.1:5173',
     'http://localhost:3000',
-    'https://sistsigai.acm.org'
+    'https://sistsigai.acm.org',
+    'http://sistsigai.acm.org',
+    'https://www.sistsigai.acm.org',
+    'http://www.sistsigai.acm.org',
+    'https://api.sistsigai.acm.org',
+    'http://api.sistsigai.acm.org'
 ];
 
 const configuredOrigins = process.env.ALLOWED_ORIGINS 
@@ -267,7 +272,8 @@ process.on("uncaughtException", (error) => {
 });
 
 // ========== START SERVER ==========
-const PORT = Number(process.env.PORT) || 5000;
+const RAW_PORT = process.env.PORT;
+const PORT = RAW_PORT && isNaN(Number(RAW_PORT)) ? RAW_PORT : (Number(RAW_PORT) || 5000);
 
 (async () => {
     try {
@@ -283,7 +289,7 @@ const PORT = Number(process.env.PORT) || 5000;
         await connectDB();
         console.log("🗄️  MongoDB    : Connected successfully");
 
-        app.listen(PORT, "0.0.0.0", () => {
+        const startCallback = () => {
             console.log("────────────────────────────────────────────");
             console.log(`✅ Server Status : RUNNING`);
 
@@ -297,7 +303,13 @@ const PORT = Number(process.env.PORT) || 5000;
 
             console.log(`⏱️  Started At  : ${new Date().toLocaleString()}`);
             console.log("────────────────────────────────────────────\n");
-        });
+        };
+
+        if (typeof PORT === "string") {
+            app.listen(PORT, startCallback);
+        } else {
+            app.listen(PORT, "0.0.0.0", startCallback);
+        }
 
     } catch (error) {
         console.error("❌ Server failed to start:");
