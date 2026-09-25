@@ -267,7 +267,7 @@ process.on("uncaughtException", (error) => {
 });
 
 // ========== START SERVER ==========
-const PORT = process.env.PORT || 5000;
+const PORT = Number(process.env.PORT) || 5000;
 
 (async () => {
     try {
@@ -283,7 +283,7 @@ const PORT = process.env.PORT || 5000;
         await connectDB();
         console.log("🗄️  MongoDB    : Connected successfully");
 
-        app.listen(PORT, () => {
+        app.listen(PORT, "0.0.0.0", () => {
             console.log("────────────────────────────────────────────");
             console.log(`✅ Server Status : RUNNING`);
 

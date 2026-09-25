@@ -11,6 +11,7 @@ import Members from "./pages/Admin/Members";
 import EventManager from "./pages/Admin/EventManager";
 import AdminSettings from "./pages/Admin/Adminsettings";
 import AdminLogin from "./pages/Admin/AdminLogin";
+import MobileScanner from "./pages/Admin/MobileScanner";
 
 /* ---------------- WEBSITE PAGES ---------------- */
 import Home from "./pages/website/Home";
@@ -78,6 +79,16 @@ function App() {
 
     return () => clearTimeout(timer);
   }, [location.pathname]);
+
+  const isScannerRoute =
+    location.pathname === "/scanner" ||
+    location.pathname === "/scan" ||
+    location.pathname === "/admin/scanner";
+
+  /* ---------------- PUBLIC ATTENDANCE SCANNER ---------------- */
+  if (isScannerRoute) {
+    return <MobileScanner />;
+  }
 
   const isAdminRoute = location.pathname.startsWith("/admin");
 
@@ -153,7 +164,6 @@ function App() {
               <Route path="/our-roots" element={<Ourroots />} />
               <Route path="/join-us" element={<JoinUs />} />
               <Route path="/events" element={<Events />} />
-
 
               <Route path="/archives/inaugural" element={<Suspense fallback={<LogoLoading />}><Inaugural /></Suspense>} />
               <Route path="/archives/azure" element={<Suspense fallback={<LogoLoading />}><Azure /></Suspense>} />

@@ -6,6 +6,11 @@ import {
   uploadEventRegistrationFile,
   deleteEventRegistrationFile,
 } from "../controllers/webeventController";
+import {
+  getEventRegistrations,
+  scanAttendanceQr,
+  toggleRegistrationAttendance,
+} from "../controllers/eventAttendanceController";
 import { uploadRegistrationFile } from "../middleware/upload";
 
 const router = Router();
@@ -39,5 +44,10 @@ router.get("/getallmem", getAllEvents);
 router.post("/register", registerForEvent);
 router.post("/upload-file", handleRegistrationFileUpload, uploadEventRegistrationFile);
 router.post("/delete-file", deleteEventRegistrationFile);
+
+/* --- Public Attendance Scanner Endpoints --- */
+router.put("/registration/:registrationId/attendance", toggleRegistrationAttendance);
+router.get("/:eventId/registrations", getEventRegistrations);
+router.post("/:eventId/attendance/scan", scanAttendanceQr);
 
 export default router;

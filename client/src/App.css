@@ -6732,3 +6732,84 @@ p.content-text {
 .nav-btn:hover {
   transform: translateX(4px);
 }
+
+/* Mobile Attendance Scanner Viewport & Laser Animation */
+#html5-qr-reader-viewport {
+  width: 100% !important;
+  height: 100% !important;
+  background: #000000 !important;
+  border: none !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  overflow: hidden !important;
+  display: block !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+#html5-qr-reader-viewport video {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 100% !important;
+  min-height: 100% !important;
+  object-fit: cover !important;
+  border: none !important;
+  transform: none !important;
+  z-index: 1 !important;
+  display: block !important;
+}
+
+#html5-qr-reader-viewport canvas {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  width: 0 !important;
+  height: 0 !important;
+  pointer-events: none !important;
+}
+
+#html5-qr-reader-viewport img {
+  display: none !important;
+}
+
+#html5-qr-reader-viewport > div {
+  width: 100% !important;
+  height: 100% !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+#html5-qr-reader-viewport__scan_region {
+  display: none !important;
+}
+
+#html5-qr-reader-viewport__dashboard_section,
+#html5-qr-reader-viewport__dashboard,
+#html5-qr-reader-viewport__status_span,
+#html5-qr-reader-viewport__header_message {
+  display: none !important;
+}
+
+@keyframes scannerSweep {
+  0% {
+    top: 12px;
+    opacity: 0.9;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    top: calc(100% - 16px);
+    opacity: 0.9;
+  }
+}

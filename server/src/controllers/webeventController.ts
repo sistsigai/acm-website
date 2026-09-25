@@ -590,8 +590,12 @@ export const registerForEvent = async (
                     <td style="font-weight: 600;">${event.name}</td>
                   </tr>
                   <tr>
-                    <td style="color: #94a3b8; font-weight: 500;">Date & Time</td>
-                    <td style="font-weight: 600;">${event.date} at ${event.time}</td>
+                    <td style="color: #94a3b8; font-weight: 500;">Date</td>
+                    <td style="font-weight: 600;">${event.date}</td>
+                  </tr>
+                  <tr>
+                    <td style="color: #94a3b8; font-weight: 500;">Time</td>
+                    <td style="font-weight: 600;">${event.time}</td>
                   </tr>
                   <tr>
                     <td style="color: #94a3b8; font-weight: 500;">Venue</td>

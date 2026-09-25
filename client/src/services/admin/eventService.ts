@@ -25,6 +25,27 @@ export interface CreateEventPayload {
   posterPublicId?: string;
 }
 
+export interface EventItem {
+  _id: string;
+  name: string;
+  date: string;
+  time: string;
+  venue: string;
+  description: string;
+  registrationEndDate?: string;
+  display?: boolean;
+  thumbnailUrl?: string;
+  thumbnailPublicId?: string;
+  posterUrl?: string;
+  posterPublicId?: string;
+  contactPersons?: ContactPerson[];
+  registrationQuestions?: string[];
+  customQuestions?: IQuestion[];
+  whatsappGroupLink?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export type UpdateEventPayload = Partial<CreateEventPayload>;
 
 /* ---------------- DIRECT CLOUDINARY UPLOAD WITH PROGRESS ---------------- */
@@ -89,11 +110,19 @@ export const getAllEvents = async () => {
   try {
     const res = await axiosInstance.get("/admin/eventmanager/getAll");
     return res.data;
-  } catch (err: any) {
-    throw new Error(
-      err?.response?.data?.message ||
-      "Failed to fetch events"
-    );
+  } catch {
+    try {
+      const res = await axiosInstance.get("/events/getallmem");
+      return {
+        success: true,
+        events: Array.isArray(res.data) ? res.data : (res.data?.events || []),
+      };
+    } catch (err: any) {
+      throw new Error(
+        err?.response?.data?.message ||
+        "Failed to fetch events"
+      );
+    }
   }
 };
 
@@ -187,14 +216,21 @@ export const getEventRegistrations = async (
   params?: { search?: string; status?: "all" | "present" | "absent" }
 ): Promise<GetRegistrationsResponse> => {
   try {
-    const res = await axiosInstance.get(`/admin/eventmanager/${eventId}/registrations`, {
+    const res = await axiosInstance.get(`/events/${eventId}/registrations`, {
       params,
     });
     return res.data;
-  } catch (err: any) {
-    throw new Error(
-      err?.response?.data?.message || "Failed to fetch event registrations"
-    );
+  } catch {
+    try {
+      const res = await axiosInstance.get(`/admin/eventmanager/${eventId}/registrations`, {
+        params,
+      });
+      return res.data;
+    } catch (err: any) {
+      throw new Error(
+        err?.response?.data?.message || "Failed to fetch event registrations"
+      );
+    }
   }
 };
 
@@ -211,14 +247,21 @@ export const scanAttendanceQr = async (
   qrData: string
 ): Promise<ScanQrResponse> => {
   try {
-    const res = await axiosInstance.post(`/admin/eventmanager/${eventId}/attendance/scan`, {
+    const res = await axiosInstance.post(`/events/${eventId}/attendance/scan`, {
       qrData,
     });
     return res.data;
-  } catch (err: any) {
-    throw new Error(
-      err?.response?.data?.message || "Failed to scan and verify QR ticket"
-    );
+  } catch {
+    try {
+      const res = await axiosInstance.post(`/admin/eventmanager/${eventId}/attendance/scan`, {
+        qrData,
+      });
+      return res.data;
+    } catch (err: any) {
+      throw new Error(
+        err?.response?.data?.message || "Failed to scan and verify QR ticket"
+      );
+    }
   }
 };
 
@@ -228,14 +271,22 @@ export const toggleRegistrationAttendance = async (
 ): Promise<{ success: boolean; message: string; registration: AttendeeRecord }> => {
   try {
     const res = await axiosInstance.put(
-      `/admin/eventmanager/registration/${registrationId}/attendance`,
+      `/events/registration/${registrationId}/attendance`,
       { entry }
     );
     return res.data;
-  } catch (err: any) {
-    throw new Error(
-      err?.response?.data?.message || "Failed to update attendance status"
-    );
+  } catch {
+    try {
+      const res = await axiosInstance.put(
+        `/admin/eventmanager/registration/${registrationId}/attendance`,
+        { entry }
+      );
+      return res.data;
+    } catch (err: any) {
+      throw new Error(
+        err?.response?.data?.message || "Failed to update attendance status"
+      );
+    }
   }
 };
 

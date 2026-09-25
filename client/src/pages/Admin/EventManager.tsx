@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
+import { Link } from "react-router-dom";
 import { motion as m, AnimatePresence } from "framer-motion";
 import AdminLayout from "../../components/AdminLayout";
 import {
@@ -769,15 +770,32 @@ const EventManager: React.FC = () => {
             <h2 className="fw-bold text-white mb-1">Events Directory</h2>
             <p className="text-secondary m-0">Manage schedule, media, and attendee registrations</p>
           </div>
-          <button
-            type="button"
-            className="btn btn-primary px-4 py-2 fw-semibold shadow-lg d-flex align-items-center gap-2"
-            onClick={handleCreateEvent}
-            style={{ borderRadius: "12px" }}
-          >
-            <i className="bi bi-calendar-plus-fill"></i>
-            <span>Create Event</span>
-          </button>
+          <div className="d-flex align-items-center gap-2">
+            <Link
+              to="/admin/scanner"
+              className="btn btn-outline-info px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2 text-decoration-none shadow-sm"
+              style={{
+                borderRadius: "12px",
+                borderColor: "rgba(56, 189, 248, 0.4)",
+                background: "rgba(56, 189, 248, 0.08)",
+                color: "#38bdf8",
+              }}
+              title="Open Mobile Attendance QR Scanner"
+            >
+              <i className="bi bi-qr-code-scan"></i>
+              <span>Mobile Scanner</span>
+            </Link>
+
+            <button
+              type="button"
+              className="btn btn-primary px-4 py-2 fw-semibold shadow-lg d-flex align-items-center gap-2"
+              onClick={handleCreateEvent}
+              style={{ borderRadius: "12px" }}
+            >
+              <i className="bi bi-calendar-plus-fill"></i>
+              <span>Create Event</span>
+            </button>
+          </div>
         </m.div>
 
         {/* Search & Filter Controls */}
