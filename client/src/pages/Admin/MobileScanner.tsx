@@ -115,9 +115,9 @@ const MobileScanner: React.FC = () => {
       setIsProcessing(true);
       const res = await scanAttendanceQr(selectedEventId, qrData);
 
-      if (res?.success) {
+      if (res?.success && res.registration) {
         const attendee: AttendeeRecord = res.registration;
-        const isAlready = res.alreadyCheckedIn;
+        const isAlready = Boolean(res.alreadyCheckedIn);
 
         if (isAlready) {
           scannerFeedback.playWarning();
@@ -153,21 +153,37 @@ const MobileScanner: React.FC = () => {
       } else {
         scannerFeedback.playError();
         setScanResult({
-          status: "invalid",
+          status: res?.mismatch ? "mismatch" : "invalid",
           message: res?.message || "Invalid ticket QR code.",
+          ticketEventId: res?.ticketEventId,
+          ticketEventName: res?.ticketEventName,
+          currentEventName: res?.currentEventName,
+          name: res?.attendeeName,
         });
       }
     } catch (err: any) {
       console.error("Attendance QR scan error:", err);
       scannerFeedback.playError();
+      const data = err?.data;
       setScanResult({
-        status: "invalid",
+        status: data?.mismatch ? "mismatch" : "invalid",
         message: err?.message || "Failed to verify attendance ticket.",
+        ticketEventId: data?.ticketEventId,
+        ticketEventName: data?.ticketEventName,
+        currentEventName: data?.currentEventName,
+        name: data?.attendeeName,
       });
     }
   };
 
   const handleDismissResult = () => {
+    setScanResult(null);
+    setIsProcessing(false);
+  };
+
+  const handleSwitchEvent = (targetEventId: string) => {
+    setSelectedEventId(targetEventId);
+    setSearchParams({ eventId: targetEventId });
     setScanResult(null);
     setIsProcessing(false);
   };
@@ -271,6 +287,7 @@ const MobileScanner: React.FC = () => {
         <ScanResultOverlay
           result={scanResult}
           onDismiss={handleDismissResult}
+          onSwitchEvent={handleSwitchEvent}
         />
       </div>
     );

@@ -44,8 +44,8 @@ const normalizeAttendeeDoc = (doc: any) => {
     doc.answers instanceof Map
       ? Object.fromEntries(doc.answers)
       : typeof doc.answers === "object" && doc.answers !== null
-      ? doc.answers
-      : {};
+        ? doc.answers
+        : {};
 
   const name =
     doc.name ||
@@ -217,40 +217,60 @@ export const scanAttendanceQr = async (req: Request, res: Response) => {
       let cleanData = String(qrData).trim();
 
       // Handle URI encoded strings
-      if (cleanData.includes("%7B") || cleanData.includes("%22") || cleanData.includes("%3A")) {
+      if (cleanData.includes("%7B") || cleanData.includes("%22") || cleanData.includes("%3A") || cleanData.includes("%2F")) {
         try {
           cleanData = decodeURIComponent(cleanData);
-        } catch {}
+        } catch { }
+      }
+
+      // Check if data is a URL with query parameters (e.g. ?data=... or ?ticket=... or ?id=...)
+      if (cleanData.includes("?") || cleanData.startsWith("http://") || cleanData.startsWith("https://")) {
+        try {
+          const urlObj = new URL(cleanData, "https://sistsigai.acm.org");
+          const ticketParam = urlObj.searchParams.get("ticket") || urlObj.searchParams.get("data") || urlObj.searchParams.get("payload");
+          const idParam = urlObj.searchParams.get("id") || urlObj.searchParams.get("registrationId") || urlObj.searchParams.get("regId");
+          if (idParam && mongoose.Types.ObjectId.isValid(idParam)) {
+            resolvedRegistrationId = idParam;
+          } else if (ticketParam) {
+            cleanData = ticketParam;
+          }
+        } catch { }
       }
 
       // 1. Try parsing raw JSON
-      try {
-        const parsed = JSON.parse(cleanData);
-        if (parsed.registrationId) {
-          resolvedRegistrationId = parsed.registrationId;
-        } else if (parsed._id) {
-          resolvedRegistrationId = parsed._id;
-        } else if (parsed.id) {
-          resolvedRegistrationId = parsed.id;
-        }
-      } catch {
-        // 2. Try base64 decoded JSON / string
+      if (!resolvedRegistrationId) {
+        try {
+          const parsed = JSON.parse(cleanData);
+          if (parsed.registrationId && mongoose.Types.ObjectId.isValid(parsed.registrationId)) {
+            resolvedRegistrationId = parsed.registrationId;
+          } else if (parsed._id && mongoose.Types.ObjectId.isValid(parsed._id)) {
+            resolvedRegistrationId = parsed._id;
+          } else if (parsed.id && mongoose.Types.ObjectId.isValid(parsed.id)) {
+            resolvedRegistrationId = parsed.id;
+          }
+        } catch { }
+      }
+
+      // 2. Try base64 decoded JSON / string
+      if (!resolvedRegistrationId) {
         try {
           const decoded = Buffer.from(cleanData, "base64").toString("utf-8");
           const parsed = JSON.parse(decoded);
-          if (parsed.registrationId) {
+          if (parsed.registrationId && mongoose.Types.ObjectId.isValid(parsed.registrationId)) {
             resolvedRegistrationId = parsed.registrationId;
-          } else if (parsed._id) {
+          } else if (parsed._id && mongoose.Types.ObjectId.isValid(parsed._id)) {
             resolvedRegistrationId = parsed._id;
-          } else if (parsed.id) {
+          } else if (parsed.id && mongoose.Types.ObjectId.isValid(parsed.id)) {
             resolvedRegistrationId = parsed.id;
           }
-        } catch {
-          // 3. Try regex match for ObjectId in URLs or strings
-          const objectIdMatch = cleanData.match(/[0-9a-fA-F]{24}/);
-          if (objectIdMatch) {
-            resolvedRegistrationId = objectIdMatch[0];
-          }
+        } catch { }
+      }
+
+      // 3. Try regex match for ObjectId in URLs or raw strings
+      if (!resolvedRegistrationId) {
+        const objectIdMatch = cleanData.match(/[0-9a-fA-F]{24}/);
+        if (objectIdMatch) {
+          resolvedRegistrationId = objectIdMatch[0];
         }
       }
     }
@@ -288,9 +308,28 @@ export const scanAttendanceQr = async (req: Request, res: Response) => {
 
     // Ensure the ticket belongs to THIS specific event
     if (String(targetDoc.eventId) !== String(eventId)) {
+      let ticketEventName = "Another Event";
+      let scanningEventName = "Current Event";
+
+      try {
+        const [ticketEv, scanningEv] = await Promise.all([
+          Event.findById(targetDoc.eventId).select("name"),
+          Event.findById(eventId).select("name"),
+        ]);
+        if (ticketEv?.name) ticketEventName = ticketEv.name;
+        if (scanningEv?.name) scanningEventName = scanningEv.name;
+      } catch { }
+
+      const normalized = normalizeAttendeeDoc(targetDoc);
+
       return res.status(400).json({
         success: false,
-        message: "Ticket Mismatch: This QR code belongs to a different event!",
+        mismatch: true,
+        ticketEventId: String(targetDoc.eventId),
+        ticketEventName,
+        currentEventName: scanningEventName,
+        attendeeName: normalized.name,
+        message: `Ticket Mismatch: This ticket is for "${ticketEventName}", but you are scanning for "${scanningEventName}".`,
       });
     }
 

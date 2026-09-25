@@ -28,7 +28,6 @@ export const EventCropperModal: React.FC<EventCropperModalProps> = ({
   onSave,
   onCancel,
 }) => {
-  // Trigger window resize event on mount/show so react-easy-crop calculates 100% exact container dimensions immediately
   useEffect(() => {
     if (show && imageToCrop) {
       const t1 = setTimeout(() => window.dispatchEvent(new Event("resize")), 20);

@@ -1,7 +1,7 @@
 import React from "react";
 import { createPortal } from "react-dom";
 
-export type ScanStatusType = "success" | "already_checked_in" | "invalid";
+export type ScanStatusType = "success" | "already_checked_in" | "invalid" | "mismatch";
 
 export interface ScanResultData {
   status: ScanStatusType;
@@ -15,21 +15,27 @@ export interface ScanResultData {
   section?: string;
   checkedInAt?: string;
   answers?: Record<string, any>;
+  ticketEventId?: string;
+  ticketEventName?: string;
+  currentEventName?: string;
 }
 
 interface ScanResultOverlayProps {
   result: ScanResultData | null;
   onDismiss: () => void;
+  onSwitchEvent?: (targetEventId: string) => void;
 }
 
 export const ScanResultOverlay: React.FC<ScanResultOverlayProps> = ({
   result,
   onDismiss,
+  onSwitchEvent,
 }) => {
   if (!result) return null;
 
   const isSuccess = result.status === "success";
   const isAlready = result.status === "already_checked_in";
+  const isMismatch = result.status === "mismatch" || Boolean(result.ticketEventName);
 
   // Extract attendee details with broad fallback compatibility
   const answersMap =
@@ -92,6 +98,22 @@ export const ScanResultOverlay: React.FC<ScanResultOverlayProps> = ({
         btnBg: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
         btnText: "#451a03",
         btnShadow: "0 8px 24px rgba(245, 158, 11, 0.45)",
+      }
+    : isMismatch
+    ? {
+        bg: "#2e1005",
+        border: "#f97316",
+        glow: "rgba(249, 115, 22, 0.45)",
+        iconBg: "linear-gradient(135deg, #f97316 0%, #ea580c 100%)",
+        textColor: "#fb923c",
+        badgeBg: "rgba(249, 115, 22, 0.2)",
+        badgeText: "#fb923c",
+        badgeBorder: "rgba(249, 115, 22, 0.4)",
+        icon: "bi-arrow-left-right",
+        title: "Event Mismatch",
+        btnBg: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
+        btnText: "#ffffff",
+        btnShadow: "0 8px 24px rgba(59, 130, 246, 0.45)",
       }
     : {
         bg: "#2e0808",
@@ -166,6 +188,39 @@ export const ScanResultOverlay: React.FC<ScanResultOverlayProps> = ({
           </p>
         </div>
 
+        {/* Event Mismatch Comparison Card */}
+        {isMismatch && result.ticketEventName && (
+          <div
+            className="rounded-4 p-3 mb-3"
+            style={{
+              background: "rgba(249, 115, 22, 0.08)",
+              border: "1px solid rgba(249, 115, 22, 0.3)",
+            }}
+          >
+            <div className="mb-2">
+              <span className="text-secondary small text-uppercase fw-bold tracking-wider d-block mb-0.5" style={{ fontSize: "0.68rem" }}>
+                Ticket belongs to
+              </span>
+              <div className="d-flex align-items-center gap-2 text-warning fw-semibold" style={{ fontSize: "0.95rem" }}>
+                <i className="bi bi-calendar-event"></i>
+                <span className="text-white">{result.ticketEventName}</span>
+              </div>
+            </div>
+
+            {result.currentEventName && (
+              <div className="pt-2 border-top border-secondary border-opacity-20">
+                <span className="text-secondary small text-uppercase fw-bold tracking-wider d-block mb-0.5" style={{ fontSize: "0.68rem" }}>
+                  Active scanner for
+                </span>
+                <div className="d-flex align-items-center gap-2 text-secondary" style={{ fontSize: "0.85rem" }}>
+                  <i className="bi bi-qr-code-scan"></i>
+                  <span>{result.currentEventName}</span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Attendee Details Card */}
         {attendeeName ? (
           <div
@@ -229,38 +284,46 @@ export const ScanResultOverlay: React.FC<ScanResultOverlayProps> = ({
               </div>
             )}
           </div>
-        ) : (
-          <div
-            className="rounded-4 p-3 mb-3.5 text-center"
-            style={{
-              background: "rgba(239, 68, 68, 0.1)",
-              border: "1px solid rgba(239, 68, 68, 0.25)",
-            }}
-          >
-            <p className="text-danger fw-semibold mb-0" style={{ fontSize: "0.92rem" }}>
-              {result.message || "Invalid or unverified ticket QR code."}
-            </p>
-          </div>
-        )}
+        ) : null}
 
-        {/* Large Prominent Next Scan CTA Button */}
-        <button
-          type="button"
-          className="w-100 py-3 rounded-pill fw-bold d-flex align-items-center justify-content-center gap-2 border-0 transition"
-          style={{
-            background: themeConfig.btnBg,
-            color: themeConfig.btnText,
-            boxShadow: themeConfig.btnShadow,
-            fontSize: "1.05rem",
-            letterSpacing: "0.2px",
-            cursor: "pointer",
-          }}
-          onClick={onDismiss}
-        >
-          <i className="bi bi-qr-code-scan fs-5"></i>
-          <span>Scan Next Ticket</span>
-          <i className="bi bi-arrow-right fs-5 ms-1"></i>
-        </button>
+        {/* Buttons */}
+        <div className="d-flex flex-column gap-2">
+          {isMismatch && result.ticketEventId && onSwitchEvent && (
+            <button
+              type="button"
+              className="w-100 py-2.5 rounded-pill fw-bold d-flex align-items-center justify-content-center gap-2 border-0"
+              style={{
+                background: "linear-gradient(135deg, #f97316 0%, #ea580c 100%)",
+                color: "#ffffff",
+                boxShadow: "0 8px 24px rgba(249, 115, 22, 0.4)",
+                fontSize: "0.95rem",
+                cursor: "pointer",
+              }}
+              onClick={() => onSwitchEvent(result.ticketEventId!)}
+            >
+              <i className="bi bi-arrow-repeat fs-5"></i>
+              <span>Switch to {result.ticketEventName || "Event"}</span>
+            </button>
+          )}
+
+          <button
+            type="button"
+            className="w-100 py-3 rounded-pill fw-bold d-flex align-items-center justify-content-center gap-2 border-0 transition"
+            style={{
+              background: themeConfig.btnBg,
+              color: themeConfig.btnText,
+              boxShadow: themeConfig.btnShadow,
+              fontSize: "1.05rem",
+              letterSpacing: "0.2px",
+              cursor: "pointer",
+            }}
+            onClick={onDismiss}
+          >
+            <i className="bi bi-qr-code-scan fs-5"></i>
+            <span>Scan Next Ticket</span>
+            <i className="bi bi-arrow-right fs-5 ms-1"></i>
+          </button>
+        </div>
       </div>
     </div>
   );

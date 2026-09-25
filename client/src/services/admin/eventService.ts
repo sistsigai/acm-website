@@ -236,10 +236,15 @@ export const getEventRegistrations = async (
 
 export interface ScanQrResponse {
   success: boolean;
-  alreadyCheckedIn: boolean;
+  alreadyCheckedIn?: boolean;
   message: string;
-  registration: AttendeeRecord;
+  registration?: AttendeeRecord;
   checkedInAt?: string;
+  mismatch?: boolean;
+  ticketEventId?: string;
+  ticketEventName?: string;
+  currentEventName?: string;
+  attendeeName?: string;
 }
 
 export const scanAttendanceQr = async (
@@ -252,12 +257,15 @@ export const scanAttendanceQr = async (
     });
     return res.data;
   } catch (err: any) {
+    const data = err?.response?.data;
     const message =
-      err?.response?.data?.message ||
-      err?.response?.data?.error ||
+      data?.message ||
+      data?.error ||
       err?.message ||
       "Failed to scan and verify QR ticket";
-    throw new Error(message);
+    const customErr: any = new Error(message);
+    customErr.data = data;
+    throw customErr;
   }
 };
 

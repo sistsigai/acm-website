@@ -25,6 +25,7 @@ router.post("/upload-image", upload.single("image"), verifyAdminToken, uploadEve
 router.post("/delete-image", verifyAdminToken, deleteEventImage);
 router.post("/add", verifyAdminToken, addEvent);
 router.get("/getAll", verifyAdminToken, getAllEvents);
+
 /* --- Event Attendance & Registrations (Defined before generic :id routes) --- */
 router.put("/registration/:registrationId/attendance", verifyAdminToken, toggleRegistrationAttendance);
 router.delete("/registration/:registrationId", verifyAdminToken, deleteEventRegistration);

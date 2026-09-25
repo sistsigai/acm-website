@@ -47,7 +47,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     res.setHeader('X-XSS-Protection', '1; mode=block');
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Powered-By', 'ACM SIGAI');
-    
+
     next();
 });
 
@@ -63,7 +63,7 @@ const defaultAllowedOrigins = [
     'http://api.sistsigai.acm.org'
 ];
 
-const configuredOrigins = process.env.ALLOWED_ORIGINS 
+const configuredOrigins = process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
     : [];
 
@@ -88,12 +88,12 @@ app.use(cookieParser());
 // ========== LOGGING ==========
 app.use(morgan(isProduction ? 'combined' : 'dev'));
 
-app.use(express.json({ 
+app.use(express.json({
     limit: "10mb"
 }));
 
-app.use(express.urlencoded({ 
-    extended: true, 
+app.use(express.urlencoded({
+    extended: true,
     limit: "10mb"
 }));
 
@@ -124,7 +124,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 });
 
 // ========== RATE LIMITING ==========
-const   apiLimiter = rateLimit({
+const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: isProduction ? 100 : 500,
     message: {
@@ -168,7 +168,7 @@ app.use("/api/admin/settings", adminSettingsRoutes);
 const healthCheckHandler = async (req: Request, res: Response) => {
     try {
         const mongoose = (await import("mongoose")).default;
-        
+
         const healthData = {
             status: "healthy",
             timestamp: new Date().toISOString(),
@@ -181,7 +181,7 @@ const healthCheckHandler = async (req: Request, res: Response) => {
             database: mongoose.connection.readyState === 1 ? "connected" : "disconnected",
             environment: process.env.NODE_ENV
         };
-        
+
         res.status(200).json(healthData);
     } catch (error) {
         res.status(500).json({
@@ -228,7 +228,7 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
     });
 
     const statusCode = (err as any).status || 500;
-    
+
     const errorResponse: any = {
         success: false,
         message: isProduction ? "Internal server error" : err.message,
@@ -246,7 +246,7 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
 // ========== GRACEFUL SHUTDOWN ==========
 const shutdown = async (signal: string) => {
     console.log(`\n🛑 Received ${signal}. Shutting down gracefully...`);
-    
+
     try {
         const mongoose = (await import("mongoose")).default;
         await mongoose.connection.close();
@@ -254,7 +254,7 @@ const shutdown = async (signal: string) => {
     } catch (err) {
         console.error("Error closing MongoDB:", err);
     }
-    
+
     console.log("✅ Server shutdown complete");
     process.exit(0);
 };
