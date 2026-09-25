@@ -10,11 +10,14 @@ export const DashboardEngagementMetrics: React.FC<DashboardEngagementMetricsProp
   stats,
   topPerformers,
 }) => {
+  const regRate = stats.registrationRate ?? 0;
+  const growthRate = stats.memberGrowthRate ?? 0;
+
   return (
-    <div className="glass-panel p-4 h-100">
+    <div className="glass-panel rounded-4 p-4 h-100">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h5 className="fw-bold text-white m-0">
-          <i className="bi bi-graph-up-arrow text-success me-2"></i>
+          <i className="bi bi-graph-up-arrow text-primary me-2"></i>
           Engagement Metrics
         </h5>
       </div>
@@ -22,24 +25,24 @@ export const DashboardEngagementMetrics: React.FC<DashboardEngagementMetricsProp
       <div className="row g-4">
         {/* Registration Progress */}
         <div className="col-12 col-md-4">
-          <div className="border border-secondary border-opacity-25 rounded-3 p-3">
+          <div className="border border-secondary border-opacity-25 rounded-3 p-3 h-100 d-flex flex-column justify-content-between">
             <div className="d-flex justify-content-between align-items-center mb-2">
-              <h6 className="text-white m-0">Event Registrations Today</h6>
+              <h6 className="text-white m-0 small fw-medium">Event Registrations Today</h6>
               <span
-                className={`badge ${
-                  stats.registrationRate > 0
-                    ? "bg-success bg-opacity-25 text-success"
-                    : stats.registrationRate < 0
-                    ? "bg-danger bg-opacity-25 text-danger"
-                    : "bg-secondary bg-opacity-25 text-secondary"
+                className={`admin-badge ${
+                  regRate > 0
+                    ? "admin-badge-success"
+                    : regRate < 0
+                    ? "admin-badge-danger"
+                    : "admin-badge-secondary"
                 }`}
               >
-                {stats.registrationRate > 0 ? "+" : ""}
-                {stats.registrationRate}%
+                {regRate > 0 ? "+" : ""}
+                {regRate}%
               </span>
             </div>
-            <div className="d-flex align-items-center gap-3">
-              <h2 className="fw-bold text-white m-0">{stats.todayRegistrations}</h2>
+            <div className="d-flex align-items-center gap-3 mt-2">
+              <h2 className="fw-bold text-white m-0">{stats.todayRegistrations ?? 0}</h2>
               <div className="flex-grow-1">
                 <div
                   className="progress bg-dark"
@@ -50,12 +53,12 @@ export const DashboardEngagementMetrics: React.FC<DashboardEngagementMetricsProp
                     style={{
                       width: `${Math.min(
                         100,
-                        (stats.todayRegistrations / Math.max(stats.totalMembers, 1)) * 100
+                        ((stats.todayRegistrations ?? 0) / Math.max(stats.totalMembers || 1, 1)) * 100
                       )}%`,
                     }}
                   ></div>
                 </div>
-                <small className="text-secondary">Today's registrations</small>
+                <small className="text-secondary d-block mt-1">Today's registrations</small>
               </div>
             </div>
           </div>
@@ -63,32 +66,32 @@ export const DashboardEngagementMetrics: React.FC<DashboardEngagementMetricsProp
 
         {/* Most Popular Event */}
         <div className="col-12 col-md-4">
-          <div className="border border-secondary border-opacity-25 rounded-3 p-3">
-            <h6 className="text-white mb-2">Most Popular Event</h6>
+          <div className="border border-secondary border-opacity-25 rounded-3 p-3 h-100 d-flex flex-column justify-content-between">
+            <h6 className="text-white mb-2 small fw-medium">Most Popular Event</h6>
             {topPerformers.topEvent ? (
               <>
-                <h5 className="text-white fw-bold">{topPerformers.topEvent.name}</h5>
-                <div className="d-flex align-items-center gap-3">
-                  <span className="badge bg-primary">
+                <h5 className="text-white fw-bold text-truncate mb-2">{topPerformers.topEvent.name}</h5>
+                <div className="d-flex align-items-center gap-2">
+                  <span className="admin-badge admin-badge-primary">
                     {topPerformers.topEvent.registrations} registrations
                   </span>
                   <small className="text-secondary">All time best</small>
                 </div>
               </>
             ) : (
-              <p className="text-secondary m-0">No event data available</p>
+              <p className="text-secondary m-0 small">No event data available</p>
             )}
           </div>
         </div>
 
         {/* Member Growth Rate */}
         <div className="col-12 col-md-4">
-          <div className="border border-secondary border-opacity-25 rounded-3 p-3">
-            <h6 className="text-white mb-2">Member Growth Rate</h6>
-            <div className="d-flex align-items-center gap-3">
+          <div className="border border-secondary border-opacity-25 rounded-3 p-3 h-100 d-flex flex-column justify-content-between">
+            <h6 className="text-white mb-2 small fw-medium">Member Growth Rate</h6>
+            <div className="d-flex align-items-center gap-3 mt-2">
               <h2 className="fw-bold text-white m-0">
-                {stats.memberGrowthRate > 0 ? "+" : ""}
-                {stats.memberGrowthRate}%
+                {growthRate > 0 ? "+" : ""}
+                {growthRate}%
               </h2>
               <div>
                 <div
@@ -98,11 +101,11 @@ export const DashboardEngagementMetrics: React.FC<DashboardEngagementMetricsProp
                   <div
                     className="progress-bar bg-primary"
                     style={{
-                      width: `${Math.min(100, Math.abs(stats.memberGrowthRate))}%`,
+                      width: `${Math.min(100, Math.abs(growthRate))}%`,
                     }}
                   ></div>
                 </div>
-                <small className="text-secondary">vs yesterday</small>
+                <small className="text-secondary d-block mt-1">vs yesterday</small>
               </div>
             </div>
           </div>

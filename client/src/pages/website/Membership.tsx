@@ -1,8 +1,32 @@
+import React, { useEffect } from "react";
 import { motion as m } from "framer-motion";
-import { FaLaptop, FaExclamationTriangle, FaIdCard, FaUserPlus, FaEnvelopeOpenText, FaSignInAlt, FaDownload } from "react-icons/fa";
+import { FaLaptop, FaExclamationTriangle, FaIdCard, FaUserPlus, FaEnvelopeOpenText, FaSignInAlt, FaDownload, FaBookOpen, FaGraduationCap, FaUsers, FaAward } from "react-icons/fa";
 import { fadeIn } from "../../components/transitions";
 import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+
+// --- Data: Membership Benefits ---
+const perksData = [
+  {
+    icon: <FaBookOpen />,
+    title: "ACM Digital Library",
+    desc: "Unlimited access to 3M+ peer-reviewed articles, publications, and top AI research papers."
+  },
+  {
+    icon: <FaGraduationCap />,
+    title: "Learning Center",
+    desc: "Complimentary access to O'Reilly learning resources, Skillsoft courses, and tech webinars."
+  },
+  {
+    icon: <FaUsers />,
+    title: "Global Community",
+    desc: "Connect with industry pioneers, AI researchers, mentors, and student chapters worldwide."
+  },
+  {
+    icon: <FaAward />,
+    title: "Events & Perks",
+    desc: "Special discounted rates for ACM international conferences, hackathons, and certifications."
+  }
+];
 
 // --- Data: Steps Configuration ---
 const stepsData = [
@@ -15,7 +39,7 @@ const stepsData = [
       {
         label: "Student Membership",
         link: "https://services.acm.org/public/qj/proflevel/proflevel_control.cfm?level=3&country=India&form_type=Student&promo=ACMMSDEPT&pay=DD",
-        primary: true
+        primary: false
       },
       {
         label: "Professional Membership",
@@ -66,18 +90,72 @@ const stepsData = [
       {
         label: "Access Dashboard",
         link: "https://myacm.acm.org/dashboard.cfm?svc=services",
-        primary: true
+        primary: false
       }
     ]
   }
 ];
 
+// --- REUSABLE COMPONENTS (Matching Aboutus.tsx MemberCard Pattern) ---
+const PerkCard = React.memo(({ perk, index }: { perk: typeof perksData[0]; index: number }) => {
+  return (
+    <m.div
+      className="perk-card"
+      variants={fadeIn("up", 0.15 + index * 0.08)}
+      initial="hidden"
+      animate="show"
+    >
+      <div className="perk-icon">{perk.icon}</div>
+      <h3>{perk.title}</h3>
+      <p>{perk.desc}</p>
+    </m.div>
+  );
+});
+
+const StepCard = React.memo(({ step }: { step: typeof stepsData[0] }) => {
+  return (
+    <m.div
+      className="step-card"
+      variants={fadeIn("up", 0.15)}
+      initial="hidden"
+      whileInView="show"
+      viewport={{ once: false, amount: 0.2 }}
+    >
+      {/* Left Column: Number & Icon */}
+      <div className="step-card-left">
+        <div className="step-number-badge">{step.id}</div>
+        <div className="step-icon-wrapper">{step.icon}</div>
+      </div>
+
+      {/* Right Column: Content */}
+      <div className="step-card-content">
+        <h2>{step.title}</h2>
+        <p>{step.description}</p>
+
+        {step.actions.length > 0 && (
+          <div className="action-row">
+            {step.actions.map((action, idx) => (
+              <a
+                key={idx}
+                href={action.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`glass-btn ${action.primary ? "primary" : "secondary"}`}
+              >
+                {action.label}
+              </a>
+            ))}
+          </div>
+        )}
+      </div>
+    </m.div>
+  );
+});
+
 const Membership = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    console.log("✅ Admin shortcut (Ctrl + Shift + G) attached");
-
     const handleKeyDown = (e: KeyboardEvent) => {
       if (
         e.ctrlKey &&
@@ -98,12 +176,11 @@ const Membership = () => {
 
   return (
     <>
-      <div className='membership-page'>
-
+      <div className="membership-page">
         {/* --- Header Section --- */}
         <div className="membership-header">
           <m.div
-            variants={fadeIn("down", 0)}
+            variants={fadeIn("down", 0.1)}
             initial="hidden"
             animate="show"
           >
@@ -113,17 +190,16 @@ const Membership = () => {
           </m.div>
 
           <m.h1
-            variants={fadeIn("up", 0)}
-            initial="hidden"
-            animate="show"
-            className="main-title"
-            viewport={{ once: false, amount: 0.7 }}
+            className="text-gradient"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
           >
-            ACM <span className="highlight-text">Membership Guide</span>
+            ACM MEMBERSHIP GUIDE
           </m.h1>
 
           <m.p
-            variants={fadeIn("up", 0.25)}
+            variants={fadeIn("up", 0.2)}
             initial="hidden"
             animate="show"
             className="sub-title"
@@ -132,74 +208,62 @@ const Membership = () => {
           </m.p>
         </div>
 
+        {/* --- Membership Benefits / Perks Grid --- */}
+        <div className="perks-grid">
+          {perksData.map((perk, i) => (
+            <PerkCard key={i} perk={perk} index={i} />
+          ))}
+        </div>
+
         {/* --- Alert Box --- */}
         <m.div
           className="alert-box"
-          variants={fadeIn("up", 0.35)}
+          variants={fadeIn("up", 0.4)}
           initial="hidden"
           animate="show"
         >
-          <div className="alert-icon"><FaExclamationTriangle /></div>
+          <div className="alert-icon">
+            <FaExclamationTriangle />
+          </div>
           <div className="alert-content">
             <h3>Critical Requirements</h3>
             <ul>
-              <li><strong>Do not create an account</strong> before paying for the membership.</li>
-              <li><strong>Verify your email</strong> spelling carefully. Use an active, accessible email address.</li>
+              <li>
+                <strong>Do not create an account</strong> before paying for the membership.
+              </li>
+              <li>
+                <strong>Verify your email</strong> spelling carefully. Use an active, accessible email address.
+              </li>
             </ul>
           </div>
         </m.div>
 
-        {/* --- Stacked Steps Container --- */}
+        {/* --- Registration Steps Divider --- */}
         <m.div
-          className="steps-container"
+          className="section-divider"
+          variants={fadeIn("up", 0.15)}
           initial="hidden"
-          animate="show"
+          whileInView="show"
+          viewport={{ once: false, amount: 0.2 }}
         >
-          {stepsData.map((step, index) => (
-            <m.div
-              key={step.id}
-              className="step-card"
-              variants={fadeIn("up", 0.15 + index * 0.1)}
-            >
-              {/* Left Column: Number & Icon */}
-              <div className="card-left">
-                <div className="step-number-badge">{step.id}</div>
-                <div className="step-icon-wrapper">
-                  {step.icon}
-                </div>
-              </div>
-
-              {/* Right Column: Content */}
-              <div className="card-content">
-                <h2>{step.title}</h2>
-                <p>{step.description}</p>
-
-                {step.actions.length > 0 && (
-                  <div className="action-row">
-                    {step.actions.map((action, idx) => (
-                      <a
-                        key={idx}
-                        href={action.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`glass-btn ${action.primary ? 'primary' : 'secondary'}`}
-                      >
-                        {action.label}
-                      </a>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </m.div>
-          ))}
+          <h2>Registration Roadmap</h2>
+          <p>Complete these 5 straightforward steps to activate your membership</p>
         </m.div>
+
+        {/* --- Stacked Steps Container --- */}
+        <div className="steps-container">
+          {stepsData.map((step) => (
+            <StepCard key={step.id} step={step} />
+          ))}
+        </div>
 
         {/* --- Footer --- */}
         <m.footer
           className="support-footer"
-          variants={fadeIn("up", 0.4)}
+          variants={fadeIn("up", 0.15)}
           initial="hidden"
-          animate="show"
+          whileInView="show"
+          viewport={{ once: false, amount: 0.2 }}
         >
           <p>Experiencing technical difficulties?</p>
           <a

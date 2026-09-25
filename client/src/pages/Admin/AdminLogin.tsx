@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { motion as m } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import Loader from "../../components/Loader";
 import Message from "../../components/Message";
@@ -173,7 +174,12 @@ const AdminLogin = () => {
         <div className="login-wrapper">
             <Loader loading={loading} />
 
-            <div className="glass-card">
+            <m.div
+                className="glass-card"
+                initial={{ opacity: 0, scale: 0.95, y: 15 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                transition={{ duration: 0.4, ease: "easeOut" }}
+            >
                 <div className="text-center mb-4">
                     <div className="logo-container d-inline-flex align-items-center justify-content-center bg-white rounded-circle p-2 mb-3 shadow-lg">
                         <img src={logo} alt="Logo" style={{ width: "100%", objectFit: 'contain' }} />
@@ -291,7 +297,7 @@ const AdminLogin = () => {
                         Sign In
                     </button>
                 </form>
-            </div>
+            </m.div>
         </div>
     );
 };

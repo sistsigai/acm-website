@@ -10,9 +10,11 @@ export const getTokenStorage = (rememberMe: boolean = false): Storage => {
 
 export const setAuthToken = (
   token: string,
-  _rememberMe: boolean = true
+  rememberMe: boolean = true
 ): void => {
-  localStorage.setItem("adminToken", token);
+  if (rememberMe) {
+    localStorage.setItem("adminToken", token);
+  }
   sessionStorage.setItem("adminToken", token);
 
   axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${token}`;

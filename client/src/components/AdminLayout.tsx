@@ -121,12 +121,12 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
       {/* Global Loader */}
       <Loader loading={loading} variant="orbit" fullscreen theme="dark" />
 
-      {/* Message / Toast */}
-      {toast && (
+      {/* Message / Toast - Only show on errors */}
+      {toast && toast.variant === "error" && (
         <Message
           show={toast.show}
-          variant={toast.variant}
-          title={toast.title}
+          variant="error"
+          title={toast.title || "Error"}
           onClose={onCloseToast}
         >
           {toast.message}

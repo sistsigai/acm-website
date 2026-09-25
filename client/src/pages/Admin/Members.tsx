@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
+import { motion as m, AnimatePresence } from "framer-motion";
 import AdminLayout from "../../components/AdminLayout";
 import type { Area, Point } from "react-easy-crop";
 import {
@@ -498,9 +499,19 @@ const Members: React.FC = () => {
       }}
       onCloseToast={() => setToast((prev) => ({ ...prev, show: false }))}
     >
-      <div className="mobile-offset">
+      <m.div
+        className="mobile-offset"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3 }}
+      >
         {/* Header */}
-        <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
+        <m.div
+          className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: "easeOut" }}
+        >
           <div>
             <h2 className="fw-bold text-white mb-1">Members Directory</h2>
             <p className="text-secondary m-0">Manage core team and faculty members</p>
@@ -519,10 +530,15 @@ const Members: React.FC = () => {
             <i className="bi bi-person-plus-fill"></i>
             <span>Add Member</span>
           </button>
-        </div>
+        </m.div>
 
         {/* Filter Controls */}
-        <div className="row g-3 mb-4">
+        <m.div
+          className="row g-3 mb-4"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, delay: 0.05, ease: "easeOut" }}
+        >
           <div className="col-12 col-md-8">
             <div className="admin-search-bar">
               <i className="bi bi-search search-icon"></i>
@@ -554,7 +570,7 @@ const Members: React.FC = () => {
               label="Filter by Batch"
             />
           </div>
-        </div>
+        </m.div>
 
         {/* Members List */}
         <div className="d-flex flex-column gap-3">
@@ -565,37 +581,39 @@ const Members: React.FC = () => {
               <p className="text-secondary">Try adjusting your filters or search terms.</p>
             </div>
           ) : (
-            filteredMembers.map((member, index) => (
-              <MemberCard
-                key={member._id || index}
-                member={member}
-                index={index}
-                isOpen={expandedRow === index}
-                onToggleOpen={() => setExpandedRow(expandedRow === index ? null : index)}
-                onEdit={(mem) => {
-                  const pic = mem.profilePic || mem.imageUrl || "";
-                  setEditMember({
-                    ...mem,
-                    profilePic: pic,
-                    social: {
-                      linkedin: mem.social?.linkedin || "",
-                      instagram: mem.social?.instagram || "",
-                      facebook: mem.social?.facebook || "",
-                    },
-                  });
-                  setEditImagePreview(pic);
-                  setEditValidationErrors({});
-                  setShowEditModal(true);
-                }}
-                onDelete={(mem) => {
-                  setMemberToDelete(mem);
-                  setShowDeleteModal(true);
-                }}
-              />
-            ))
+            <AnimatePresence mode="popLayout">
+              {filteredMembers.map((member, index) => (
+                <MemberCard
+                  key={member._id || index}
+                  member={member}
+                  index={index}
+                  isOpen={expandedRow === index}
+                  onToggleOpen={() => setExpandedRow(expandedRow === index ? null : index)}
+                  onEdit={(mem) => {
+                    const pic = mem.profilePic || mem.imageUrl || "";
+                    setEditMember({
+                      ...mem,
+                      profilePic: pic,
+                      social: {
+                        linkedin: mem.social?.linkedin || "",
+                        instagram: mem.social?.instagram || "",
+                        facebook: mem.social?.facebook || "",
+                      },
+                    });
+                    setEditImagePreview(pic);
+                    setEditValidationErrors({});
+                    setShowEditModal(true);
+                  }}
+                  onDelete={(mem) => {
+                    setMemberToDelete(mem);
+                    setShowDeleteModal(true);
+                  }}
+                />
+              ))}
+            </AnimatePresence>
           )}
         </div>
-      </div>
+      </m.div>
 
       {/* Add Modal */}
       <MemberFormModal

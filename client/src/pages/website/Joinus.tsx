@@ -59,9 +59,6 @@ const JoinUs: React.FC = () => {
     const [submitting, setSubmitting] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [success, setSuccess] = useState(false);
-    // Removed old error state in favor of Orb, or kept for inline fallback if desired
-    // const [error, setError] = useState(''); 
-
     const [answers, setAnswers] = useState<Answer[]>([]);
     const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
     const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
@@ -611,13 +608,12 @@ const JoinUs: React.FC = () => {
                         /* --- IF DATA EXISTS: SHOW GRID --- */
                         <>
                             <m.h1
-                                initial={{ opacity: 0, y: -30 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.8, ease: "easeOut" }}
-                                viewport={{ once: true }}
-                                className='timeline-main-title'
+                                className="text-gradient"
+                                initial={{ opacity: 0, y: -20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.8 }}
                             >
-                                JOIN THE <span className="highlight-text">TEAM</span>
+                                JOIN THE TEAM
                             </m.h1>
 
                             <m.div className="roles-grid" variants={formContainerVariants} initial="hidden" animate="show">

@@ -91,7 +91,7 @@ export const getCurrentAdmin = async (): Promise<{ success: boolean; user?: any 
   try {
     const res = await axiosInstance.get("/admin/auth/me");
     return res.data;
-  } catch (error) {
+  } catch {
     return { success: false };
   }
 };

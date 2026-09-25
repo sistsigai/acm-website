@@ -55,7 +55,7 @@ const Events: React.FC = () => {
         } else {
           setEvents([]);
         }
-      } catch (err: any) {
+      } catch {
         setError("Failed to load events");
         showToast("Failed to load events", "error");
       } finally {
@@ -87,8 +87,8 @@ const Events: React.FC = () => {
   if (loading) {
     return (
       <div className="events-page">
-        <h1 className="page-title">
-          SIGAI <span className="highlight">EVENT</span>
+        <h1 className="text-gradient">
+          SIGAI EVENTS
         </h1>
         <div className="glitch-container">
           <div className="terminal-subtext">Loading events...</div>
@@ -124,12 +124,12 @@ const Events: React.FC = () => {
       />
 
       <m.h1
-        className="page-title"
-        initial={{ opacity: 0, y: -40 }}
+        className="text-gradient"
+        initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, ease: "easeOut" }}
+        transition={{ duration: 0.8 }}
       >
-        SIGAI <span className="highlight">EVENTS</span>
+        SIGAI EVENTS
       </m.h1>
 
       {events.length === 0 ? (

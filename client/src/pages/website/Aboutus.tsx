@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion as m } from "framer-motion";
 import Tilt from 'react-vanilla-tilt';
 import { useLocation } from 'react-router-dom';
 import { fadeIn } from '../../components/transitions';
-import { FaInstagram, FaLinkedin, FaTwitter, FaFacebook } from "react-icons/fa";
+import { FaInstagram, FaLinkedin, FaFacebook } from "react-icons/fa";
 
 // --- LOCAL IMAGES (Only for non-member content) ---
 import { getMembers, type Member } from '../../services/website/aboutservice';
@@ -86,7 +86,6 @@ const MemberCard = React.memo(({ member, isLarge = false }: { member: FrontendMe
                 >
                   {social.type === "instagram" && <FaInstagram />}
                   {social.type === "linkedin" && <FaLinkedin />}
-                  {social.type === "twitter" && <FaTwitter />}
                   {social.type === "facebook" && <FaFacebook />}
                 </a>
               ))}
@@ -98,9 +97,7 @@ const MemberCard = React.memo(({ member, isLarge = false }: { member: FrontendMe
   );
 });
 
-interface AboutProps { }
-
-const About: React.FC<AboutProps> = () => {
+const About: React.FC = () => {
   const [selectedUnit, setSelectedUnit] = useState<string>('volunteers');
   const location = useLocation();
   const [selectedYear, setSelectedYear] = useState<string>('2025-2026');
@@ -167,7 +164,7 @@ const About: React.FC<AboutProps> = () => {
 
   const normalize = (v: string) => v.replace(/[–—]/g, "-").trim();
 
-  const filterMembers = (
+  const filterMembers = useCallback((
     batch: string,
     designationKeywords: string[],
     sortOldest = false
@@ -186,9 +183,9 @@ const About: React.FC<AboutProps> = () => {
     }
 
     return filtered.map(convertToFrontendMember);
-  };
+  }, [members]);
 
-  const getMembersByUnit = (unit: string): FrontendMember[] => {
+  const getMembersByUnit = useCallback((unit: string): FrontendMember[] => {
     const keywords: Record<string, string[]> = {
       volunteers: ['volunteer'],
       media: ['media'],
@@ -196,7 +193,7 @@ const About: React.FC<AboutProps> = () => {
     };
 
     return filterMembers(selectedYear, keywords[unit] || ['volunteer'], true);
-  };
+  }, [selectedYear, filterMembers]);
 
   const getLeadershipPriority = (designation: string): number => {
     const d = designation.toLowerCase();
@@ -218,15 +215,15 @@ const About: React.FC<AboutProps> = () => {
         getLeadershipPriority(a.designation) -
         getLeadershipPriority(b.designation)
     );
-  }, [members, selectedYear]);
+  }, [members, selectedYear, filterMembers]);
 
   const coreTeamData = useMemo(() => {
     return filterMembers(selectedYear, ['core team'], true);
-  }, [members, selectedYear]);
+  }, [members, selectedYear, filterMembers]);
 
   const facultyData = useMemo(() => {
     return filterMembers(selectedYear, ['hod', 'faculty convener'], true);
-  }, [members, selectedYear]);
+  }, [members, selectedYear, filterMembers]);
 
   const facultyCoordinatorsData = useMemo(() => {
     return filterMembers(
@@ -234,11 +231,11 @@ const About: React.FC<AboutProps> = () => {
       ['associate professor', 'faculty coordinator'],
       true
     );
-  }, [members, selectedYear]);
+  }, [members, selectedYear, filterMembers]);
 
   const unitCardsData = useMemo(() => {
     return getMembersByUnit(selectedUnit);
-  }, [members, selectedYear, selectedUnit]);
+  }, [selectedUnit, getMembersByUnit]);
 
   return (
     <>
@@ -253,12 +250,12 @@ const About: React.FC<AboutProps> = () => {
       <div className='about1' id='about'>
         {/* ENHANCED MAIN TITLE */}
         <m.h1
-          variants={fadeIn("up", 0)}
-          initial="hidden"
-          animate="show"
-          viewport={{ once: true, amount: 0.7 }}
+          className="text-gradient"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
         >
-          EXPLORE <span className="title-highlight">ACM SIGAI!!</span>
+          EXPLORE ACM SIGAI!!
         </m.h1>
 
         <div className='content1'>
@@ -366,7 +363,7 @@ const About: React.FC<AboutProps> = () => {
 
         <div className='grid-container'>
           {unitCardsData.length > 0 ? (
-            unitCardsData.map((member) => (
+            unitCardsData.map((member: FrontendMember) => (
               <MemberCard key={member.id} member={member} />
             ))
           ) : (

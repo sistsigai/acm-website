@@ -1,9 +1,29 @@
 import React, { useEffect, useState } from "react";
+import { motion as m, type Variants } from "framer-motion";
 import AdminLayout from "../../components/AdminLayout";
 import {
     getAdminSettings,
     updateAdminSettings,
 } from "../../services/admin/settingsService";
+
+const containerVariants: Variants = {
+    hidden: { opacity: 0 },
+    show: {
+        opacity: 1,
+        transition: {
+            staggerChildren: 0.08,
+        },
+    },
+};
+
+const itemVariants: Variants = {
+    hidden: { opacity: 0, y: 15 },
+    show: {
+        opacity: 1,
+        y: 0,
+        transition: { duration: 0.35, ease: "easeOut" },
+    },
+};
 
 /* ---------------- COMPONENT ---------------- */
 const AdminSettings: React.FC = () => {
@@ -39,12 +59,9 @@ const AdminSettings: React.FC = () => {
     /* ---------------- LOAD SETTINGS ---------------- */
     useEffect(() => {
         const loadSettings = async () => {
-
             try {
                 setLoading(true);
-
                 const data = await getAdminSettings();
-
                 setOrgName(data.orgName);
                 setContact(data.contact);
                 setSocials({
@@ -70,7 +87,6 @@ const AdminSettings: React.FC = () => {
 
         loadSettings();
     }, []);
-
 
     /* ---------------- SAVE HANDLER ---------------- */
     const handleSave = async () => {
@@ -122,19 +138,48 @@ const AdminSettings: React.FC = () => {
             toast={toast ?? undefined}
             onCloseToast={() => setToast(null)}
         >
-            <div className="mobile-offset p-2 pb-5">
+            <m.div
+                className="mobile-offset pb-4"
+                variants={containerVariants}
+                initial="hidden"
+                animate="show"
+            >
                 {/* Header */}
-                <div className="mb-4">
-                    <h1 className="fw-bold text-white mb-1 display-6" style={{ letterSpacing: '-1px' }}>Admin Settings</h1>
-                    <p className="text-secondary">
-                        Manage organization details and website information.
-                    </p>
-                </div>
+                <m.div
+                    className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3"
+                    variants={itemVariants}
+                >
+                    <div>
+                        <h2 className="fw-bold text-white mb-1">Admin Settings</h2>
+                        <p className="text-secondary m-0">
+                            Manage organization details and website information
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        className="btn btn-primary px-4 py-2 fw-semibold shadow-lg d-flex align-items-center gap-2"
+                        onClick={handleSave}
+                        disabled={loading}
+                        style={{ borderRadius: "12px" }}
+                    >
+                        {loading ? (
+                            <>
+                                <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                <span>Saving...</span>
+                            </>
+                        ) : (
+                            <>
+                                <i className="bi bi-save-fill"></i>
+                                <span>Save Changes</span>
+                            </>
+                        )}
+                    </button>
+                </m.div>
 
                 <div className="row g-4">
                     {/* ---------------- GENERAL ---------------- */}
-                    <div className="col-12">
-                        <div className="glass-panel p-4">
+                    <m.div className="col-12" variants={itemVariants}>
+                        <div className="glass-panel rounded-4 p-4">
                             <h5 className="fw-bold text-white mb-4 border-bottom border-secondary border-opacity-25 pb-3">
                                 <i className="bi bi-building text-primary me-2"></i>
                                 General Information
@@ -142,7 +187,7 @@ const AdminSettings: React.FC = () => {
 
                             {/* Organization Name */}
                             <div className="mb-4">
-                                <label className="form-label">
+                                <label className="form-label text-secondary small fw-medium">
                                     Organization Name
                                 </label>
                                 <input
@@ -154,7 +199,7 @@ const AdminSettings: React.FC = () => {
 
                             {/* ABOUT */}
                             <div className="mb-4">
-                                <label className="form-label">
+                                <label className="form-label text-secondary small fw-medium">
                                     About SIST ACM SIGAI
                                 </label>
                                 <textarea
@@ -167,7 +212,7 @@ const AdminSettings: React.FC = () => {
 
                             <div className="row g-4">
                                 <div className="col-12 col-md-6">
-                                    <label className="form-label">
+                                    <label className="form-label text-secondary small fw-medium">
                                         Our Mission
                                     </label>
                                     <textarea
@@ -178,7 +223,7 @@ const AdminSettings: React.FC = () => {
                                     />
                                 </div>
                                 <div className="col-12 col-md-6">
-                                    <label className="form-label">
+                                    <label className="form-label text-secondary small fw-medium">
                                         Our Vision
                                     </label>
                                     <textarea
@@ -192,7 +237,7 @@ const AdminSettings: React.FC = () => {
 
                             {/* IDEOLOGY */}
                             <div className="mt-4">
-                                <label className="form-label">
+                                <label className="form-label text-secondary small fw-medium">
                                     Our Ideology
                                 </label>
                                 <textarea
@@ -203,19 +248,18 @@ const AdminSettings: React.FC = () => {
                                 />
                             </div>
                         </div>
-                    </div>
-
+                    </m.div>
 
                     {/* ---------------- CONTACT INFO ---------------- */}
-                    <div className="col-12 col-lg-6">
-                        <div className="glass-panel p-4">
+                    <m.div className="col-12 col-lg-6" variants={itemVariants}>
+                        <div className="glass-panel rounded-4 p-4 h-100">
                             <h5 className="fw-bold text-white mb-4 border-bottom border-secondary border-opacity-25 pb-3">
                                 <i className="bi bi-telephone-fill text-primary me-2"></i>
                                 Contact Information
                             </h5>
 
                             <div className="mb-3">
-                                <label className="form-label">Location</label>
+                                <label className="form-label text-secondary small fw-medium">Location</label>
                                 <input
                                     className="form-control form-control-glass"
                                     value={contact.location}
@@ -226,7 +270,7 @@ const AdminSettings: React.FC = () => {
                             </div>
 
                             <div className="mb-3">
-                                <label className="form-label">Email</label>
+                                <label className="form-label text-secondary small fw-medium">Email</label>
                                 <input
                                     type="email"
                                     className="form-control form-control-glass"
@@ -238,7 +282,7 @@ const AdminSettings: React.FC = () => {
                             </div>
 
                             <div>
-                                <label className="form-label">Phone</label>
+                                <label className="form-label text-secondary small fw-medium">Phone</label>
                                 <div className="input-group phone-input-group">
                                     <span className="input-group-text phone-prefix-glass">+91</span>
                                     <input
@@ -253,11 +297,11 @@ const AdminSettings: React.FC = () => {
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </m.div>
 
                     {/* ---------------- SOCIAL LINKS ---------------- */}
-                    <div className="col-12 col-lg-6">
-                        <div className="glass-panel p-4">
+                    <m.div className="col-12 col-lg-6" variants={itemVariants}>
+                        <div className="glass-panel rounded-4 p-4 h-100">
                             <h5 className="fw-bold text-white mb-4 border-bottom border-secondary border-opacity-25 pb-3">
                                 <i className="bi bi-share-fill text-primary me-2"></i>
                                 Social Media Links
@@ -269,7 +313,7 @@ const AdminSettings: React.FC = () => {
                                 { key: "twitter", label: "Twitter / X" },
                             ].map((item) => (
                                 <div className="mb-3" key={item.key}>
-                                    <label className="form-label">{item.label}</label>
+                                    <label className="form-label text-secondary small fw-medium">{item.label}</label>
                                     <input
                                         className="form-control form-control-glass"
                                         value={(socials as any)[item.key]}
@@ -283,38 +327,32 @@ const AdminSettings: React.FC = () => {
                                 </div>
                             ))}
                         </div>
-                    </div>
+                    </m.div>
                 </div>
 
-                {/* SAVE BUTTON - Standard Positioning (Not Floating) */}
-                <div className="d-flex justify-content-end align-items-center mt-4 pt-2 save-btn-container">
+                {/* BOTTOM SAVE BUTTON */}
+                <m.div className="d-flex justify-content-end align-items-center mt-4 pt-2" variants={itemVariants}>
                     <button
-                        className="btn save-btn px-5 py-3 fw-bold"
+                        type="button"
+                        className="btn btn-primary px-5 py-2.5 fw-semibold shadow-lg d-flex align-items-center gap-2"
                         onClick={handleSave}
                         disabled={loading}
-                        style={{
-                            background: "linear-gradient(135deg, #3b82f6, #06b6d4)",
-                            color: "#ffffff",
-                            border: "none",
-                            boxShadow: "0 8px 20px rgba(59,130,246,0.45)",
-                            borderRadius: "50px",
-                            fontSize: "1rem"
-                        }}
+                        style={{ borderRadius: "12px" }}
                     >
                         {loading ? (
                             <>
-                                <span className="spinner-border spinner-border-sm me-2"></span>
-                                Saving...
+                                <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                <span>Saving...</span>
                             </>
                         ) : (
                             <>
-                                <i className="bi bi-save me-2"></i>
-                                Save Changes
+                                <i className="bi bi-save-fill"></i>
+                                <span>Save Changes</span>
                             </>
                         )}
                     </button>
-                </div>
-            </div>
+                </m.div>
+            </m.div>
         </AdminLayout>
     );
 };

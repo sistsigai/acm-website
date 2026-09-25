@@ -1,18 +1,36 @@
 import React, { useEffect, useState } from "react";
+import { motion as m, type Variants } from "framer-motion";
 import AdminLayout from "../../components/AdminLayout";
 import { useNavigate } from "react-router-dom";
-import Message from "../../components/Message";
 import {
   getDashboardData,
   syncDashboard,
   type DashboardResponse,
   type Activity,
-  markContactAsRead,
 } from "../../services/admin/dashboardService";
 import DashboardStatCard from "../../components/Admin/Dashboard/DashboardStatCard";
 import DashboardEngagementMetrics from "../../components/Admin/Dashboard/DashboardEngagementMetrics";
 import DashboardUpcomingEvent from "../../components/Admin/Dashboard/DashboardUpcomingEvent";
-import DashboardRecentActivity, { formatTimeAgo } from "../../components/Admin/Dashboard/DashboardRecentActivity";
+import DashboardRecentActivity from "../../components/Admin/Dashboard/DashboardRecentActivity";
+
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.08,
+    },
+  },
+};
+
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 15 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.35, ease: "easeOut" },
+  },
+};
 
 /* ---------------- COMPONENT ---------------- */
 const Dashboard: React.FC = () => {
@@ -50,27 +68,6 @@ const Dashboard: React.FC = () => {
 
   const { stats, latestEvent, topPerformers, systemHealth } =
     dashboardData;
-
-  const contactNotifications = enhancedRecentActivity.filter(
-    (a) => a.type === "contact_message"
-  );
-
-  const unreadCount = contactNotifications.filter((n) => !n.isRead).length;
-
-  const toggleReadState = async (id: string) => {
-    try {
-      const res = await markContactAsRead(id);
-      setEnhancedRecentActivity((prev) =>
-        prev.map((item) =>
-          item._id === id ? { ...item, isRead: res.isRead } : item
-        )
-      );
-      setError(null);
-    } catch (err: any) {
-      console.error("Failed to toggle read state", err);
-      setError(err.message || "Failed to update message status");
-    }
-  };
 
   /* ---------------- FETCH DATA ---------------- */
   const loadDashboard = async () => {
@@ -134,169 +131,52 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <AdminLayout active="Dashboard" loading={loading}>
-      <Message
-        variant="error"
-        show={!!error}
-        onClose={() => setError(null)}
-        title="Something went wrong"
-        position="top-right"
+    <AdminLayout
+      active="Dashboard"
+      loading={loading}
+      toast={error ? { show: true, variant: "error", message: error, title: "Something went wrong" } : undefined}
+      onCloseToast={() => setError(null)}
+    >
+      <m.div
+        className="mobile-offset"
+        variants={containerVariants}
+        initial="hidden"
+        animate="show"
       >
-        {error}
-      </Message>
-
-      <div className="p-2 mobile-offset">
         {/* Header */}
-        <div
-          className="mb-5 animate-up"
-          style={{ animationDelay: "0ms", position: "relative", zIndex: 100 }}
+        <m.div
+          className="mb-4"
+          variants={itemVariants}
+          style={{ position: "relative", zIndex: 100 }}
         >
-          <div className="d-flex justify-content-between align-items-center page-header">
+          <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
             <div>
-              <h1 className="fw-bold text-white mb-1 display-6">
+              <h2 className="fw-bold text-white mb-1">
                 Welcome Back, Admin
-              </h1>
+              </h2>
               <p className="text-secondary m-0">
                 Here's what's happening with your chapter today.
               </p>
             </div>
 
-            {/* System Health Badge & Notification */}
-            <div className="d-flex align-items-center gap-3 header-actions">
-              {/* 🔔 Notification Bell */}
-              <div className="dropdown position-relative" style={{ zIndex: 1055 }}>
-                <button
-                  type="button"
-                  className="btn position-relative notification-btn"
-                  data-bs-toggle="dropdown"
-                  aria-expanded="false"
-                >
-                  <i className="bi bi-bell fs-5"></i>
-                  {unreadCount > 0 && (
-                    <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notification-badge">
-                      {unreadCount}
-                    </span>
-                  )}
-                </button>
-
-                <ul className="dropdown-menu dropdown-menu-end p-2 border-0 shadow-lg custom-dropdown-menu">
-                  {contactNotifications.length === 0 ? (
-                    <li className="text-secondary text-center small py-3">
-                      <i className="bi bi-inbox fs-4 d-block mb-2 opacity-50"></i>
-                      No new messages
-                    </li>
-                  ) : (
-                    <>
-                      {contactNotifications
-                        .slice()
-                        .sort(
-                          (a, b) =>
-                            new Date(a.time).getTime() - new Date(b.time).getTime()
-                        )
-                        .slice(0, 3)
-                        .map((msg) => (
-                          <li
-                            key={msg._id}
-                            className="custom-dropdown-item rounded-3 p-3 mb-1"
-                          >
-                            <div className="d-flex gap-3">
-                              <div className="flex-shrink-0">
-                                <div
-                                  className="rounded-circle bg-danger bg-opacity-10 d-flex align-items-center justify-content-center"
-                                  style={{ width: "32px", height: "32px" }}
-                                >
-                                  <i className="bi bi-envelope-fill text-danger small"></i>
-                                </div>
-                              </div>
-                              <div className="flex-grow-1 overflow-hidden">
-                                <div className="d-flex justify-content-between align-items-start mb-1">
-                                  <div
-                                    className={`text-truncate ${
-                                      msg.isRead
-                                        ? "fw-normal text-secondary"
-                                        : "fw-bold text-white"
-                                    }`}
-                                    style={{ maxWidth: "140px" }}
-                                  >
-                                    {msg.title}
-                                  </div>
-                                  <small
-                                    className="text-secondary"
-                                    style={{ fontSize: "0.7rem" }}
-                                  >
-                                    {formatTimeAgo(msg.time)}
-                                  </small>
-                                </div>
-
-                                <small
-                                  className={`d-block text-truncate ${
-                                    msg.isRead ? "text-secondary" : "text-white-50"
-                                  }`}
-                                >
-                                  {msg.subtitle}
-                                </small>
-
-                                <div className="text-end">
-                                  <button
-                                    type="button"
-                                    className="btn btn-sm btn-link text-decoration-none p-0"
-                                    style={{ fontSize: "0.75rem" }}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      toggleReadState(msg._id);
-                                    }}
-                                  >
-                                    {msg.isRead ? "Mark unread" : "Mark read"}
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          </li>
-                        ))}
-
-                      {contactNotifications.length > 3 && (
-                        <li className="text-center mt-2 pt-2 border-top border-secondary border-opacity-25">
-                          <button
-                            type="button"
-                            className="btn btn-sm btn-link text-decoration-none text-white opacity-75 hover-opacity-100"
-                            onClick={() => navigate("/admin/messages")}
-                          >
-                            View all messages
-                          </button>
-                        </li>
-                      )}
-                    </>
-                  )}
-                </ul>
+            {/* System Health Badges */}
+            <div className="d-flex align-items-center gap-2 header-actions">
+              <div className="admin-header-pill">
+                <span className={`status-dot ${systemHealth.apiStatus}`}></span>
+                <span className="small fw-medium">API: {systemHealth.apiStatus}</span>
               </div>
 
-              {/* System Health */}
-              <div className="d-flex align-items-center">
-                <span
-                  className={`status-indicator status-${systemHealth.apiStatus}`}
-                ></span>
-                <small className="text-secondary d-none d-md-inline">
-                  API: {systemHealth.apiStatus}
-                </small>
-                <small className="text-secondary d-md-none">API</small>
-              </div>
-
-              <div className="d-flex align-items-center">
-                <span
-                  className={`status-indicator status-${systemHealth.dbStatus}`}
-                ></span>
-                <small className="text-secondary d-none d-md-inline">
-                  DB: {systemHealth.dbStatus}
-                </small>
-                <small className="text-secondary d-md-none">DB</small>
+              <div className="admin-header-pill">
+                <span className={`status-dot ${systemHealth.dbStatus}`}></span>
+                <span className="small fw-medium">DB: {systemHealth.dbStatus}</span>
               </div>
             </div>
           </div>
-        </div>
+        </m.div>
 
         {/* Stats Grid */}
-        <div className="stats-grid mb-5">
-          <div className="animate-up" style={{ animationDelay: "100ms" }}>
+        <div className="admin-stats-grid">
+          <m.div variants={itemVariants}>
             <DashboardStatCard
               title="Total Members"
               value={stats.totalMembers}
@@ -311,9 +191,9 @@ const Dashboard: React.FC = () => {
               }}
               onClick={() => navigate("/admin/members")}
             />
-          </div>
+          </m.div>
 
-          <div className="animate-up" style={{ animationDelay: "200ms" }}>
+          <m.div variants={itemVariants}>
             <DashboardStatCard
               title="Today's Registrations"
               value={stats.todayRegistrations}
@@ -327,9 +207,9 @@ const Dashboard: React.FC = () => {
                 variant: stats.registrationRate >= 0 ? "success" : "warning",
               }}
             />
-          </div>
+          </m.div>
 
-          <div className="animate-up" style={{ animationDelay: "300ms" }}>
+          <m.div variants={itemVariants}>
             <DashboardStatCard
               title="Ongoing Events"
               value={stats.ongoingEvents}
@@ -340,11 +220,11 @@ const Dashboard: React.FC = () => {
                 text: `${stats.ongoingEvents} live`,
                 variant: "info",
               }}
-              onClick={() => navigate("/admin/events")}
+              onClick={() => navigate("/admin/eventmanager")}
             />
-          </div>
+          </m.div>
 
-          <div className="animate-up" style={{ animationDelay: "400ms" }}>
+          <m.div variants={itemVariants}>
             <DashboardStatCard
               title="Upcoming Events"
               value={stats.upcomingEvents}
@@ -355,11 +235,11 @@ const Dashboard: React.FC = () => {
                 text: "Scheduled",
                 variant: "warning",
               }}
-              onClick={() => navigate("/admin/events")}
+              onClick={() => navigate("/admin/eventmanager")}
             />
-          </div>
+          </m.div>
 
-          <div className="animate-up" style={{ animationDelay: "500ms" }}>
+          <m.div variants={itemVariants}>
             <DashboardStatCard
               title="Total Events"
               value={stats.totalEvents}
@@ -370,38 +250,38 @@ const Dashboard: React.FC = () => {
                 text: "All time",
                 variant: "primary",
               }}
-              onClick={() => navigate("/admin/events")}
+              onClick={() => navigate("/admin/eventmanager")}
             />
-          </div>
+          </m.div>
         </div>
 
         {/* Second Row: Engagement Metrics & Upcoming Event */}
         <div className="row g-4 mb-4">
-          <div
-            className={`col-12 ${latestEvent ? "col-lg-8" : "col-lg-12"} animate-up`}
-            style={{ animationDelay: "600ms" }}
+          <m.div
+            className={`col-12 ${latestEvent ? "col-lg-8" : "col-lg-12"}`}
+            variants={itemVariants}
           >
             <DashboardEngagementMetrics
               stats={stats}
               topPerformers={topPerformers}
             />
-          </div>
+          </m.div>
 
           {latestEvent && (
-            <div
-              className="col-12 col-lg-4 animate-up"
-              style={{ animationDelay: "650ms" }}
+            <m.div
+              className="col-12 col-lg-4"
+              variants={itemVariants}
             >
               <DashboardUpcomingEvent latestEvent={latestEvent} />
-            </div>
+            </m.div>
           )}
         </div>
 
         {/* Third Row: Recent Activity & System Health */}
         <div className="row g-4">
-          <div
-            className="col-12 animate-up"
-            style={{ animationDelay: "700ms" }}
+          <m.div
+            className="col-12"
+            variants={itemVariants}
           >
             <DashboardRecentActivity
               activities={enhancedRecentActivity}
@@ -409,9 +289,9 @@ const Dashboard: React.FC = () => {
               loading={loading}
               onSync={handleSync}
             />
-          </div>
+          </m.div>
         </div>
-      </div>
+      </m.div>
     </AdminLayout>
   );
 };

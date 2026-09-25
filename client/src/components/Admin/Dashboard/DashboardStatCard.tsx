@@ -1,4 +1,5 @@
 import React from "react";
+import { motion as m } from "framer-motion";
 
 interface DashboardStatCardProps {
   title: string;
@@ -9,7 +10,7 @@ interface DashboardStatCardProps {
   subtitle?: string;
   badge?: {
     text: string;
-    variant: "success" | "warning" | "info" | "primary";
+    variant: "success" | "warning" | "info" | "primary" | "secondary" | "danger";
   };
   onClick?: () => void;
 }
@@ -24,11 +25,12 @@ export const DashboardStatCard: React.FC<DashboardStatCardProps> = ({
   onClick,
 }) => {
   return (
-    <div
-      className="glass-panel p-4 h-100 d-flex flex-column justify-content-between"
+    <m.div
+      className="glass-panel rounded-4 p-4 h-100 d-flex flex-column justify-content-between"
+      whileHover={{ y: -4, transition: { duration: 0.2, ease: "easeOut" } }}
+      whileTap={onClick ? { scale: 0.98 } : undefined}
       style={{
         cursor: onClick ? "pointer" : "default",
-        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
       }}
       onClick={onClick}
     >
@@ -51,20 +53,17 @@ export const DashboardStatCard: React.FC<DashboardStatCardProps> = ({
       </div>
 
       <div>
-        <h3 className="fw-bold text-white mb-1">{value}</h3>
-        <div className="d-flex align-items-center gap-2">
+        <h3 className="fw-bold text-white mb-2">{value}</h3>
+        <div className="d-flex align-items-center gap-2 flex-wrap">
           {badge && (
-            <span
-              className={`badge bg-${badge.variant} bg-opacity-20 text-${badge.variant} px-2 py-1 rounded-2`}
-              style={{ fontSize: "0.75rem" }}
-            >
+            <span className={`admin-badge admin-badge-${badge.variant || "primary"}`}>
               {badge.text}
             </span>
           )}
           {subtitle && <span className="text-secondary small">{subtitle}</span>}
         </div>
       </div>
-    </div>
+    </m.div>
   );
 };
 

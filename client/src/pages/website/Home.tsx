@@ -51,7 +51,15 @@ const Home: React.FC = () => {
         <div className='Aboutt'>
 
           <m.div variants={fadeIn("up", 0.2)} initial="hidden" whileInView="show" viewport={{ once: false, amount: 0.3 }} className='aboutsec'>
-            <div className="tech-badge"><span className="tech-highlight">About </span>SIST ACM SIGAI</div>
+            <m.h1
+              className="text-gradient"
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              style={{ fontSize: 'clamp(2rem, 4.5vw, 3.2rem)', marginBottom: '20px' }}
+            >
+              ABOUT SIST ACM SIGAI
+            </m.h1>
             <p className='about-paragraph'>{adminSettings?.about}</p>
           </m.div>
 
@@ -60,7 +68,15 @@ const Home: React.FC = () => {
           </m.div>
 
           <m.div variants={fadeIn("up", 0.4)} initial="hidden" whileInView="show" viewport={{ once: false, amount: 0.3 }} className='mission'>
-            <div className="tech-badge"><span className="tech-highlight">Our</span> Mission</div>
+            <m.h1
+              className="text-gradient"
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              style={{ fontSize: 'clamp(2rem, 4.5vw, 3.2rem)', marginBottom: '20px' }}
+            >
+              OUR MISSION
+            </m.h1>
             <p className='mission-paragraph'>{adminSettings?.mission}</p>
           </m.div>
 
@@ -69,7 +85,15 @@ const Home: React.FC = () => {
           </m.div>
 
           <m.div variants={fadeIn("up", 0.2)} initial="hidden" whileInView="show" viewport={{ once: false, amount: 0.3 }} className='vision'>
-            <div className="tech-badge"><span className="tech-highlight">Our</span> Vision</div>
+            <m.h1
+              className="text-gradient"
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              style={{ fontSize: 'clamp(2rem, 4.5vw, 3.2rem)', marginBottom: '20px' }}
+            >
+              OUR VISION
+            </m.h1>
             <p className='mission-paragraph'>{adminSettings?.vision}</p>
           </m.div>
 
@@ -78,7 +102,15 @@ const Home: React.FC = () => {
           </m.div>
 
           <m.div variants={fadeIn("up", 0.2)} initial="hidden" whileInView="show" viewport={{ once: false, amount: 0.3 }} className='ideology'>
-            <div className="tech-badge"><span className="tech-highlight">Our</span> Ideology</div>
+            <m.h1
+              className="text-gradient"
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              style={{ fontSize: 'clamp(2rem, 4.5vw, 3.2rem)', marginBottom: '20px' }}
+            >
+              OUR IDEOLOGY
+            </m.h1>
             <p className='mission-paragraph'>{adminSettings?.ideology}</p>
           </m.div>
 

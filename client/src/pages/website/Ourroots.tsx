@@ -62,13 +62,12 @@ const Ourroots = () => {
       <div className='timeline-page' ref={ref}>
         {/* Title Section */}
         <m.h1
-          initial={{ opacity: 0, y: -30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          viewport={{ once: true }}
-          className='timeline-main-title'
+          className="text-gradient"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
         >
-          Our Journey & <span className="highlight-text">Batches</span>
+          OUR ROOTS & TIMELINE
         </m.h1>
 
         {/* Timeline Wrapper */}

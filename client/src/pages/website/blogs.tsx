@@ -45,7 +45,7 @@ const Blogs: React.FC = () => {
         show: {
             y: 0,
             opacity: 1,
-            transition: { type: "spring" as const, stiffness: 60 } // FIX: Added 'as const'
+            transition: { type: "spring" as const, stiffness: 60 }
         }
     };
 

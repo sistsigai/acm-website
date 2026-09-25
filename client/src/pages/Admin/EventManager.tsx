@@ -23,14 +23,27 @@ import ImagePreviewModal from "../../components/Admin/Events/ImagePreviewModal";
 import AdminEventDetailModal from "../../components/Admin/Events/AdminEventDetailModal";
 import EventAttendeesModal from "../../components/Admin/Events/EventAttendeesModal";
 import ConfirmModal from "../../components/Common/ConfirmModal";
+import CustomSelect from "../../components/Common/CustomSelect";
 import { DEFAULT_INITIAL_EVENT_QUESTIONS } from "../../types/formBuilder";
 
 // Default registration questions derived from form builder defaults (Name, Register Number, Email ID, Phone Number)
 const INITIAL_REGISTRATION_QUESTIONS = DEFAULT_INITIAL_EVENT_QUESTIONS.map((q) => q.question);
 
+const EVENT_STATUS_OPTIONS = [
+  { value: "all", label: "All Events" },
+  { value: "upcoming", label: "Upcoming Events" },
+  { value: "past", label: "Past Events" },
+  { value: "visible", label: "Visible on Website" },
+  { value: "hidden", label: "Hidden from Website" },
+];
+
 const EventManager: React.FC = () => {
   /* Events list */
   const [events, setEvents] = useState<AdminEvent[]>([]);
+
+  // Search & Filters
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("all");
 
   /* Modal control */
   const [showModal, setShowModal] = useState(false);
@@ -702,6 +715,34 @@ const EventManager: React.FC = () => {
     }
   };
 
+  // Filtered Events
+  const filteredEvents = useMemo(() => {
+    return events.filter((ev) => {
+      const q = searchQuery.toLowerCase().trim();
+      const matchesSearch =
+        !q ||
+        ev.name.toLowerCase().includes(q) ||
+        ev.venue.toLowerCase().includes(q) ||
+        (ev.description && ev.description.toLowerCase().includes(q));
+
+      if (!matchesSearch) return false;
+
+      if (selectedStatus === "visible") return ev.display !== false;
+      if (selectedStatus === "hidden") return ev.display === false;
+      if (selectedStatus === "upcoming") {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return new Date(ev.date) >= today;
+      }
+      if (selectedStatus === "past") {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return new Date(ev.date) < today;
+      }
+      return true;
+    });
+  }, [events, searchQuery, selectedStatus]);
+
   return (
     <AdminLayout
       active="Events"
@@ -714,29 +755,72 @@ const EventManager: React.FC = () => {
       }}
       onCloseToast={() => setToast((prev) => ({ ...prev, show: false }))}
     >
-      <div className="mobile-offset">
-        {/* Animated Header */}
+      <m.div
+        className="mobile-offset"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3 }}
+      >
+        {/* Header */}
         <m.div
           className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3"
-          initial={{ opacity: 0, y: -12 }}
+          initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, ease: "easeOut" }}
         >
           <div>
-            <h2 className="fw-bold text-white mb-1" style={{ letterSpacing: "-0.3px" }}>Events Dashboard</h2>
-            <p className="text-secondary m-0 small">Manage your schedule, media, and registrations</p>
+            <h2 className="fw-bold text-white mb-1">Events Directory</h2>
+            <p className="text-secondary m-0">Manage schedule, media, and attendee registrations</p>
           </div>
-          <m.button
+          <button
+            type="button"
             className="btn btn-primary px-4 py-2 fw-semibold shadow-lg d-flex align-items-center gap-2"
             onClick={handleCreateEvent}
             style={{ borderRadius: "12px" }}
-            whileHover={{ scale: 1.03, boxShadow: "0 0 25px rgba(56, 189, 248, 0.4)" }}
-            whileTap={{ scale: 0.97 }}
-            transition={{ type: "spring", stiffness: 350, damping: 20 }}
           >
-            <i className="bi bi-plus-lg"></i>
+            <i className="bi bi-calendar-plus-fill"></i>
             <span>Create Event</span>
-          </m.button>
+          </button>
+        </m.div>
+
+        {/* Search & Filter Controls */}
+        <m.div
+          className="row g-3 mb-4"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, delay: 0.05, ease: "easeOut" }}
+        >
+          <div className="col-12 col-md-8">
+            <div className="admin-search-bar">
+              <i className="bi bi-search search-icon"></i>
+              <input
+                type="text"
+                className="admin-search-input"
+                placeholder="Search by event name, venue, or description..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  className="search-clear-btn"
+                  onClick={() => setSearchQuery("")}
+                  title="Clear search"
+                >
+                  <i className="bi bi-x-lg"></i>
+                </button>
+              )}
+            </div>
+          </div>
+          <div className="col-12 col-md-4">
+            <CustomSelect
+              value={selectedStatus}
+              options={EVENT_STATUS_OPTIONS}
+              onChange={setSelectedStatus}
+              icon="bi-filter"
+              label="Filter by Status"
+            />
+          </div>
         </m.div>
 
         {/* Animated Events Grid */}
@@ -754,38 +838,33 @@ const EventManager: React.FC = () => {
             },
           }}
         >
-          {events.length === 0 && (
-            <m.div
-              className="col-12 text-center py-5"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.4 }}
-            >
-              <i className="bi bi-calendar-x display-1 text-white opacity-50 mb-3 d-block"></i>
-              <h4 className="text-white fw-semibold">No events found</h4>
-              <p className="text-white-50">Create a new event to get started!</p>
-            </m.div>
+          {filteredEvents.length === 0 ? (
+            <div className="col-12 text-center py-5 glass-panel rounded-4">
+              <i className="bi bi-calendar-x display-4 text-secondary opacity-50 mb-3 d-block"></i>
+              <h5 className="text-white">No events found</h5>
+              <p className="text-secondary">Try adjusting your filters or search terms, or create a new event.</p>
+            </div>
+          ) : (
+            <AnimatePresence mode="popLayout">
+              {filteredEvents.map((event, index) => (
+                <EventCard
+                  key={event._id}
+                  event={event}
+                  index={index}
+                  onToggleDisplay={handleToggleDisplay}
+                  onEdit={handleEditEvent}
+                  onDelete={(ev) => {
+                    setEventToDelete(ev);
+                    setShowDeleteModal(true);
+                  }}
+                  onViewDetails={(ev) => setSelectedDetailEvent(ev)}
+                  onOpenAttendees={(ev) => setSelectedAttendeesEvent(ev)}
+                />
+              ))}
+            </AnimatePresence>
           )}
-
-          <AnimatePresence mode="popLayout">
-            {events.map((event, index) => (
-              <EventCard
-                key={event._id}
-                event={event}
-                index={index}
-                onToggleDisplay={handleToggleDisplay}
-                onEdit={handleEditEvent}
-                onDelete={(ev) => {
-                  setEventToDelete(ev);
-                  setShowDeleteModal(true);
-                }}
-                onViewDetails={(ev) => setSelectedDetailEvent(ev)}
-                onOpenAttendees={(ev) => setSelectedAttendeesEvent(ev)}
-              />
-            ))}
-          </AnimatePresence>
         </m.div>
-      </div>
+      </m.div>
 
       {/* Admin Event Detail Split Popup Modal */}
       <AdminEventDetailModal

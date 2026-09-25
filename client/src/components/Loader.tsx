@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 
 interface LoaderProps {
   loading: boolean;
-  text?: string;
   variant?: "orbit" | "wave" | "breath";
   fullscreen?: boolean;
   theme?: "light" | "dark";

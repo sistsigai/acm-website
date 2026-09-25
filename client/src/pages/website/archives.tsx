@@ -2,10 +2,8 @@ import { motion as m } from "framer-motion";
 import { Link } from 'react-router-dom';
 import { FaLongArrowAltRight } from "react-icons/fa";
 
-// Import the fadeIn utility
 import { fadeIn } from '../../components/transitions';
 
-// Event Images
 import inaugural from '../../assets/Archives/Events/inaugural.jpg';
 import azure from '../../assets/Archives/Events/azure.jpg';
 import genai from '../../assets/Archives/Events/genAi.jpg';
@@ -137,18 +135,15 @@ const eventsData = [
 const Archives = () => {
   return (
     <div className="archives-page">
-
-
       {/* --- HEADER --- */}
       <div className="page-header">
         <m.h1
           className="text-gradient"
-          variants={fadeIn("down", 0.1)}
-          initial="hidden"
-          animate="show"
-          style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: '900', letterSpacing: '-2px' }}
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
         >
-          ARCHIVES
+          SIGAI ARCHIVES
         </m.h1>
         <m.p
           variants={fadeIn("up", 0.3)}
@@ -168,7 +163,7 @@ const Archives = () => {
         animate="show"
       >
         <div className="marquee-track">
-          {sliderImages.map((img, index) => (
+          {[...sliderImages, ...sliderImages].map((img, index) => (
             <div className="marquee-item" key={index}>
               <img src={img} alt="Archive Highlight" />
             </div>
@@ -177,7 +172,7 @@ const Archives = () => {
       </m.div>
 
       {/* --- TIMELINE LOOP --- */}
-      <div className="timeline-container">
+      <div className="archives-timeline-container">
         {eventsData.map((item, index) => {
           const isEven = index % 2 === 0;
 
@@ -221,6 +216,6 @@ const Archives = () => {
       </div>
     </div>
   );
-}
+};
 
 export default Archives;
