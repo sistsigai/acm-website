@@ -25,7 +25,7 @@ const Digiart = () => {
           background: linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.85)), url(${digiBg});
           background-size: cover;
           background-position: center;
-          background-attachment: fixed; 
+          background-attachment: scroll; 
           background-repeat: no-repeat;
         }
 
@@ -35,7 +35,7 @@ const Digiart = () => {
         }
 
         .text-gradient {
-            background: linear-gradient(135deg, #fff 0%, var(--primary-blue, #0099ff) 100%);
+            background: linear-gradient(135deg, #fff 0%, var(--primary-blue, var(--primary-blue)) 100%);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             font-weight: 900;
             letter-spacing: -2px;
@@ -51,7 +51,7 @@ const Digiart = () => {
         }
 
         .highlight-blue {
-            color: #0099ff; /* Azure Blue */
+            color: var(--primary-blue); /* Azure Blue */
         }
 
         p.content-text {
@@ -162,131 +162,135 @@ const Digiart = () => {
 
       {/* --- TITLE SECTION --- */}
       <div className="page-header">
-        <m.h1 
-            className="text-gradient"
-            variants={fadeIn("down", 0.1)}
-            initial="hidden"
-            animate="show"
+        <m.h1
+          className="text-gradient"
+          variants={fadeIn("down", 0.1)}
+          initial="hidden"
+          animate="show"
         >
-            DIGITAL <br /> ART
+          DIGITAL ART
         </m.h1>
-        
-        <m.p 
-            className="content-text" 
-            style={{ textAlign: 'center' }}
-            variants={fadeIn("up", 0.3)}
-            initial="hidden"
-            animate="show"
+
+        <m.p
+          className="content-text"
+          style={{ textAlign: 'center' }}
+          variants={fadeIn("up", 0.3)}
+          initial="hidden"
+          animate="show"
         >
-            Creativity meets Technology. August 1st, 2024.
+          Creativity meets Technology. August 1st, 2024.
         </m.p>
       </div>
 
       {/* --- INTRO TEXT --- */}
       <m.div
-         variants={fadeIn("up", 0.2)}
-         initial="hidden"
-         animate="show"
+        variants={fadeIn("up", 0.2)}
+        initial="hidden"
+        animate="show"
       >
         <p className="content-text">
-            We are thrilled to announce that the SIST ACM SIGAI Student Chapter hosted a digital art event on August 1, 2024, in the Remibai Auditorium at Sathyabama Institute of Science and Technology, Chennai.
+          We are thrilled to announce that the SIST ACM SIGAI Student Chapter hosted a Digital Art Competition on August 1, 2024, at the Remibai Auditorium, Sathyabama Institute of Science and Technology, Chennai. The event brought together talented students with a passion for creativity, design, and digital innovation, providing them with a platform to showcase their artistic abilities through modern digital tools.
+        </p>
+
+        <p className="content-text">
+          The competition witnessed enthusiastic participation from students across the department, each presenting unique and imaginative artworks that reflected their creativity, technical skills, and storytelling abilities. Centered around the theme of Freestyle Comics, participants explored diverse artistic styles and concepts, producing visually captivating pieces that impressed both the audience and the judges.
         </p>
       </m.div>
 
       {/* --- WINNER'S ARTWORK --- */}
-      <m.h2 
+      <m.h2
         className="section-title"
         variants={fadeIn("up", 0.2)}
         initial="hidden"
         whileInView="show"
-        viewport={{ once: false, amount: 0.3 }}
+        viewport={{ once: true, amount: 0.3 }}
       >
         WINNER'S <span className="highlight-blue">ARTWORK</span>
       </m.h2>
-      
-      <m.div 
+
+      <m.div
         className="image-container"
         variants={fadeIn("up", 0.3)}
         initial="hidden"
         whileInView="show"
-        viewport={{ once: false }}
+        viewport={{ once: true }}
       >
-        <img 
-            src={spiderman} 
-            alt="Winner Artwork - Spiderman" 
-            className="showcase-image"
-            style={{ width: '400px' }}
+        <img
+          src={spiderman}
+          alt="Winner Artwork - Spiderman"
+          className="showcase-image"
+          style={{ width: '400px' }}
         />
       </m.div>
 
       {/* --- EVENT WINNER --- */}
-      <m.h2 
+      <m.h2
         className="section-title"
         variants={fadeIn("up", 0.2)}
         initial="hidden"
         whileInView="show"
-        viewport={{ once: false, amount: 0.3 }}
+        viewport={{ once: true, amount: 0.3 }}
       >
         EVENT <span className="highlight-blue">WINNER</span>
       </m.h2>
-      
-      <m.div 
+
+      <m.div
         className="guest-container"
         variants={fadeIn("up", 0.3)}
         initial="hidden"
         whileInView="show"
-        viewport={{ once: false, amount: 0.3 }}
+        viewport={{ once: true, amount: 0.3 }}
       >
         <div className="guest-card">
-            <img src={winner} alt="Mr. Godwin Deepak T" />
-            <div className="card-overlay">
-                <div className="guest-info">
-                    <h3>Mr. Godwin Deepak T<br />
-                    <span style={{ fontSize: '11px', fontWeight: '300', textTransform: 'initial', color: '#ccc' }}>
-                        3rd year CSE
-                    </span>
-                    </h3>
-                </div>
+          <img src={winner} alt="Mr. Godwin Deepak T" />
+          <div className="card-overlay">
+            <div className="guest-info">
+              <h3>Mr. Godwin Deepak T<br />
+                <span style={{ fontSize: '11px', fontWeight: '300', textTransform: 'initial', color: '#ccc' }}>
+                  3rd year CSE
+                </span>
+              </h3>
             </div>
+          </div>
         </div>
       </m.div>
 
       {/* --- HIGHLIGHTS TEXT --- */}
-      <m.h2 
+      <m.h2
         className="section-title"
         variants={fadeIn("up", 0.2)}
         initial="hidden"
         whileInView="show"
-        viewport={{ once: false, amount: 0.3 }}
+        viewport={{ once: true, amount: 0.3 }}
       >
         KEY <span className="highlight-blue">HIGHLIGHTS</span>
       </m.h2>
 
       <div>
-        <m.p 
-            className="content-text"
-            variants={fadeIn("up", 0.2)}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: false }}
+        <m.p
+          className="content-text"
+          variants={fadeIn("up", 0.2)}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true }}
         >
-            The SIST ACM SIGAI Student Chapter recently conducted an artistic "Digital Art Competition" for the students of the CSE department on August 1, 2024. It was a remarkable event where participants enthusiastically showcased their talent in digital technology through their excellent artistic skills. The theme of this exciting competition was freestyle comics, and the artist who captured the hearts of the audience with his work was <strong>Godwin Deepak T</strong>.
+          The SIST ACM SIGAI Student Chapter recently conducted an artistic "Digital Art Competition" for the students of the CSE department on August 1, 2024. It was a remarkable event where participants enthusiastically showcased their talent in digital technology through their excellent artistic skills. The theme of this exciting competition was freestyle comics, and the artist who captured the hearts of the audience with his work was <strong>Godwin Deepak T</strong>.
         </m.p>
-        
+
         {/* Winners Group Photo */}
-        <m.div 
-            className="image-container"
-            variants={fadeIn("up", 0.3)}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: false }}
+        <m.div
+          className="image-container"
+          variants={fadeIn("up", 0.3)}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true }}
         >
-            <img 
-                src={grpimg} 
-                alt="Digital Art Competition Winners" 
-                className="showcase-image"
-                style={{ width: '800px' }}
-            />
+          <img
+            src={grpimg}
+            alt="Digital Art Competition Winners"
+            className="showcase-image"
+            style={{ width: '800px' }}
+          />
         </m.div>
       </div>
 

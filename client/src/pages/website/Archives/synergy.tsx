@@ -16,16 +16,16 @@ import fre11 from "../../../assets/Archives/Synergy/FRE11.avif"
 import synergyBg from '../../../assets/Archives/Synergy/frebg.jpg';
 
 const Synergy = () => {
-  const images = [
-    fre1, fre2, fre3, fre4, fre5, fre6, 
-    fre7, fre8, fre9, fre10, fre11
-  ];
-  // Double the array for seamless scrolling
-  const sliderImages = [...images, ...images];
+    const images = [
+        fre1, fre2, fre3, fre4, fre5, fre6,
+        fre7, fre8, fre9, fre10, fre11
+    ];
+    // Double the array for seamless scrolling
+    const sliderImages = [...images, ...images];
 
-  return (
-    <div className="synergy-page">
-      <style>{`
+    return (
+        <div className="synergy-page">
+            <style>{`
         .synergy-page {
           width: 100%;
           padding: 120px 0 60px;
@@ -38,7 +38,7 @@ const Synergy = () => {
           background: linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.85)), url(${synergyBg});
           background-size: cover;
           background-position: center;
-          background-attachment: fixed; 
+          background-attachment: scroll; 
           background-repeat: no-repeat;
         }
 
@@ -48,7 +48,7 @@ const Synergy = () => {
         }
 
         .text-gradient {
-            background: linear-gradient(135deg, #fff 0%, var(--primary-blue, #0099ff) 100%);
+            background: linear-gradient(135deg, #fff 0%, var(--primary-blue, var(--primary-blue)) 100%);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             font-weight: 900;
             letter-spacing: -2px;
@@ -64,7 +64,7 @@ const Synergy = () => {
         }
 
         .highlight-blue {
-            color: #0099ff; /* Primary Blue */
+            color: var(--primary-blue); /* Primary Blue */
         }
 
         p.content-text {
@@ -154,124 +154,128 @@ const Synergy = () => {
         }
       `}</style>
 
-      {/* --- TITLE SECTION --- */}
-      <div className="page-header">
-        <m.h1 
-            className="text-gradient"
-            variants={fadeIn("down", 0.1)}
-            initial="hidden"
-            animate="show"
-        >
-            SYNERGY <br /> TO FRESHERS
-        </m.h1>
-        
-        <m.p 
-            className="content-text" 
-            style={{ textAlign: 'center' }}
-            variants={fadeIn("up", 0.3)}
-            initial="hidden"
-            animate="show"
-        >
-            Welcoming the New Batch. September 4th, 2024.
-        </m.p>
-      </div>
+            {/* --- TITLE SECTION --- */}
+            <div className="page-header">
+                <m.h1
+                    className="text-gradient"
+                    variants={fadeIn("down", 0.1)}
+                    initial="hidden"
+                    animate="show"
+                >
+                    SYNERGY TO FRESHERS
+                </m.h1>
 
-      {/* --- INTRO TEXT --- */}
-      <m.div
-         variants={fadeIn("up", 0.2)}
-         initial="hidden"
-         animate="show"
-      >
-        <p className="content-text">
-            We are happy to share that the SIST ACM SIGAI Student Chapter successfully conducted an exciting event for the new generation, "Synergy for Freshers," on 4th September 2024 (Wednesday) at the Dental Auditorium, Sathyabama Institute of Science and Technology, Chennai.
-        </p>
-      </m.div>
+                <m.p
+                    className="content-text"
+                    style={{ textAlign: 'center' }}
+                    variants={fadeIn("up", 0.3)}
+                    initial="hidden"
+                    animate="show"
+                >
+                    Welcoming the New Batch. September 4th, 2024.
+                </m.p>
+            </div>
 
-      {/* --- MARQUEE GALLERY --- */}
-      <m.h2 
-        className="section-title"
-        variants={fadeIn("up", 0.2)}
-        initial="hidden"
-        animate="show"
-      >
-        EVENT <span className="highlight-blue">GALLERY</span>
-      </m.h2>
-      
-      <div className="marquee-container">
-        <div className="marquee-track">
-            {sliderImages.map((img, index) => (
-                <div className="marquee-item" key={index}>
-                    <img src={img} alt={`Synergy Highlight ${index}`} />
+            {/* --- INTRO TEXT --- */}
+            <m.div
+                variants={fadeIn("up", 0.2)}
+                initial="hidden"
+                animate="show"
+            >
+                <p className="content-text">
+                    We are happy to share that the SIST ACM SIGAI Student Chapter successfully conducted an exciting event for the new generation, "Synergy for Freshers," on 4th September 2024 (Wednesday) at the Dental Auditorium, Sathyabama Institute of Science and Technology, Chennai. The event was designed to warmly welcome the incoming batch of students and introduce them to the vibrant academic and extracurricular opportunities available within the university.
+                </p>
+
+                <p className="content-text">
+                    Synergy for Freshers served as a platform to foster interaction, collaboration, and creativity among students while helping them build meaningful connections with their peers and seniors. Through engaging activities, insightful sessions, and team-based challenges, participants gained valuable knowledge about career opportunities, higher studies, entrepreneurship, and personal development. The event created an enthusiastic and friendly atmosphere, encouraging freshers to step confidently into their academic journey and become active members of the student community.
+                </p>
+            </m.div>
+
+            {/* --- MARQUEE GALLERY --- */}
+            <m.h2
+                className="section-title"
+                variants={fadeIn("up", 0.2)}
+                initial="hidden"
+                animate="show"
+            >
+                EVENT <span className="highlight-blue">GALLERY</span>
+            </m.h2>
+
+            <div className="marquee-container">
+                <div className="marquee-track">
+                    {sliderImages.map((img, index) => (
+                        <div className="marquee-item" key={index}>
+                            <img src={img} alt={`Synergy Highlight ${index}`} />
+                        </div>
+                    ))}
                 </div>
-            ))}
+            </div>
+
+            {/* --- HIGHLIGHTS TEXT --- */}
+            <m.h2
+                className="section-title"
+                variants={fadeIn("up", 0.2)}
+                initial="hidden"
+                whileInView="show"
+                viewport={{ once: true, amount: 0.3 }}
+            >
+                KEY <span className="highlight-blue">HIGHLIGHTS</span>
+            </m.h2>
+
+            <div>
+                <m.p
+                    className="content-text"
+                    variants={fadeIn("up", 0.2)}
+                    initial="hidden"
+                    whileInView="show"
+                    viewport={{ once: true }}
+                >
+                    The event began with our core unit members, <strong>Ms. Janllyn Avantikha and Ms. Vaishnavi Battina</strong>, introducing our Student Chapter to the audience, followed by a speech from our honorable Head of the Department, <strong>Dr. Vigneshwari.</strong>
+                </m.p>
+
+                <m.p
+                    className="content-text"
+                    variants={fadeIn("up", 0.2)}
+                    initial="hidden"
+                    whileInView="show"
+                    viewport={{ once: true }}
+                >
+                    The first round of the event was a non-technical fun activity, "Trash to Treasure." All the students were divided into teams and provided with a bunch of trash and chart paper. They were tasked with creating something innovative from the materials they were given. The students showed immense enthusiasm and worked wonders with their creations. The results were evaluated by our faculty coordinators, <strong>Dr. R. Sathyabama Krishna and Dr. Anu Barathi</strong>. Two winners were selected from the teams.
+                </m.p>
+
+                <m.p
+                    className="content-text"
+                    variants={fadeIn("up", 0.2)}
+                    initial="hidden"
+                    whileInView="show"
+                    viewport={{ once: true }}
+                >
+                    Following this was an orientation session where the members of our Student Chapter took the stage to explain the various future opportunities available to students after graduation. <strong>Ms. Sri Soundharya</strong>, Secretary of the Student Chapter, gave a detailed explanation of the current placement opportunities and how to aim for them. <strong>Ms. Sushree Sonali Patra</strong>, a core unit member, discussed entrepreneurship opportunities, highlighting its advantages and drawbacks with real-life examples. <strong>Ms. Vaishnavi Battina</strong>, another core unit member, familiarized the students with post-graduation degrees available to them, their eligibility criteria, and how to approach them. The students found this session extremely informative.
+                </m.p>
+
+                <m.p
+                    className="content-text"
+                    variants={fadeIn("up", 0.2)}
+                    initial="hidden"
+                    whileInView="show"
+                    viewport={{ once: true }}
+                >
+                    <strong>Ms. Deekshitha</strong>, Treasurer of the Student Chapter, engaged with the students and spoke about the anxiety surrounding career decisions, offering advice on how to handle it and passionately pursue one's dreams.
+                </m.p>
+
+                <m.p
+                    className="content-text"
+                    variants={fadeIn("up", 0.2)}
+                    initial="hidden"
+                    whileInView="show"
+                    viewport={{ once: true }}
+                >
+                    Overall, the event was a great success, and all the students thoroughly enjoyed it. We are thankful to all the dignitaries, faculty coordinators, student coordinators, and freshers who attended the event, contributing to its success. We look forward to organizing more such events in the future.
+                </m.p>
+            </div>
+
         </div>
-      </div>
-
-      {/* --- HIGHLIGHTS TEXT --- */}
-      <m.h2 
-        className="section-title"
-        variants={fadeIn("up", 0.2)}
-        initial="hidden"
-        whileInView="show"
-        viewport={{ once: false, amount: 0.1 }}
-      >
-        KEY <span className="highlight-blue">HIGHLIGHTS</span>
-      </m.h2>
-
-      <div>
-        <m.p 
-            className="content-text"
-            variants={fadeIn("up", 0.2)}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: false }}
-        >
-            The event began with our core unit members, <strong>Ms. Janllyn Avantikha and Ms. Vaishnavi Battina</strong>, introducing our Student Chapter to the audience, followed by a speech from our honorable Head of the Department, <strong>Dr. Vigneshwari.</strong>
-        </m.p>
-        
-        <m.p 
-            className="content-text"
-            variants={fadeIn("up", 0.2)}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: false }}
-        >
-            The first round of the event was a non-technical fun activity, "Trash to Treasure." All the students were divided into teams and provided with a bunch of trash and chart paper. They were tasked with creating something innovative from the materials they were given. The students showed immense enthusiasm and worked wonders with their creations. The results were evaluated by our faculty coordinators, <strong>Dr. R. Sathyabama Krishna and Dr. Anu Barathi</strong>. Two winners were selected from the teams.
-        </m.p>
-        
-        <m.p 
-            className="content-text"
-            variants={fadeIn("up", 0.2)}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: false }}
-        >
-             Following this was an orientation session where the members of our Student Chapter took the stage to explain the various future opportunities available to students after graduation. <strong>Ms. Sri Soundharya</strong>, Secretary of the Student Chapter, gave a detailed explanation of the current placement opportunities and how to aim for them. <strong>Ms. Sushree Sonali Patra</strong>, a core unit member, discussed entrepreneurship opportunities, highlighting its advantages and drawbacks with real-life examples. <strong>Ms. Vaishnavi Battina</strong>, another core unit member, familiarized the students with post-graduation degrees available to them, their eligibility criteria, and how to approach them. The students found this session extremely informative.
-        </m.p>
-
-        <m.p 
-            className="content-text"
-            variants={fadeIn("up", 0.2)}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: false }}
-        >
-            <strong>Ms. Deekshitha</strong>, Treasurer of the Student Chapter, engaged with the students and spoke about the anxiety surrounding career decisions, offering advice on how to handle it and passionately pursue one's dreams.
-        </m.p>
-
-        <m.p 
-            className="content-text"
-            variants={fadeIn("up", 0.2)}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: false }}
-        >
-            Overall, the event was a great success, and all the students thoroughly enjoyed it. We are thankful to all the dignitaries, faculty coordinators, student coordinators, and freshers who attended the event, contributing to its success. We look forward to organizing more such events in the future.
-        </m.p>
-      </div>
-
-    </div>
-  );
+    );
 }
 
 export default Synergy;

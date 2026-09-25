@@ -16,7 +16,7 @@ export interface UpcomingEvent {
   date: string;
   time: string;
   venue: string;
-  contactPersons: { name: string; phone: string }[];
+  contactPersons: { name: string; phone: string; role?: string }[];
   totalRegistrations: number;
 }
 

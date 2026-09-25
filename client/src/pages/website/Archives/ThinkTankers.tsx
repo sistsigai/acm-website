@@ -37,7 +37,7 @@ const ThinkTankers = () => {
           background: linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.85)), url(${ttbg});
           background-size: cover;
           background-position: center;
-          background-attachment: fixed; 
+          background-attachment: scroll; 
           background-repeat: no-repeat;
         }
 
@@ -47,7 +47,7 @@ const ThinkTankers = () => {
         }
 
         .text-gradient {
-            background: linear-gradient(135deg, #fff 0%, var(--primary-blue, #0099ff) 100%);
+            background: linear-gradient(135deg, #fff 0%, var(--primary-blue, var(--primary-blue)) 100%);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             font-weight: 900;
             letter-spacing: -2px;
@@ -63,7 +63,7 @@ const ThinkTankers = () => {
         }
 
         .highlight-blue {
-            color: #0099ff; /* Primary Blue */
+            color: var(--primary-blue); /* Primary Blue */
         }
 
         p.content-text {
@@ -163,16 +163,6 @@ const ThinkTankers = () => {
                 >
                     Think Tankers
                 </m.h1>
-
-                <m.p
-                    className="content-text"
-                    style={{ textAlign: 'center' }}
-                    variants={fadeIn("up", 0.3)}
-                    initial="hidden"
-                    animate="show"
-                >
-                    Welcoming the New Batch. September 4th, 2024.
-                </m.p>
             </div>
 
             {/* --- INTRO TEXT --- */}
@@ -182,7 +172,7 @@ const ThinkTankers = () => {
                 animate="show"
             >
                 <p className="content-text">
-                    We are happy to share that the SIST ACM SIGAI Student Chapter successfully conducted an exciting event for the new generation, "Synergy for Freshers," on 4th September 2024 (Wednesday) at the Dental Auditorium, Sathyabama Institute of Science and Technology, Chennai.
+                    Think Tankers was an interactive seminar-based quiz event designed to help students explore important concepts related to Environmental Science. The event introduced participants to various themes including biodiversity, sustainable development, agricultural productivity, and global food security through informative discussions and engaging quiz rounds. Students were encouraged to think critically about real-world environmental challenges and analyze meaningful solutions through active participation. The event provided an excellent platform for participants to enhance their environmental awareness, improve analytical thinking, and engage in collaborative learning in an interactive and informative atmosphere.
                 </p>
             </m.div>
 
@@ -212,7 +202,7 @@ const ThinkTankers = () => {
                 variants={fadeIn("up", 0.2)}
                 initial="hidden"
                 whileInView="show"
-                viewport={{ once: false, amount: 0.1 }}
+                viewport={{ once: true, amount: 0.3 }}
             >
                 KEY <span className="highlight-blue">HIGHLIGHTS</span>
             </m.h2>
@@ -223,9 +213,9 @@ const ThinkTankers = () => {
                     variants={fadeIn("up", 0.2)}
                     initial="hidden"
                     whileInView="show"
-                    viewport={{ once: false }}
+                    viewport={{ once: true }}
                 >
-                    The event began with our core unit members, <strong>Ms. Janllyn Avantikha and Ms. Vaishnavi Battina</strong>, introducing our Student Chapter to the audience, followed by a speech from our honorable Head of the Department, <strong>Dr. Vigneshwari.</strong>
+                    The event began with an informative seminar session that introduced students to important Environmental Science concepts and their relevance in addressing present-day global challenges. Participants actively engaged in discussions on topics such as biodiversity, sustainable development, agricultural productivity, and global food security. The session encouraged students to think beyond theoretical knowledge and understand the practical impact of environmental issues on society and future generations. The interactive nature of the seminar created an engaging learning atmosphere and motivated students to participate enthusiastically throughout the event.
                 </m.p>
 
                 <m.p
@@ -233,9 +223,9 @@ const ThinkTankers = () => {
                     variants={fadeIn("up", 0.2)}
                     initial="hidden"
                     whileInView="show"
-                    viewport={{ once: false }}
+                    viewport={{ once: true }}
                 >
-                    The first round of the event was a non-technical fun activity, "Trash to Treasure." All the students were divided into teams and provided with a bunch of trash and chart paper. They were tasked with creating something innovative from the materials they were given. The students showed immense enthusiasm and worked wonders with their creations. The results were evaluated by our faculty coordinators, <strong>Dr. R. Sathyabama Krishna and Dr. Anu Barathi</strong>. Two winners were selected from the teams.
+                    Following the seminar session, multiple quiz rounds were conducted to test the participants' understanding, critical thinking, and analytical abilities. The quiz questions were designed around real-world environmental challenges and encouraged students to apply their knowledge in identifying practical and meaningful solutions. Participants displayed great enthusiasm and competitiveness while answering questions related to environmental conservation, sustainability practices, food security, and ecological balance. The rounds not only tested their awareness but also enhanced their ability to think logically under pressure.
                 </m.p>
 
                 <m.p
@@ -243,9 +233,9 @@ const ThinkTankers = () => {
                     variants={fadeIn("up", 0.2)}
                     initial="hidden"
                     whileInView="show"
-                    viewport={{ once: false }}
+                    viewport={{ once: true }}
                 >
-                    Following this was an orientation session where the members of our Student Chapter took the stage to explain the various future opportunities available to students after graduation. <strong>Ms. Sri Soundharya</strong>, Secretary of the Student Chapter, gave a detailed explanation of the current placement opportunities and how to aim for them. <strong>Ms. Sushree Sonali Patra</strong>, a core unit member, discussed entrepreneurship opportunities, highlighting its advantages and drawbacks with real-life examples. <strong>Ms. Vaishnavi Battina</strong>, another core unit member, familiarized the students with post-graduation degrees available to them, their eligibility criteria, and how to approach them. The students found this session extremely informative.
+                    One of the major highlights of the event was the active involvement of students during the discussion and quiz sessions. Participants confidently shared their perspectives on environmental concerns and demonstrated a strong interest in learning about sustainable practices and global environmental developments. The event successfully created an interactive platform where students could exchange ideas, improve their awareness, and strengthen their understanding of Environmental Science concepts in an enjoyable manner.
                 </m.p>
 
                 <m.p
@@ -253,19 +243,9 @@ const ThinkTankers = () => {
                     variants={fadeIn("up", 0.2)}
                     initial="hidden"
                     whileInView="show"
-                    viewport={{ once: false }}
+                    viewport={{ once: true }}
                 >
-                    <strong>Ms. Deekshitha</strong>, Treasurer of the Student Chapter, engaged with the students and spoke about the anxiety surrounding career decisions, offering advice on how to handle it and passionately pursue one's dreams.
-                </m.p>
-
-                <m.p
-                    className="content-text"
-                    variants={fadeIn("up", 0.2)}
-                    initial="hidden"
-                    whileInView="show"
-                    viewport={{ once: false }}
-                >
-                    Overall, the event was a great success, and all the students thoroughly enjoyed it. We are thankful to all the dignitaries, faculty coordinators, student coordinators, and freshers who attended the event, contributing to its success. We look forward to organizing more such events in the future.
+                    Overall, Think Tankers was a successful and enriching seminar-based event that combined learning with interaction and critical thinking. The event helped students develop a deeper understanding of environmental issues while encouraging teamwork, participation, and knowledge sharing. The enthusiastic response from participants reflected the success of the event in creating awareness and promoting meaningful discussions on environmental sustainability and responsibility today.
                 </m.p>
             </div>
 

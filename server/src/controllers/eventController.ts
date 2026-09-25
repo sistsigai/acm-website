@@ -1,16 +1,43 @@
 import { Request, Response } from "express";
 import Event from "../models/events";
+import sharp from "sharp";
+import cloudinary from "../utils/cloudinary";
+import streamifier from "streamifier";
+
+/* ───────────────── CLOUDINARY HELPER ───────────────── */
+
+const uploadToCloudinary = (
+  buffer: Buffer,
+  folder: string
+): Promise<{ url: string; public_id: string }> => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { folder, resource_type: "image" },
+      (error, result) => {
+        if (error || !result) return reject(error);
+        resolve({
+          url: result.secure_url,
+          public_id: result.public_id,
+        });
+      }
+    );
+
+    streamifier.createReadStream(buffer).pipe(stream);
+  });
+};
 
 // --- TYPE DEFINITIONS ---
 interface ContactPerson {
   name: string;
   phone: string;
+  role?: string;
 }
 
 interface ValidationData {
   name?: string;
   date?: string;
   time?: string;
+  registrationEndDate?: string;
   venue?: string;
   description?: string;
   contactPersons?: any[];
@@ -44,13 +71,34 @@ const validateDate = (date: string): string | null => {
   return null;
 };
 
-const validateTime = (time: string): string | null => {
-  if (!time) return "Event time is required";
+const validateRegistrationEndDate = (regEndDate?: string, eventDate?: string): string | null => {
+  if (!regEndDate || !regEndDate.trim()) return "Registration deadline is required";
   
-  // Validate HH:MM AM/PM format
-  const timeRegex = /^(0[1-9]|1[0-2]):([0-5][0-9]) (AM|PM)$/;
-  if (!timeRegex.test(time.trim())) {
-    return "Time must be in HH:MM AM/PM format (e.g., 02:30 PM)";
+  const selectedRegEnd = new Date(`${regEndDate}T00:00:00`);
+  if (isNaN(selectedRegEnd.getTime())) {
+    return "Invalid registration deadline format";
+  }
+  
+  if (eventDate) {
+    const selectedEventDate = new Date(`${eventDate}T00:00:00`);
+    if (!isNaN(selectedEventDate.getTime()) && selectedRegEnd.getTime() > selectedEventDate.getTime()) {
+      return "Registration deadline cannot be after the event date";
+    }
+  }
+  
+  return null;
+};
+
+const validateTime = (time: string): string | null => {
+  if (!time || !time.trim()) return "Event time is required";
+  
+  const trimmed = time.trim();
+  // Support single time (e.g. "02:30 PM", "2:30 PM") and time ranges (e.g. "02:30 PM - 04:30 PM", "2:30 PM to 4:30 PM")
+  const singleTimeRegex = /^(0?[1-9]|1[0-2]):([0-5][0-9])\s*(AM|PM)$/i;
+  const timeRangeRegex = /^(0?[1-9]|1[0-2]):([0-5][0-9])\s*(AM|PM)\s*(-|–|—|to)\s*(0?[1-9]|1[0-2]):([0-5][0-9])\s*(AM|PM)$/i;
+
+  if (!singleTimeRegex.test(trimmed) && !timeRangeRegex.test(trimmed)) {
+    return "Time must be in HH:MM AM/PM format (e.g., 02:30 PM or 02:30 PM - 04:30 PM)";
   }
   
   return null;
@@ -111,17 +159,6 @@ const validateContactPersons = (contactPersons: any[]): string[] => {
   return errors;
 };
 
-// Required registration questions (must be present and unchanged)
-const REQUIRED_REGISTRATION_QUESTIONS = [
-  "Name",
-  "Register Number",
-  "Department",
-  "Year",
-  "Section",
-  "Email ID",
-  "Mobile Number"
-];
-
 const validateRegistrationQuestions = (questions: any[]): string[] => {
   const errors: string[] = [];
   
@@ -129,26 +166,13 @@ const validateRegistrationQuestions = (questions: any[]): string[] => {
     return ["Registration questions must be an array"];
   }
   
-  // Check if all required questions are present
-  const hasAllRequiredQuestions = REQUIRED_REGISTRATION_QUESTIONS.every(
-    (requiredQuestion, index) => questions[index] === requiredQuestion
-  );
-  
-  if (!hasAllRequiredQuestions) {
-    errors.push("Required registration questions cannot be modified or removed");
-  }
-  
-  // Validate all questions (required + custom)
+  // Validate all questions
   questions.forEach((question: any, index: number) => {
-    if (!question || !question.toString().trim()) {
+    const qText = typeof question === "object" && question !== null ? question.question : String(question || "");
+    if (!qText || !qText.toString().trim()) {
       errors[index] = `Question ${index + 1} cannot be empty`;
-    } else if (question.toString().length > 200) {
+    } else if (qText.toString().length > 200) {
       errors[index] = `Question ${index + 1} must be less than 200 characters`;
-    }
-    
-    // For custom questions (after required ones), validate minimum length
-    if (index >= REQUIRED_REGISTRATION_QUESTIONS.length && question.toString().length < 3) {
-      errors[index] = `Custom question ${index - REQUIRED_REGISTRATION_QUESTIONS.length + 1} must be at least 3 characters`;
     }
   });
   
@@ -193,6 +217,14 @@ const validateAllFields = (data: ValidationData, isUpdate: boolean = false): { e
     if (dateError) {
       errors.push(dateError);
       fieldErrors.date = dateError;
+    }
+  }
+  
+  if (!isUpdate || data.registrationEndDate !== undefined) {
+    const regEndError = validateRegistrationEndDate(data.registrationEndDate, data.date);
+    if (regEndError) {
+      errors.push(regEndError);
+      fieldErrors.registrationEndDate = regEndError;
     }
   }
   
@@ -247,17 +279,89 @@ const validateAllFields = (data: ValidationData, isUpdate: boolean = false): { e
   return { errors: errors.filter(e => e), fieldErrors };
 };
 
+/* ───────────────── DIRECT CLOUDINARY UPLOAD FOR EVENTS ───────────────── */
+
+export const uploadEventImage = async (req: any, res: any) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: "No image file provided" });
+    }
+
+    const { type } = req.body; // "thumbnail" or "poster"
+
+    let sharpPipeline = sharp(req.file.buffer);
+
+    if (type === "thumbnail") {
+      // 16:9 banner
+      sharpPipeline = sharpPipeline
+        .resize(1280, 720, { fit: "cover", position: "center" })
+        .jpeg({ quality: 85 });
+    } else if (type === "poster") {
+      // 3:4 portrait poster
+      sharpPipeline = sharpPipeline
+        .resize(900, 1200, { fit: "cover", position: "center" })
+        .jpeg({ quality: 85 });
+    } else {
+      sharpPipeline = sharpPipeline.jpeg({ quality: 85 });
+    }
+
+    const processedImage = await sharpPipeline.toBuffer();
+    const uploadResult = await uploadToCloudinary(processedImage, "events");
+
+    return res.status(200).json({
+      success: true,
+      message: "Image uploaded successfully",
+      url: uploadResult.url,
+      public_id: uploadResult.public_id,
+    });
+  } catch (error: any) {
+    console.error("Event Cloudinary Upload Error:", error);
+    return res.status(500).json({ success: false, message: "Cloudinary upload failed", error: error.message });
+  }
+};
+
+/* ───────────────── DIRECT CLOUDINARY DELETE FOR EVENTS ───────────────── */
+
+export const deleteEventImage = async (req: any, res: any) => {
+  try {
+    const { public_id } = req.body;
+    if (!public_id) {
+      return res.status(400).json({ success: false, message: "public_id is required" });
+    }
+
+    const result = await cloudinary.uploader.destroy(public_id);
+    return res.status(200).json({
+      success: true,
+      message: "Image deleted successfully",
+      result,
+    });
+  } catch (error: any) {
+    console.error("Event Cloudinary Delete Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to delete image from Cloudinary",
+      error: error.message,
+    });
+  }
+};
+
 export const addEvent = async (req: Request, res: Response): Promise<Response> => {
   try {
     const {
       name,
       date,
       time,
+      registrationEndDate,
       venue,
       description,
       contactPersons,
       registrationQuestions,
+      customQuestions,
       whatsappGroupLink,
+      thumbnailUrl,
+      thumbnailPublicId,
+      posterUrl,
+      posterPublicId,
     } = req.body;
 
     // 🔴 Comprehensive Validation
@@ -265,6 +369,7 @@ export const addEvent = async (req: Request, res: Response): Promise<Response> =
       name,
       date,
       time,
+      registrationEndDate,
       venue,
       description,
       contactPersons,
@@ -281,27 +386,35 @@ export const addEvent = async (req: Request, res: Response): Promise<Response> =
       });
     }
 
-    // Ensure required questions are present
-    const finalRegistrationQuestions = [
-      ...REQUIRED_REGISTRATION_QUESTIONS,
-      ...(registrationQuestions?.slice(REQUIRED_REGISTRATION_QUESTIONS.length) || [])
-    ];
+    // Format registration questions from customQuestions or registrationQuestions
+    const finalRegistrationQuestions = Array.isArray(customQuestions) && customQuestions.length > 0
+      ? customQuestions.map((q: any) => (typeof q === "string" ? q : q.question || "")).filter(Boolean)
+      : Array.isArray(registrationQuestions)
+      ? registrationQuestions.map((q: any) => (typeof q === "string" ? q : q.question || "")).filter(Boolean)
+      : [];
 
-    // Format phone numbers with +91 prefix
+    // Format phone numbers with +91 prefix and preserve role
     const formattedContactPersons = (contactPersons || []).map((contact: any) => ({
       name: (contact?.name?.toString() || '').trim(),
-      phone: contact?.phone ? `+91${contact.phone.toString().replace(/^\+91/, '').replace(/\D/g, '').slice(0, 10)}` : ''
+      phone: contact?.phone ? `+91${contact.phone.toString().replace(/^\+91/, '').replace(/\D/g, '').slice(0, 10)}` : '',
+      role: (contact?.role?.toString() || 'Student Coordinator').trim()
     })).filter((contact: { name: any; phone: any; }) => contact.name && contact.phone);
 
     const event = await Event.create({
       name: (name || '').trim(),
       date,
       time: (time || '').trim(),
+      registrationEndDate: registrationEndDate?.trim() || null,
       venue: (venue || '').trim(),
       description: (description || '').trim(),
       contactPersons: formattedContactPersons,
       registrationQuestions: finalRegistrationQuestions,
+      customQuestions: Array.isArray(customQuestions) ? customQuestions : [],
       whatsappGroupLink: whatsappGroupLink?.trim() || null,
+      thumbnailUrl: thumbnailUrl || null,
+      thumbnailPublicId: thumbnailPublicId || null,
+      posterUrl: posterUrl || null,
+      posterPublicId: posterPublicId || null,
       display: true
     });
 
@@ -359,6 +472,14 @@ export const deleteEvent = async (req: Request, res: Response) => {
       });
     }
 
+    // Destroy Cloudinary media assets if present
+    if (event.thumbnailPublicId) {
+      await cloudinary.uploader.destroy(event.thumbnailPublicId).catch((e) => console.error("Error deleting event thumbnail:", e));
+    }
+    if (event.posterPublicId) {
+      await cloudinary.uploader.destroy(event.posterPublicId).catch((e) => console.error("Error deleting event poster:", e));
+    }
+
     await event.deleteOne();
 
     res.json({
@@ -392,11 +513,17 @@ export const updateEvent = async (req: Request, res: Response) => {
       name,
       date,
       time,
+      registrationEndDate,
       venue,
       description,
       contactPersons,
       registrationQuestions,
+      customQuestions,
       whatsappGroupLink,
+      thumbnailUrl,
+      thumbnailPublicId,
+      posterUrl,
+      posterPublicId,
       display
     } = req.body;
 
@@ -405,6 +532,7 @@ export const updateEvent = async (req: Request, res: Response) => {
       name: name !== undefined ? name : event.name,
       date: date !== undefined ? date : event.date,
       time: time !== undefined ? time : event.time,
+      registrationEndDate: registrationEndDate !== undefined ? registrationEndDate : (event.registrationEndDate || undefined),
       venue: venue !== undefined ? venue : event.venue,
       description: description !== undefined ? description : event.description,
       contactPersons: contactPersons !== undefined ? contactPersons : event.contactPersons,
@@ -432,15 +560,20 @@ export const updateEvent = async (req: Request, res: Response) => {
     if (time !== undefined) {
       event.time = String(time).trim();
     }
+
+    if (registrationEndDate !== undefined) {
+      event.registrationEndDate = registrationEndDate ? registrationEndDate.trim() : null;
+    }
     
     if (venue !== undefined) event.venue = venue.trim();
     if (description !== undefined) event.description = description.trim();
 
     if (contactPersons !== undefined) {
-      // Format phone numbers with +91 prefix
+      // Format phone numbers with +91 prefix and preserve role
       const formattedContactPersons = (contactPersons || []).map((contact: any) => ({
         name: (contact?.name?.toString() || '').trim(),
-        phone: contact?.phone ? `+91${contact.phone.toString().replace(/^\+91/, '').replace(/\D/g, '').slice(0, 10)}` : ''
+        phone: contact?.phone ? `+91${contact.phone.toString().replace(/^\+91/, '').replace(/\D/g, '').slice(0, 10)}` : '',
+        role: (contact?.role?.toString() || 'Student Coordinator').trim()
       })).filter((contact: { name: any; phone: any; }) => contact.name && contact.phone);
       
       if (formattedContactPersons.length === 0) {
@@ -454,23 +587,38 @@ export const updateEvent = async (req: Request, res: Response) => {
     }
 
     if (registrationQuestions !== undefined) {
-      // Ensure required questions are not modified
-      const hasAllRequiredQuestions = REQUIRED_REGISTRATION_QUESTIONS.every(
-        (requiredQuestion, index) => registrationQuestions[index] === requiredQuestion
-      );
-      
-      if (!hasAllRequiredQuestions) {
-        return res.status(400).json({
-          success: false,
-          message: "Required registration questions cannot be modified or removed"
-        });
+      event.registrationQuestions = Array.isArray(registrationQuestions)
+        ? registrationQuestions.map((q: any) => (typeof q === "string" ? q : q.question || "")).filter(Boolean)
+        : [];
+    }
+
+    if (customQuestions !== undefined) {
+      event.customQuestions = Array.isArray(customQuestions) ? customQuestions : [];
+      if (registrationQuestions === undefined) {
+        event.registrationQuestions = event.customQuestions.map((q: any) => q.question || "").filter(Boolean);
       }
-      
-      event.registrationQuestions = registrationQuestions;
     }
 
     if (whatsappGroupLink !== undefined) {
       event.whatsappGroupLink = whatsappGroupLink?.trim() || null;
+    }
+
+    // Handle thumbnail replacement on Cloudinary
+    if (thumbnailPublicId !== undefined) {
+      if (event.thumbnailPublicId && event.thumbnailPublicId !== thumbnailPublicId) {
+        await cloudinary.uploader.destroy(event.thumbnailPublicId).catch((e) => console.error("Error destroying old thumbnail:", e));
+      }
+      event.thumbnailUrl = thumbnailUrl || null;
+      event.thumbnailPublicId = thumbnailPublicId || null;
+    }
+
+    // Handle poster replacement on Cloudinary
+    if (posterPublicId !== undefined) {
+      if (event.posterPublicId && event.posterPublicId !== posterPublicId) {
+        await cloudinary.uploader.destroy(event.posterPublicId).catch((e) => console.error("Error destroying old poster:", e));
+      }
+      event.posterUrl = posterUrl || null;
+      event.posterPublicId = posterPublicId || null;
     }
     
     if (display !== undefined) {

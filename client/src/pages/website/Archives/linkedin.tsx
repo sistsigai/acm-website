@@ -38,7 +38,7 @@ const linkedin = () => {
           background: linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.85)), url(${gcwlbg});
           background-size: cover;
           background-position: center;
-          background-attachment: fixed; 
+          background-attachment: scroll; 
           background-repeat: no-repeat;
         }
 
@@ -48,7 +48,7 @@ const linkedin = () => {
         }
 
         .text-gradient {
-            background: linear-gradient(135deg, #fff 0%, var(--primary-blue, #0099ff) 100%);
+            background: linear-gradient(135deg, #fff 0%, var(--primary-blue, var(--primary-blue)) 100%);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             font-weight: 900;
             letter-spacing: -2px;
@@ -64,7 +64,7 @@ const linkedin = () => {
         }
 
         .highlight-blue {
-            color: #0099ff; /* Primary Blue */
+            color: var(--primary-blue); /* Primary Blue */
         }
 
         p.content-text {
@@ -162,7 +162,7 @@ const linkedin = () => {
                     initial="hidden"
                     animate="show"
                 >
-                    Get linked with <br /> Linkedin
+                    Get linked with Linkedin
                 </m.h1>
             </div>
 
@@ -173,9 +173,8 @@ const linkedin = () => {
                 animate="show"
             >
                 <p className="content-text">
-                    InsightX’24 was a dynamic event designed to showcase innovation and creativity within the tech community. It featured a blend of technical and non-technical competitions alongside an insightful guest talk on the Big Data revolution. The event provided an excellent platform for students to compete and learn, promoting collaborative knowledge sharing. Cash prizes were awarded to the winners, and e-certificates were given to recognize every participant.
+                    Get Linked with LinkedIn was an interactive workshop designed to help first-year students understand the importance of LinkedIn and build their professional presence online. The session guided participants in creating LinkedIn accounts, setting up profiles, and exploring key platform features. Students also learned how LinkedIn supports career development, networking, and job opportunities, making the event an informative and valuable experience for their future professional growth.
                 </p>
-
             </m.div>
 
             {/* --- MARQUEE GALLERY --- */}
@@ -204,7 +203,7 @@ const linkedin = () => {
                 variants={fadeIn("up", 0.2)}
                 initial="hidden"
                 whileInView="show"
-                viewport={{ once: false, amount: 0.1 }}
+                viewport={{ once: true, amount: 0.3 }}
             >
                 KEY <span className="highlight-blue">HIGHLIGHTS</span>
             </m.h2>
@@ -215,9 +214,9 @@ const linkedin = () => {
                     variants={fadeIn("up", 0.2)}
                     initial="hidden"
                     whileInView="show"
-                    viewport={{ once: false }}
+                    viewport={{ once: true }}
                 >
-                    The event began with our core unit members, <strong>Ms. Janllyn Avantikha and Ms. Vaishnavi Battina</strong>, introducing our Student Chapter to the audience, followed by a speech from our honorable Head of the Department, <strong>Dr. Vigneshwari.</strong>
+                    The event began with an introductory session that familiarized first-year students with LinkedIn and its growing importance in today's professional world. Participants were introduced to the purpose of LinkedIn as a professional networking platform and learned how it helps students connect with industry professionals, explore career opportunities, and build a strong online presence. The session created awareness among students about the importance of maintaining a professional identity from the early stages of their academic journey.
                 </m.p>
 
                 <m.p
@@ -225,9 +224,9 @@ const linkedin = () => {
                     variants={fadeIn("up", 0.2)}
                     initial="hidden"
                     whileInView="show"
-                    viewport={{ once: false }}
+                    viewport={{ once: true }}
                 >
-                    The first round of the event was a non-technical fun activity, "Trash to Treasure." All the students were divided into teams and provided with a bunch of trash and chart paper. They were tasked with creating something innovative from the materials they were given. The students showed immense enthusiasm and worked wonders with their creations. The results were evaluated by our faculty coordinators, <strong>Dr. R. Sathyabama Krishna and Dr. Anu Barathi</strong>. Two winners were selected from the teams.
+                    Following the introduction, students were guided through the process of creating their own LinkedIn accounts and setting up professional profiles. The session included step-by-step explanations on adding profile details such as educational background, skills, achievements, certifications, and profile photographs. Participants actively followed the instructions and learned how to organize their profiles effectively to create a positive first impression for recruiters and professional connections.
                 </m.p>
 
                 <m.p
@@ -235,9 +234,9 @@ const linkedin = () => {
                     variants={fadeIn("up", 0.2)}
                     initial="hidden"
                     whileInView="show"
-                    viewport={{ once: false }}
+                    viewport={{ once: true }}
                 >
-                    Following this was an orientation session where the members of our Student Chapter took the stage to explain the various future opportunities available to students after graduation. <strong>Ms. Sri Soundharya</strong>, Secretary of the Student Chapter, gave a detailed explanation of the current placement opportunities and how to aim for them. <strong>Ms. Sushree Sonali Patra</strong>, a core unit member, discussed entrepreneurship opportunities, highlighting its advantages and drawbacks with real-life examples. <strong>Ms. Vaishnavi Battina</strong>, another core unit member, familiarized the students with post-graduation degrees available to them, their eligibility criteria, and how to approach them. The students found this session extremely informative.
+                    One of the major highlights of the event was the interactive guidance provided on exploring LinkedIn features and using the platform for career development. Students learned how to build professional networks, connect with peers and mentors, follow organizations, and stay updated with industry trends. The session also explained how LinkedIn can support internship opportunities, job searches, and personal branding through active engagement and content sharing. Participants showed great interest in understanding how the platform could contribute to their future academic and professional growth.
                 </m.p>
 
                 <m.p
@@ -245,9 +244,9 @@ const linkedin = () => {
                     variants={fadeIn("up", 0.2)}
                     initial="hidden"
                     whileInView="show"
-                    viewport={{ once: false }}
+                    viewport={{ once: true }}
                 >
-                    <strong>Ms. Deekshitha</strong>, Treasurer of the Student Chapter, engaged with the students and spoke about the anxiety surrounding career decisions, offering advice on how to handle it and passionately pursue one's dreams.
+                    The workshop encouraged active participation and interaction throughout the session, with students clarifying doubts and exploring the platform practically during the event. The hands-on approach made the learning process engaging and easy to understand for beginners. Participants gained confidence in using LinkedIn effectively and recognized its value in developing professional communication and networking skills.
                 </m.p>
 
                 <m.p
@@ -255,9 +254,9 @@ const linkedin = () => {
                     variants={fadeIn("up", 0.2)}
                     initial="hidden"
                     whileInView="show"
-                    viewport={{ once: false }}
+                    viewport={{ once: true }}
                 >
-                    Overall, the event was a great success, and all the students thoroughly enjoyed it. We are thankful to all the dignitaries, faculty coordinators, student coordinators, and freshers who attended the event, contributing to its success. We look forward to organizing more such events in the future.
+                    Overall, Get Linked with LinkedIn was a highly informative and practical workshop that successfully introduced students to professional networking and career development through interactive learning and guided profile-building activities for future success.
                 </m.p>
             </div>
 

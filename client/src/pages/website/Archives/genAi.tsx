@@ -38,7 +38,7 @@ const Genai = () => {
           background: linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.85)), url(${genBg});
           background-size: cover;
           background-position: center;
-          background-attachment: fixed; 
+          background-attachment: scroll; 
           background-repeat: no-repeat;
         }
 
@@ -48,7 +48,7 @@ const Genai = () => {
         }
 
         .text-gradient {
-            background: linear-gradient(135deg, #fff 0%, var(--primary-blue, #0099ff) 100%);
+            background: linear-gradient(135deg, #fff 0%, var(--primary-blue, var(--primary-blue)) 100%);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             font-weight: 900;
             letter-spacing: -2px;
@@ -64,7 +64,7 @@ const Genai = () => {
         }
 
         .highlight-blue {
-            color: #0099ff; /* Azure Blue */
+            color: var(--primary-blue); /* Azure Blue */
         }
 
         p.content-text {
@@ -226,7 +226,7 @@ const Genai = () => {
                     initial="hidden"
                     animate="show"
                 >
-                    DEEP DIVE INTO <br /> GEN-AI
+                    DEEP DIVE INTO GEN-AI
                 </m.h1>
 
                 <m.p
@@ -277,7 +277,7 @@ const Genai = () => {
                 variants={fadeIn("up", 0.2)}
                 initial="hidden"
                 whileInView="show"
-                viewport={{ once: false, amount: 0.3 }}
+                viewport={{ once: true, amount: 0.3 }}
             >
                 OUR <span className="highlight-blue">SPEAKERS</span>
             </m.h2>
@@ -287,7 +287,7 @@ const Genai = () => {
                 variants={fadeIn("up", 0.3)}
                 initial="hidden"
                 whileInView="show"
-                viewport={{ once: false, amount: 0.3 }}
+                viewport={{ once: true, amount: 0.3 }}
             >
                 {/* Speaker 1 */}
                 <div className="guest-card">
@@ -324,7 +324,7 @@ const Genai = () => {
                 variants={fadeIn("up", 0.2)}
                 initial="hidden"
                 whileInView="show"
-                viewport={{ once: false, amount: 0.3 }}
+                viewport={{ once: true, amount: 0.3 }}
             >
                 KEY <span className="highlight-blue">HIGHLIGHTS</span>
             </m.h2>
@@ -335,7 +335,7 @@ const Genai = () => {
                     variants={fadeIn("up", 0.2)}
                     initial="hidden"
                     whileInView="show"
-                    viewport={{ once: false }}
+                    viewport={{ once: true }}
                 >
                     The event focused on Generative AI and was attended by an enthusiastic crowd of second-year BSc students. <strong>Ms. Janllyn Avantikha</strong>, a core unit member, started the event by introducing the speakers and providing an overview about the session.
                 </m.p>
@@ -345,7 +345,7 @@ const Genai = () => {
                     variants={fadeIn("up", 0.2)}
                     initial="hidden"
                     whileInView="show"
-                    viewport={{ once: false }}
+                    viewport={{ once: true }}
                 >
                     Two of our third-year students from the CSE Data Science specialization, <strong>Sri Harsha Jonnalagadda</strong> and <strong>Kishore Ramanan</strong>, took the lead as speakers. In the first half of the event, they introduced the students to Generative AI and explained its applications in everyday life in detail. A live demonstration of generating content like text, images, and PPTs was conducted, and input prompts were taken from the audience, encouraging active participation from all students.
                 </m.p>
@@ -355,7 +355,7 @@ const Genai = () => {
                     variants={fadeIn("up", 0.2)}
                     initial="hidden"
                     whileInView="show"
-                    viewport={{ once: false }}
+                    viewport={{ once: true }}
                 >
                     In the second half of the event, a hands-on session based on the Ollama model was conducted. This was followed by a digital art competition in which all the participants showcased their extraordinary talent. The event concluded with <strong>Ms. Vaishnavi Battina</strong>, a core team member of the club, delivering a vote of thanks.
                 </m.p>
@@ -365,7 +365,7 @@ const Genai = () => {
                     variants={fadeIn("up", 0.2)}
                     initial="hidden"
                     whileInView="show"
-                    viewport={{ once: false }}
+                    viewport={{ once: true }}
                 >
                     The event has been lively and interactive. It was well-received by all the students and dignitaries who attended. We are extremely grateful to the core unit, volunteers and all the people who contributed in making this event a success and we are look forward to hosting more such events in the future.
                 </m.p>

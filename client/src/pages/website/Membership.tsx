@@ -1,8 +1,32 @@
+import React, { useEffect } from "react";
 import { motion as m } from "framer-motion";
-import { FaLaptop, FaExclamationTriangle, FaIdCard, FaUserPlus, FaEnvelopeOpenText, FaSignInAlt, FaDownload } from "react-icons/fa";
+import { FaLaptop, FaExclamationTriangle, FaIdCard, FaUserPlus, FaEnvelopeOpenText, FaSignInAlt, FaDownload, FaBookOpen, FaGraduationCap, FaUsers, FaAward } from "react-icons/fa";
 import { fadeIn } from "../../components/transitions";
 import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+
+// --- Data: Membership Benefits ---
+const perksData = [
+  {
+    icon: <FaBookOpen />,
+    title: "ACM Digital Library",
+    desc: "Unlimited access to 3M+ peer-reviewed articles, publications, and top AI research papers."
+  },
+  {
+    icon: <FaGraduationCap />,
+    title: "Learning Center",
+    desc: "Complimentary access to O'Reilly learning resources, Skillsoft courses, and tech webinars."
+  },
+  {
+    icon: <FaUsers />,
+    title: "Global Community",
+    desc: "Connect with industry pioneers, AI researchers, mentors, and student chapters worldwide."
+  },
+  {
+    icon: <FaAward />,
+    title: "Events & Perks",
+    desc: "Special discounted rates for ACM international conferences, hackathons, and certifications."
+  }
+];
 
 // --- Data: Steps Configuration ---
 const stepsData = [
@@ -15,7 +39,7 @@ const stepsData = [
       {
         label: "Student Membership",
         link: "https://services.acm.org/public/qj/proflevel/proflevel_control.cfm?level=3&country=India&form_type=Student&promo=ACMMSDEPT&pay=DD",
-        primary: true
+        primary: false
       },
       {
         label: "Professional Membership",
@@ -66,285 +90,72 @@ const stepsData = [
       {
         label: "Access Dashboard",
         link: "https://myacm.acm.org/dashboard.cfm?svc=services",
-        primary: true
+        primary: false
       }
     ]
   }
 ];
 
-// --- CSS Styles ---
-const styles = `
-  :root {
-    --primary-blue: #3b82f6;
-    --primary-glow: rgba(59, 130, 246, 0.4);
-    --warning: #f59e0b;
-  }
+// --- REUSABLE COMPONENTS (Matching Aboutus.tsx MemberCard Pattern) ---
+const PerkCard = React.memo(({ perk, index }: { perk: typeof perksData[0]; index: number }) => {
+  return (
+    <m.div
+      className="perk-card"
+      variants={fadeIn("up", 0.15 + index * 0.08)}
+      initial="hidden"
+      animate="show"
+    >
+      <div className="perk-icon">{perk.icon}</div>
+      <h3>{perk.title}</h3>
+      <p>{perk.desc}</p>
+    </m.div>
+  );
+});
 
-  .membership-page {
-    width: 100%;
-    padding: 120px 5% 100px;
-    font-family: 'Poppins', sans-serif;
-    overflow-x: hidden;
-    background: transparent;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
+const StepCard = React.memo(({ step }: { step: typeof stepsData[0] }) => {
+  return (
+    <m.div
+      className="step-card"
+      variants={fadeIn("up", 0.15)}
+      initial="hidden"
+      whileInView="show"
+      viewport={{ once: false, amount: 0.2 }}
+    >
+      {/* Left Column: Number & Icon */}
+      <div className="step-card-left">
+        <div className="step-number-badge">{step.id}</div>
+        <div className="step-icon-wrapper">{step.icon}</div>
+      </div>
 
-  /* --- Header --- */
-  .membership-header {
-    text-align: center;
-    margin-bottom: 50px;
-    max-width: 800px;
-  }
+      {/* Right Column: Content */}
+      <div className="step-card-content">
+        <h2>{step.title}</h2>
+        <p>{step.description}</p>
 
-  .main-title {
-    font-size: 3.5rem;
-    font-weight: 800;
-    line-height: 1.1;
-    color: #fff;
-    margin-bottom: 20px;
-    text-shadow: 0 0 20px rgba(0,0,0,0.5);
-  }
-  
-  .highlight-text {
-    background: linear-gradient(120deg, #fff, var(--primary-blue));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    filter: drop-shadow(0 0 10px var(--primary-glow));
-  }
-
-  .sub-title {
-    color: #cbd5e1;
-    font-size: 1.1rem;
-    line-height: 1.6;
-  }
-
-  .device-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 16px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 50px;
-    color: #94a3b8;
-    font-size: 0.85rem;
-    margin-bottom: 20px;
-  }
-
-  /* --- Alert Box --- */
-  .alert-box {
-    width: 100%;
-    max-width: 850px;
-    margin-bottom: 60px;
-    background: rgba(245, 158, 11, 0.05);
-    border: 1px solid rgba(245, 158, 11, 0.3);
-    backdrop-filter: blur(10px);
-    border-radius: 16px;
-    padding: 24px;
-    display: flex;
-    gap: 20px;
-    align-items: flex-start;
-    box-shadow: 0 0 30px rgba(245, 158, 11, 0.05);
-  }
-
-  .alert-icon {
-    font-size: 1.8rem;
-    color: var(--warning);
-    margin-top: 2px;
-  }
-
-  .alert-content h3 {
-    color: var(--warning);
-    margin: 0 0 8px 0;
-    font-size: 1.1rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    font-weight: 700;
-  }
-
-  .alert-content ul {
-    margin: 0;
-    padding-left: 20px;
-    color: #e2e8f0;
-    font-size: 0.95rem;
-    line-height: 1.6;
-  }
-
-  /* --- Steps Container --- */
-  .steps-container {
-    width: 100%;
-    max-width: 850px;
-    display: flex;
-    flex-direction: column;
-    gap: 25px;
-  }
-
-  /* --- Step Card (Glassmorphism) --- */
-  .step-card {
-    padding: 35px;
-    background: rgba(255, 255, 255, 0.03); 
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
-    transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
-    display: flex;
-    gap: 30px;
-  }
-
-  .step-card:hover {
-    transform: translateY(-5px);
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(59, 130, 246, 0.3);
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
-  }
-
-  /* Left Side: Number & Icon */
-  .card-left {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 15px;
-    min-width: 60px;
-  }
-
-  .step-number-badge {
-    font-size: 1.8rem;
-    font-weight: 800;
-    color: rgba(255,255,255,0.1);
-    line-height: 1;
-  }
-
-  .step-icon-wrapper {
-    width: 50px;
-    height: 50px;
-    border-radius: 12px;
-    background: rgba(59, 130, 246, 0.1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--primary-blue);
-    font-size: 1.4rem;
-    border: 1px solid rgba(59, 130, 246, 0.2);
-    box-shadow: 0 0 15px rgba(59, 130, 246, 0.1);
-  }
-
-  .step-card:hover .step-icon-wrapper {
-    background: var(--primary-blue);
-    color: #fff;
-    box-shadow: 0 0 20px var(--primary-glow);
-  }
-
-  /* Right Side: Content */
-  .card-content {
-    flex: 1;
-  }
-
-  .card-content h2 {
-    margin: 0 0 10px 0;
-    color: #fff;
-    font-size: 1.5rem;
-    font-weight: 700;
-  }
-
-  .card-content p {
-    color: #cbd5e1;
-    line-height: 1.6;
-    margin-bottom: 20px;
-    font-size: 0.95rem;
-  }
-
-  /* --- Buttons --- */
-  .action-row {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-  }
-
-  .glass-btn {
-    padding: 10px 24px;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 0.85rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    text-decoration: none;
-    transition: all 0.3s ease;
-    cursor: pointer;
-    border: 1px solid rgba(59, 130, 246, 0.5);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .glass-btn.primary {
-    background: rgba(59, 130, 246, 0.15);
-    color: #60a5fa;
-  }
-  .glass-btn.primary:hover {
-    background: var(--primary-blue);
-    color: white;
-    box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
-  }
-
-  .glass-btn.secondary {
-    background: transparent;
-    border-color: rgba(255, 255, 255, 0.2);
-    color: #cbd5e1;
-  }
-  .glass-btn.secondary:hover {
-    border-color: #fff;
-    color: #fff;
-    background: rgba(255, 255, 255, 0.05);
-  }
-
-  /* --- Footer --- */
-  .support-footer {
-    text-align: center;
-    margin-top: 80px;
-    padding-top: 30px;
-    border-top: 1px solid rgba(255,255,255,0.1);
-    width: 100%;
-    max-width: 850px;
-  }
-  .support-footer p { color: #94a3b8; }
-  .support-link { color: var(--primary-blue); text-decoration: none; font-weight: 600; }
-
-  /* ---------------- Responsive ---------------- */
-  @media screen and (max-width: 768px) {
-    .membership-page { padding: 100px 20px; }
-    .main-title { font-size: 2.5rem; }
-    
-    .step-card {
-      flex-direction: column;
-      gap: 15px;
-      padding: 25px;
-    }
-
-    .card-left {
-      flex-direction: row;
-      width: 100%;
-      justify-content: space-between;
-    }
-
-    .step-icon-wrapper {
-      width: 40px; height: 40px; font-size: 1.1rem;
-    }
-  }
-`;
+        {step.actions.length > 0 && (
+          <div className="action-row">
+            {step.actions.map((action, idx) => (
+              <a
+                key={idx}
+                href={action.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`glass-btn ${action.primary ? "primary" : "secondary"}`}
+              >
+                {action.label}
+              </a>
+            ))}
+          </div>
+        )}
+      </div>
+    </m.div>
+  );
+});
 
 const Membership = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    console.log("✅ Admin shortcut (Ctrl + Shift + G) attached");
-
     const handleKeyDown = (e: KeyboardEvent) => {
       if (
         e.ctrlKey &&
@@ -365,14 +176,11 @@ const Membership = () => {
 
   return (
     <>
-      <style>{styles}</style>
-
-      <div className='membership-page'>
-
+      <div className="membership-page">
         {/* --- Header Section --- */}
         <div className="membership-header">
           <m.div
-            variants={fadeIn("down", 0)}
+            variants={fadeIn("down", 0.1)}
             initial="hidden"
             animate="show"
           >
@@ -382,17 +190,16 @@ const Membership = () => {
           </m.div>
 
           <m.h1
-            variants={fadeIn("up", 0)}
-            initial="hidden"
-            animate="show"
-            className="main-title"
-            viewport={{ once: false, amount: 0.7 }}
+            className="text-gradient"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
           >
-            ACM <span className="highlight-text">Membership Guide</span>
+            ACM MEMBERSHIP GUIDE
           </m.h1>
 
           <m.p
-            variants={fadeIn("up", 0.25)}
+            variants={fadeIn("up", 0.2)}
             initial="hidden"
             animate="show"
             className="sub-title"
@@ -401,74 +208,62 @@ const Membership = () => {
           </m.p>
         </div>
 
+        {/* --- Membership Benefits / Perks Grid --- */}
+        <div className="perks-grid">
+          {perksData.map((perk, i) => (
+            <PerkCard key={i} perk={perk} index={i} />
+          ))}
+        </div>
+
         {/* --- Alert Box --- */}
         <m.div
           className="alert-box"
-          variants={fadeIn("up", 0.35)}
+          variants={fadeIn("up", 0.4)}
           initial="hidden"
           animate="show"
         >
-          <div className="alert-icon"><FaExclamationTriangle /></div>
+          <div className="alert-icon">
+            <FaExclamationTriangle />
+          </div>
           <div className="alert-content">
             <h3>Critical Requirements</h3>
             <ul>
-              <li><strong>Do not create an account</strong> before paying for the membership.</li>
-              <li><strong>Verify your email</strong> spelling carefully. Use an active, accessible email address.</li>
+              <li>
+                <strong>Do not create an account</strong> before paying for the membership.
+              </li>
+              <li>
+                <strong>Verify your email</strong> spelling carefully. Use an active, accessible email address.
+              </li>
             </ul>
           </div>
         </m.div>
 
-        {/* --- Stacked Steps Container --- */}
+        {/* --- Registration Steps Divider --- */}
         <m.div
-          className="steps-container"
+          className="section-divider"
+          variants={fadeIn("up", 0.15)}
           initial="hidden"
-          animate="show"
+          whileInView="show"
+          viewport={{ once: false, amount: 0.2 }}
         >
-          {stepsData.map((step, index) => (
-            <m.div
-              key={step.id}
-              className="step-card"
-              variants={fadeIn("up", 0.15 + index * 0.1)}
-            >
-              {/* Left Column: Number & Icon */}
-              <div className="card-left">
-                <div className="step-number-badge">{step.id}</div>
-                <div className="step-icon-wrapper">
-                  {step.icon}
-                </div>
-              </div>
-
-              {/* Right Column: Content */}
-              <div className="card-content">
-                <h2>{step.title}</h2>
-                <p>{step.description}</p>
-
-                {step.actions.length > 0 && (
-                  <div className="action-row">
-                    {step.actions.map((action, idx) => (
-                      <a
-                        key={idx}
-                        href={action.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`glass-btn ${action.primary ? 'primary' : 'secondary'}`}
-                      >
-                        {action.label}
-                      </a>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </m.div>
-          ))}
+          <h2>Registration Roadmap</h2>
+          <p>Complete these 5 straightforward steps to activate your membership</p>
         </m.div>
+
+        {/* --- Stacked Steps Container --- */}
+        <div className="steps-container">
+          {stepsData.map((step) => (
+            <StepCard key={step.id} step={step} />
+          ))}
+        </div>
 
         {/* --- Footer --- */}
         <m.footer
           className="support-footer"
-          variants={fadeIn("up", 0.4)}
+          variants={fadeIn("up", 0.15)}
           initial="hidden"
-          animate="show"
+          whileInView="show"
+          viewport={{ once: false, amount: 0.2 }}
         >
           <p>Experiencing technical difficulties?</p>
           <a

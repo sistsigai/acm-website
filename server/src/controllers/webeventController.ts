@@ -5,6 +5,7 @@ import Registration from "../models/Registration";
 import QRCode from "qrcode";
 import { sendEventMail } from "../utils/sendMail";
 import cloudinary from "../utils/cloudinary";
+import streamifier from "streamifier";
 
 // --- VALIDATION TYPES AND RULES ---
 
@@ -194,25 +195,108 @@ const validateRegistrationData = (body: any): { isValid: boolean; errors: Valida
     }
   });
 
-  // Validate additional answers (if any)
-  if (body.answers && typeof body.answers === 'object') {
+  // Validate and extract from additional answers (dynamic form questions)
+  if (body.answers && typeof body.answers === "object") {
     sanitizedData.answers = {};
-    Object.keys(body.answers).forEach(key => {
+    Object.keys(body.answers).forEach((key) => {
       const value = body.answers[key];
-      const sanitizedValue = sanitizeInput(value || '', 'text');
+      const sanitizedValue = typeof value === "string" ? sanitizeInput(value, "text") : value;
       sanitizedData.answers[key] = sanitizedValue;
 
-      // Check if required
-      if (key.toLowerCase().includes('required') && !sanitizedValue.trim()) {
-        errors[key] = 'This field is required';
+      // Check if question key indicates it is required
+      if (
+        key.toLowerCase().includes("required") &&
+        (!sanitizedValue || (typeof sanitizedValue === "string" && !sanitizedValue.trim()))
+      ) {
+        errors[key] = "This field is required";
       }
     });
+
+    // 1. If email was not provided directly, extract from answers
+    if (!sanitizedData.email) {
+      for (const [key, val] of Object.entries(body.answers)) {
+        if (/email|mail/i.test(key) && typeof val === "string" && val.includes("@")) {
+          sanitizedData.email = val.toLowerCase().trim();
+          delete errors.email;
+          break;
+        }
+        if (
+          typeof val === "string" &&
+          /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(val.trim())
+        ) {
+          sanitizedData.email = val.toLowerCase().trim();
+          delete errors.email;
+          break;
+        }
+      }
+    }
+
+    // 2. If name was not provided directly, extract from answers
+    if (!sanitizedData.name) {
+      for (const [key, val] of Object.entries(body.answers)) {
+        if (/name/i.test(key) && typeof val === "string" && val.trim()) {
+          sanitizedData.name = val.trim();
+          delete errors.name;
+          break;
+        }
+      }
+    }
+
+    // 3. If phone was not provided directly, extract from answers
+    if (!sanitizedData.phone) {
+      for (const [key, val] of Object.entries(body.answers)) {
+        if (/phone|mobile|whatsapp/i.test(key) && typeof val === "string" && val.trim()) {
+          sanitizedData.phone = val.replace(/\D/g, "");
+          delete errors.phone;
+          break;
+        }
+      }
+    }
+
+    // 4. If register number was not provided directly, extract from answers
+    if (!sanitizedData.registerNo) {
+      for (const [key, val] of Object.entries(body.answers)) {
+        if (/register|reg\s*no|roll|admission/i.test(key) && typeof val === "string" && val.trim()) {
+          sanitizedData.registerNo = val.trim();
+          delete errors.registerNo;
+          break;
+        }
+      }
+    }
+
+    // For dynamic forms, default missing non-critical institutional fields to "N/A"
+    if (Object.keys(body.answers).length > 0) {
+      if (!sanitizedData.name) {
+        sanitizedData.name = "Attendee";
+        delete errors.name;
+      }
+      if (!sanitizedData.registerNo) {
+        sanitizedData.registerNo = "N/A";
+        delete errors.registerNo;
+      }
+      if (!sanitizedData.dept) {
+        sanitizedData.dept = "N/A";
+        delete errors.dept;
+      }
+      if (!sanitizedData.year) {
+        sanitizedData.year = "N/A";
+        delete errors.year;
+      }
+      if (!sanitizedData.section) {
+        sanitizedData.section = "N/A";
+        delete errors.section;
+      }
+      if (!sanitizedData.phone) {
+        sanitizedData.phone = "N/A";
+        delete errors.phone;
+      }
+    }
   }
 
   return {
     isValid: Object.keys(errors).length === 0,
     errors,
-    sanitizedData
+    sanitizedData,
   };
 };
 
@@ -294,13 +378,26 @@ export const registerForEvent = async (
 
     // Additional validation: Check if event is closed
     const currentDate = new Date();
-    const eventDateTime = new Date(event.date + ' ' + event.time);
+    
+    // If a custom registration end date is specified, close at end of that date
+    if (event.registrationEndDate) {
+      const regEndDateTime = new Date(`${event.registrationEndDate}T23:59:59`);
+      if (!isNaN(regEndDateTime.getTime()) && currentDate > regEndDateTime) {
+        return res.status(400).json({
+          success: false,
+          message: "Event registration is closed. The registration deadline has passed.",
+        });
+      }
+    } else {
+      const startTimeStr = event.time ? event.time.split(/[-–—]|to/i)[0]?.trim() : "";
+      const eventDateTime = new Date(event.date + ' ' + startTimeStr);
 
-    if (eventDateTime < currentDate) {
-      return res.status(400).json({
-        success: false,
-        message: "Event registration is closed. The event has already passed.",
-      });
+      if (!isNaN(eventDateTime.getTime()) && eventDateTime < currentDate) {
+        return res.status(400).json({
+          success: false,
+          message: "Event registration is closed. The event has already passed.",
+        });
+      }
     }
 
     /* ---------------- DUPLICATE CHECK ---------------- */
@@ -313,13 +410,15 @@ export const registerForEvent = async (
       });
     }
 
-    // Check by register number
-    const alreadyRegisteredByRegNo = await Registration.findOne({ eventId, registerNo });
-    if (alreadyRegisteredByRegNo) {
-      return res.status(409).json({
-        success: false,
-        message: "This register number has already been registered for this event",
-      });
+    // Check by register number (if provided and not N/A)
+    if (registerNo && registerNo !== "N/A") {
+      const alreadyRegisteredByRegNo = await Registration.findOne({ eventId, registerNo });
+      if (alreadyRegisteredByRegNo) {
+        return res.status(409).json({
+          success: false,
+          message: "This register number has already been registered for this event",
+        });
+      }
     }
 
     /* ---------------- SAVE REGISTRATION ---------------- */
@@ -338,10 +437,12 @@ export const registerForEvent = async (
     /* ---------------- GENERATE QR ---------------- */
     const qrPayload = Buffer.from(
       JSON.stringify({
+        type: "ACM_SIGAI_EVENT_TICKET",
         registrationId: registration._id.toString(),
+        eventId: eventId.toString(),
         email,
-        eventId,
-        timestamp: Date.now()
+        name,
+        timestamp: Date.now(),
       })
     ).toString("base64");
 
@@ -485,20 +586,16 @@ export const registerForEvent = async (
                     <td style="font-weight: 600;">${registerNo}</td>
                   </tr>
                   <tr>
-                    <td style="color: #94a3b8; font-weight: 500;">Department</td>
-                    <td style="font-weight: 600;">${dept}</td>
-                  </tr>
-                  <tr>
-                    <td style="color: #94a3b8; font-weight: 500;">Class</td>
-                    <td style="font-weight: 600;">Year ${year} - Section ${section}</td>
-                  </tr>
-                  <tr>
                     <td style="color: #94a3b8; font-weight: 500;">Event</td>
                     <td style="font-weight: 600;">${event.name}</td>
                   </tr>
                   <tr>
-                    <td style="color: #94a3b8; font-weight: 500;">Date & Time</td>
-                    <td style="font-weight: 600;">${event.date} at ${event.time}</td>
+                    <td style="color: #94a3b8; font-weight: 500;">Date</td>
+                    <td style="font-weight: 600;">${event.date}</td>
+                  </tr>
+                  <tr>
+                    <td style="color: #94a3b8; font-weight: 500;">Time</td>
+                    <td style="font-weight: 600;">${event.time}</td>
                   </tr>
                   <tr>
                     <td style="color: #94a3b8; font-weight: 500;">Venue</td>
@@ -585,6 +682,199 @@ export const registerForEvent = async (
       success: false,
       message: "Internal server error. Please try again later.",
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+/* ---------------- UPLOAD REGISTRATION FILE TO CLOUDINARY ---------------- */
+export const uploadEventRegistrationFile = async (
+  req: Request & { file?: any },
+  res: Response
+) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "No file provided",
+      });
+    }
+
+    const { eventId } = req.body;
+    if (!eventId || !mongoose.Types.ObjectId.isValid(eventId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Valid Event ID is required",
+      });
+    }
+
+    const event = await Event.findById(eventId).lean();
+    if (!event) {
+      return res.status(404).json({
+        success: false,
+        message: "Event not found",
+      });
+    }
+
+    // Build hierarchical folder: files/<eventName>
+    const sanitizedEventName = (event.name || "Event")
+      .trim()
+      .replace(/[^a-zA-Z0-9_\-\s]/g, "")
+      .replace(/\s+/g, "_");
+    const cloudinaryFolder = `files/${sanitizedEventName}`;
+
+    // Upload to Cloudinary using streamifier with resource_type: "auto"
+    const uploadResult = await new Promise<{ url: string; public_id: string; resource_type: string }>(
+      (resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          {
+            folder: cloudinaryFolder,
+            resource_type: "auto",
+            filename_override: req.file.originalname,
+            use_filename: true,
+            unique_filename: true,
+            access_mode: "public",
+          },
+          (error, result) => {
+            if (error || !result) return reject(error);
+            resolve({
+              url: result.secure_url,
+              public_id: result.public_id,
+              resource_type: result.resource_type || "auto",
+            });
+          }
+        );
+
+        streamifier.createReadStream(req.file.buffer).pipe(stream);
+      }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "File uploaded successfully to event folder",
+      url: uploadResult.url,
+      public_id: uploadResult.public_id,
+      resource_type: uploadResult.resource_type,
+      originalName: req.file.originalname,
+      size: req.file.size,
+      folder: cloudinaryFolder,
+    });
+  } catch (error: any) {
+    console.error("❌ Registration file upload error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to upload file to Cloudinary",
+      error: error.message,
+    });
+  }
+};
+
+/* ---------------- DELETE REGISTRATION FILE FROM CLOUDINARY ---------------- */
+export const deleteEventRegistrationFile = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { public_id, resource_type, url, files } = req.body;
+
+    const filesToDelete: Array<{
+      public_id?: string;
+      resource_type?: string;
+      url?: string;
+    }> = [];
+
+    if (Array.isArray(files) && files.length > 0) {
+      filesToDelete.push(...files);
+    } else if (public_id || url) {
+      filesToDelete.push({ public_id, resource_type, url });
+    }
+
+    if (filesToDelete.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "public_id, url, or files array is required",
+      });
+    }
+
+    const deleteResults = await Promise.allSettled(
+      filesToDelete.map(async (item) => {
+        let targetPublicId = item.public_id;
+        let targetResourceType = item.resource_type || "auto";
+
+        // If public_id is not passed, extract from Cloudinary URL
+        if (!targetPublicId && item.url && typeof item.url === "string") {
+          try {
+            const urlObj = new URL(item.url);
+            const pathParts = urlObj.pathname.split("/upload/");
+            if (pathParts.length > 1) {
+              let afterUpload = pathParts[1].replace(/^v\d+\//, "");
+              targetPublicId = afterUpload;
+
+              if (urlObj.pathname.includes("/raw/upload/")) {
+                targetResourceType = "raw";
+              } else if (urlObj.pathname.includes("/image/upload/")) {
+                targetResourceType = "image";
+                targetPublicId = targetPublicId.replace(/\.[^/.]+$/, "");
+              } else if (urlObj.pathname.includes("/video/upload/")) {
+                targetResourceType = "video";
+                targetPublicId = targetPublicId.replace(/\.[^/.]+$/, "");
+              }
+            }
+          } catch (e) {
+            console.error("URL parse error during Cloudinary delete:", e);
+          }
+        }
+
+        if (!targetPublicId) {
+          return { status: "skipped", reason: "no public_id could be determined" };
+        }
+
+        const primaryType = targetResourceType === "auto" ? "image" : targetResourceType;
+        let resDestroy = await cloudinary.uploader.destroy(targetPublicId, {
+          resource_type: primaryType,
+          invalidate: true,
+        });
+
+        // If not found in primaryType, try raw or image as fallback
+        if (resDestroy.result === "not found") {
+          const fallbackType = primaryType === "raw" ? "image" : "raw";
+          const resFallback = await cloudinary.uploader.destroy(targetPublicId, {
+            resource_type: fallbackType,
+            invalidate: true,
+          });
+          if (resFallback.result === "ok") {
+            resDestroy = resFallback;
+          }
+        }
+
+        // Try raw with the unstripped extension if still not found
+        if (resDestroy.result === "not found" && item.url) {
+          const match = item.url.match(/\/upload\/(?:v\d+\/)?(.+)$/);
+          if (match && match[1] && match[1] !== targetPublicId) {
+            const resWithExt = await cloudinary.uploader.destroy(match[1], {
+              resource_type: "raw",
+              invalidate: true,
+            });
+            if (resWithExt.result === "ok") {
+              resDestroy = resWithExt;
+            }
+          }
+        }
+
+        return { public_id: targetPublicId, result: resDestroy.result };
+      })
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Cloudinary delete request completed",
+      results: deleteResults,
+    });
+  } catch (error: any) {
+    console.error("❌ Registration file delete error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to delete file(s) from Cloudinary",
+      error: error.message,
     });
   }
 };

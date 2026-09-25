@@ -41,7 +41,7 @@ const Spaceday = () => {
           background: linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.85)), url(${spaceBg});
           background-size: cover;
           background-position: center;
-          background-attachment: fixed; 
+          background-attachment: scroll; 
           background-repeat: no-repeat;
         }
 
@@ -51,7 +51,7 @@ const Spaceday = () => {
         }
 
         .text-gradient {
-            background: linear-gradient(135deg, #fff 0%, var(--primary-blue, #0099ff) 100%);
+            background: linear-gradient(135deg, #fff 0%, var(--primary-blue, var(--primary-blue)) 100%);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             font-weight: 900;
             letter-spacing: -2px;
@@ -67,7 +67,7 @@ const Spaceday = () => {
         }
 
         .highlight-blue {
-            color: #0099ff; /* Primary Blue */
+            color: var(--primary-blue); /* Primary Blue */
         }
 
         p.content-text {
@@ -281,7 +281,7 @@ const Spaceday = () => {
                 variants={fadeIn("up", 0.2)}
                 initial="hidden"
                 whileInView="show"
-                viewport={{ once: true, amount: 0.1 }}
+                viewport={{ once: true, amount: 0.3 }}
             >
                 GUEST OF <span className="highlight-blue">HONOUR</span>
             </m.h2>
@@ -313,7 +313,7 @@ const Spaceday = () => {
                 variants={fadeIn("up", 0.2)}
                 initial="hidden"
                 whileInView="show"
-                viewport={{ once: true, amount: 0.1 }}
+                viewport={{ once: true, amount: 0.3 }}
             >
                 KEY <span className="highlight-blue">HIGHLIGHTS</span>
             </m.h2>

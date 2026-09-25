@@ -1,10 +1,20 @@
 import mongoose from "mongoose";
+import dns from "node:dns";
 
 const connectDB = async () => {
     try {
         // Validate MongoDB URI
         if (!process.env.MONGO_URI) {
             throw new Error("MONGO_URI is not defined in environment variables");
+        }
+
+        // Configure DNS resolvers if using mongodb+srv to prevent querySrv ECONNREFUSED on local routers
+        if (process.env.MONGO_URI.startsWith("mongodb+srv://")) {
+            try {
+                dns.setServers(["8.8.8.8", "1.1.1.1"]);
+            } catch (dnsErr) {
+                console.warn("⚠️ Warning: Could not set custom DNS servers:", dnsErr);
+            }
         }
 
         const options: mongoose.ConnectOptions = {

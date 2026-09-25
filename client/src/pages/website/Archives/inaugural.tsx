@@ -35,7 +35,7 @@ const Inaugural = () => {
           background: linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.85)), url(${bgImage});
           background-size: cover;
           background-position: center;
-          background-attachment: fixed; 
+          background-attachment: scroll; 
           background-repeat: no-repeat;
         }
 
@@ -273,7 +273,7 @@ const Inaugural = () => {
         variants={fadeIn("up", 0.2)}
         initial="hidden"
         whileInView="show"
-        viewport={{ once: false, amount: 0.3 }}
+        viewport={{ once: true, amount: 0.3 }}
       >
         GUESTS OF <span className="highlight-blue">HONOUR</span>
       </m.h2>
@@ -284,7 +284,7 @@ const Inaugural = () => {
         variants={fadeIn("up", 0.3)}
         initial="hidden"
         whileInView="show"
-        viewport={{ once: false, amount: 0.3 }}
+        viewport={{ once: true, amount: 0.3 }}
       >
         <div className="guest-card">
           <img src={inauguralchiefguest} alt="Ms. Rajalakshmi Srinivasan" />
@@ -306,7 +306,7 @@ const Inaugural = () => {
         variants={fadeIn("up", 0.2)}
         initial="hidden"
         whileInView="show"
-        viewport={{ once: false, amount: 0.3 }}
+        viewport={{ once: true, amount: 0.3 }}
       >
         KEY <span className="highlight-blue">HIGHLIGHTS</span>
       </m.h2>
@@ -317,7 +317,7 @@ const Inaugural = () => {
           variants={fadeIn("up", 0.2)}
           initial="hidden"
           whileInView="show"
-          viewport={{ once: false }}
+          viewport={{ once: true }}
         >
           Ceremonial lighting of the lamp followed by a welcome address by <strong>Dean of School of Computing, Dr. T. Sasikala</strong>.
           <strong> Mrs. Rajalakshmi Srinivasan</strong>, Director of Product Management at Zoho Corporations, emphasized the importance of practical learning.
@@ -330,7 +330,7 @@ const Inaugural = () => {
           variants={fadeIn("up", 0.2)}
           initial="hidden"
           whileInView="show"
-          viewport={{ once: false }}
+          viewport={{ once: true }}
         >
           <strong>The Head of Computer Science and Engineering department, Dr. S. Vigneshwari</strong> took a moment to express her appreciation for the Chairperson, Vice Chairperson, and every member of the core unit and she spoke very enthusiastically about the projects related to AI and her vision to bring the community together.
         </m.p>
@@ -340,7 +340,7 @@ const Inaugural = () => {
           variants={fadeIn("up", 0.2)}
           initial="hidden"
           whileInView="show"
-          viewport={{ once: false }}
+          viewport={{ once: true }}
         >
           The core unit of the club were introduced by the Chairperson. Each and every member was called onto the stage and was presented with ID cards by our respectful Vice president mam and Vice Chancellor mam.
         </m.p>
@@ -350,7 +350,7 @@ const Inaugural = () => {
           variants={fadeIn("up", 0.2)}
           initial="hidden"
           whileInView="show"
-          viewport={{ once: false }}
+          viewport={{ once: true }}
         >
           <strong>Core Unit:</strong> Chairperson - Gowtham S, Vice Chairperson – Bharath Kodidasu, Treasurer – Deekshitha Uppu, and our dedicated team members: Bellamkonda Harithreenath, Aditya Sai Teja B, Siva Krishna Adimulam, Manisri Venkatesh, Meghana Tanikella, Battina Vaishnavi, Niharika Ramayanam, D V Bhuvanesh, Ram Prasath, Sushree Sonali Patra, Vedha Varshini Vijay Ananth, Faheem Mohamed Rafi, Devendra Reddy, Janllyn Avantikha.
         </m.p>

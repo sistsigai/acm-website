@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import bcrypt from "bcryptjs";
 import Admin from "../models/Admin";
 import { createAdminToken } from "../utils/jwt";
 
@@ -122,9 +123,17 @@ export const adminLogin = async (req: Request, res: Response) => {
       });
     }
 
-    /* ---------- PASSWORD CHECK ---------- */
+    /* ---------- PASSWORD CHECK & BCRYPT VERIFICATION ---------- */
 
-    if (admin.password !== password) {
+    const isPasswordValid = await admin.comparePassword(password);
+
+    if (isPasswordValid && !/^\$2[aby]\$\d{2}\$/.test(admin.password)) {
+      // If legacy plaintext, trigger model pre-save hook to hash
+      admin.password = password;
+      await admin.save();
+    }
+
+    if (!isPasswordValid) {
       return res.status(401).json({
         success: false,
         message: "Invalid credentials",
@@ -137,6 +146,16 @@ export const adminLogin = async (req: Request, res: Response) => {
       id: admin._id.toString(),
       role: admin.role
     });
+
+    /* ---------- SET HTTP-ONLY COOKIE ---------- */
+    const isProduction = process.env.NODE_ENV === "production";
+    res.cookie("adminToken", token, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
+      maxAge: 24 * 60 * 60 * 1000 // 1 day
+    });
+
     /* ---------- SUCCESS RESPONSE ---------- */
 
     return res.status(200).json({
@@ -167,4 +186,29 @@ export const adminLogin = async (req: Request, res: Response) => {
       timestamp: new Date().toISOString()
     });
   }
+};
+
+/* ---------------- ADMIN LOGOUT CONTROLLER ---------------- */
+
+export const adminLogout = async (_req: Request, res: Response) => {
+  const isProduction = process.env.NODE_ENV === "production";
+  res.clearCookie("adminToken", {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax"
+  });
+
+  return res.status(200).json({
+    success: true,
+    message: "Logged out successfully"
+  });
+};
+
+/* ---------------- VERIFY AUTH CONTROLLER ---------------- */
+
+export const verifyAuth = async (req: Request, res: Response) => {
+  return res.status(200).json({
+    success: true,
+    user: (req as any).admin
+  });
 };

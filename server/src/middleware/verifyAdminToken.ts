@@ -1,31 +1,40 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 
-interface JwtPayload {
+export interface AdminJwtPayload {
   id: string;
   role: string;
+  iat?: number;
+  exp?: number;
+  iss?: string;
+  aud?: string;
 }
 
 export interface AuthRequest extends Request {
-  admin?: any;
+  admin?: AdminJwtPayload;
 }
 
 const verifyAdminToken = (
-  req: any,
-  res: any,
+  req: Request & { admin?: AdminJwtPayload },
+  res: Response,
   next: NextFunction
 ) => {
   try {
-    const authHeader = req.headers?.authorization;
+    let token: string | undefined = req.cookies?.adminToken;
 
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    if (!token) {
+      const authHeader = req.headers?.authorization;
+      if (authHeader && authHeader.startsWith("Bearer ")) {
+        token = authHeader.split(" ")[1];
+      }
+    }
+
+    if (!token) {
       return res.status(401).json({
         success: false,
         message: "Authorization token missing",
       });
     }
-
-    const token = authHeader.split(" ")[1];
 
     const jwtSecret = process.env.JWT_SECRET;
     if (!jwtSecret) {
@@ -35,7 +44,10 @@ const verifyAdminToken = (
       });
     }
 
-    const decoded = jwt.verify(token, jwtSecret) as JwtPayload;
+    const decoded = jwt.verify(token, jwtSecret, {
+      issuer: "acm-sigai-admin",
+      audience: "admin-panel"
+    }) as AdminJwtPayload;
 
     // attach admin info to request
     req.admin = decoded;

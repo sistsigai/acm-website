@@ -10,10 +10,12 @@ export const getTokenStorage = (rememberMe: boolean = false): Storage => {
 
 export const setAuthToken = (
   token: string,
-  rememberMe: boolean = false
+  rememberMe: boolean = true
 ): void => {
-  const storage = getTokenStorage(rememberMe);
-  storage.setItem("adminToken", token);
+  if (rememberMe) {
+    localStorage.setItem("adminToken", token);
+  }
+  sessionStorage.setItem("adminToken", token);
 
   axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 };
@@ -21,8 +23,24 @@ export const setAuthToken = (
 /* ---------------- REMOVE TOKEN ---------------- */
 
 export const clearAuthToken = (): void => {
-  localStorage.removeItem("adminToken");
-  sessionStorage.removeItem("adminToken");
+  try {
+    localStorage.removeItem("adminToken");
+    sessionStorage.removeItem("adminToken");
+    
+    // Clear any additional auth or admin state from storage
+    Object.keys(localStorage).forEach((key) => {
+      if (key.startsWith("admin") || key.startsWith("auth")) {
+        localStorage.removeItem(key);
+      }
+    });
+    Object.keys(sessionStorage).forEach((key) => {
+      if (key.startsWith("admin") || key.startsWith("auth")) {
+        sessionStorage.removeItem(key);
+      }
+    });
+  } catch (e) {
+    console.error("Error clearing auth storage:", e);
+  }
 
   delete axiosInstance.defaults.headers.common["Authorization"];
 };

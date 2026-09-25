@@ -8,7 +8,7 @@ export interface IQuestionOption {
 
 export interface IQuestionBase {
   id: string;
-  type: 'text' | 'textarea' | 'multiple-choice' | 'checkbox' | 'dropdown' | 'yes-no' | 'file';
+  type: 'text' | 'textarea' | 'multiple-choice' | 'checkbox' | 'dropdown' | 'yes-no' | 'file' | 'date' | 'time';
   question: string;
   required: boolean;
   description?: string;
@@ -97,7 +97,7 @@ const QuestionSchema = new Schema({
   type: { 
     type: String, 
     required: true,
-    enum: ['text', 'textarea', 'multiple-choice', 'checkbox', 'dropdown', 'yes-no', 'file']
+    enum: ['text', 'textarea', 'multiple-choice', 'checkbox', 'dropdown', 'yes-no', 'file', 'date', 'time']
   },
   question: { type: String, required: true },
   required: { type: Boolean, default: false },

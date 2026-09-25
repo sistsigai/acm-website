@@ -1,88 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import "bootstrap/dist/css/bootstrap.min.css";
-import "bootstrap-icons/font/bootstrap-icons.css";
 import { createPortal } from "react-dom";
-
-// --- Enhanced Glassmorphic CSS ---
-const toastStyles = `
-  .glass-toast-container {
-    /* 1. The Glass Base */
-    background: linear-gradient(
-      135deg, 
-      rgba(255, 255, 255, 0.75) 0%, 
-      rgba(255, 255, 255, 0.35) 100%
-    );
-    
-    /* 2. The Frost Effect */
-    backdrop-filter: blur(16px) saturate(180%);
-    -webkit-backdrop-filter: blur(16px) saturate(180%);
-    
-    /* 3. The Light Reflection Border (Top/Left white, Bottom/Right invisible) */
-    border: 1px solid rgba(255, 255, 255, 0.6);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-    border-right: 1px solid rgba(255, 255, 255, 0.2);
-    
-    /* 4. Shadow & Animation */
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
-    opacity: 0;
-    transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1);
-    
-    /* Rounded corners for organic feel */
-    border-radius: 16px;
-  }
-
-  /* Hover State - Slight lift and increased opacity */
-  .glass-toast-container:hover {
-    transform: translateY(-4px) scale(1.02) !important;
-    background: linear-gradient(
-      135deg, 
-      rgba(255, 255, 255, 0.85) 0%, 
-      rgba(255, 255, 255, 0.45) 100%
-    );
-    box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.2);
-  }
-
-  /* Active State */
-  .glass-toast-container.enter {
-    opacity: 1;
-  }
-
-  /* Text Styling */
-  .glass-text-title {
-    color: #2D3748;
-    font-weight: 600;
-    letter-spacing: -0.01em;
-  }
-  .glass-text-body {
-    color: #4A5568;
-    font-weight: 400;
-  }
-
-  /* Custom Scrollbar for longer content */
-  .glass-toast-container ::-webkit-scrollbar { width: 4px; }
-  .glass-toast-container ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 4px; }
-
-  /* Progress Bar Container */
-  .glass-progress-track {
-    background: rgba(255,255,255,0.3);
-    height: 4px;
-    width: 100%;
-    position: absolute;
-    bottom: 0;
-    left: 0;
-  }
-  
-  @keyframes shimmer {
-    0% { transform: translateX(-150%); }
-    50% { transform: translateX(100%); }
-    100% { transform: translateX(100%); }
-  }
-  
-  @keyframes toastProgress {
-    from { width: 100%; }
-    to { width: 0%; }
-  }
-`;
 
 const Portal = ({ children }: { children: React.ReactNode }) => {
   if (typeof document === "undefined") return null;
@@ -221,8 +138,6 @@ const Message: React.FC<MessageProps> = ({
 
   return (
     <Portal>
-      <style>{toastStyles}</style>
-
       <div
         className={`glass-toast-container d-flex flex-column overflow-hidden ${isMounted ? "enter" : ""} ${className}`}
         style={{

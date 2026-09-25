@@ -16,13 +16,6 @@ const LogoLoading = () => {
     height: '200px',
   };
 
-  const loadingTextStyle: CSSProperties = {
-    marginTop: '20px',
-    fontWeight: 'bold',
-    fontSize: '1.2em',
-    color: 'white',
-  };
-
   return (
     <motion.div 
       style={loadingContainerStyle}
@@ -37,14 +30,6 @@ const LogoLoading = () => {
         animate={{ rotateY: 360 }}
         transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
       />
-      <motion.p
-        style={loadingTextStyle}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.1 }}
-      >
-        {/* Add loading text here if needed */}
-      </motion.p>
     </motion.div>
   );
 };

@@ -38,7 +38,7 @@ const Azure = () => {
           background: linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.85)), url(${bgImage});
           background-size: cover;
           background-position: center;
-          background-attachment: fixed; 
+          background-attachment: scroll; 
           background-repeat: no-repeat;
         }
 
@@ -48,7 +48,7 @@ const Azure = () => {
         }
 
         .text-gradient {
-            background: linear-gradient(135deg, #fff 0%, var(--primary-blue, #0099ff) 100%);
+            background: linear-gradient(135deg, #fff 0%, var(--primary-blue, var(--primary-blue)) 100%);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             font-weight: 900;
             letter-spacing: -2px;
@@ -64,7 +64,7 @@ const Azure = () => {
         }
 
         .highlight-blue {
-            color: #0099ff; /* Azure Blue */
+            color: var(--primary-blue); /* Azure Blue */
         }
 
         p.content-text {
@@ -264,7 +264,7 @@ const Azure = () => {
                 <div className="marquee-track">
                     {sliderImages.map((img, index) => (
                         <div className="marquee-item" key={index}>
-                            <img src={img} alt="Azure Event Highlight" />
+                            <img src={img} alt={`Azure event photo ${index + 1}`} />
                         </div>
                     ))}
                 </div>
@@ -276,7 +276,7 @@ const Azure = () => {
                 variants={fadeIn("up", 0.2)}
                 initial="hidden"
                 whileInView="show"
-                viewport={{ once: false, amount: 0.3 }}
+                viewport={{ once: true, amount: 0.3 }}
             >
                 GUEST OF <span className="highlight-blue">HONOUR</span>
             </m.h2>
@@ -286,7 +286,7 @@ const Azure = () => {
                 variants={fadeIn("up", 0.3)}
                 initial="hidden"
                 whileInView="show"
-                viewport={{ once: false, amount: 0.3 }}
+                viewport={{ once: true, amount: 0.3 }}
             >
                 <div className="guest-card">
                     <img src={BASHEER} alt="Mr. Harun Raseed Basheer" />
@@ -308,7 +308,7 @@ const Azure = () => {
                 variants={fadeIn("up", 0.2)}
                 initial="hidden"
                 whileInView="show"
-                viewport={{ once: false, amount: 0.3 }}
+                viewport={{ once: true, amount: 0.3 }}
             >
                 KEY <span className="highlight-blue">HIGHLIGHTS</span>
             </m.h2>
@@ -319,7 +319,7 @@ const Azure = () => {
                     variants={fadeIn("up", 0.2)}
                     initial="hidden"
                     whileInView="show"
-                    viewport={{ once: false }}
+                    viewport={{ once: true }}
                 >
                     The speaker took the lead making the session really interesting. By the end of the session, all the students in the room were familiar with the key concepts of cloud computing. The students were also informed in detail about the Microsoft Student Ambassador program and its benefits. The session has been interactive and extremely informative.
                 </m.p>
@@ -329,7 +329,7 @@ const Azure = () => {
                     variants={fadeIn("up", 0.2)}
                     initial="hidden"
                     whileInView="show"
-                    viewport={{ once: false }}
+                    viewport={{ once: true }}
                 >
                     After this session, the speaker was presented with a memento by our respected HOD, <strong>Dr. S Vigneshwari</strong> and <strong>Dr. R Sathyabama Krishna, Dr. Anubharathi.</strong>
                 </m.p>
@@ -339,7 +339,7 @@ const Azure = () => {
                     variants={fadeIn("up", 0.2)}
                     initial="hidden"
                     whileInView="show"
-                    viewport={{ once: false }}
+                    viewport={{ once: true }}
                 >
                     The event was then followed by an empowering speech about mental health given by our very own treasurer of SIST ACM SIGAI Student Chapter, <strong>Ms. Deekshitha</strong>. The audience was ecstatic after listening to her motivating words and her own experiences. The students actively participated in the discussion by sharing their personal views too.
                 </m.p>
@@ -349,7 +349,7 @@ const Azure = () => {
                     variants={fadeIn("up", 0.2)}
                     initial="hidden"
                     whileInView="show"
-                    viewport={{ once: false }}
+                    viewport={{ once: true }}
                 >
                     We concluded the event by launching our SIST ACM SIGAI Student Chapter's official website. Our core team member <strong>Ms. Janllyn Avantika</strong> presented and explained all the features of the website to the audience.
                 </m.p>
@@ -359,7 +359,7 @@ const Azure = () => {
                     variants={fadeIn("up", 0.2)}
                     initial="hidden"
                     whileInView="show"
-                    viewport={{ once: false }}
+                    viewport={{ once: true }}
                 >
                     Overall it has been an overwhelming experience and we received a positive response from the students and the dignitaries who attended the event. We are excited and are looking forward to conducting more events this way and hope we get a similar, encouraging response.
                 </m.p>
