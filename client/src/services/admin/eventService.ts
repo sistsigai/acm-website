@@ -108,15 +108,15 @@ export const createEvent = async (payload: CreateEventPayload) => {
 /* ---------------- GET ALL EVENTS ---------------- */
 export const getAllEvents = async () => {
   try {
-    const res = await axiosInstance.get("/admin/eventmanager/getAll");
-    return res.data;
+    const res = await axiosInstance.get("/events/getallmem");
+    return {
+      success: true,
+      events: Array.isArray(res.data) ? res.data : (res.data?.events || []),
+    };
   } catch {
     try {
-      const res = await axiosInstance.get("/events/getallmem");
-      return {
-        success: true,
-        events: Array.isArray(res.data) ? res.data : (res.data?.events || []),
-      };
+      const res = await axiosInstance.get("/admin/eventmanager/getAll");
+      return res.data;
     } catch (err: any) {
       throw new Error(
         err?.response?.data?.message ||
@@ -251,17 +251,13 @@ export const scanAttendanceQr = async (
       qrData,
     });
     return res.data;
-  } catch {
-    try {
-      const res = await axiosInstance.post(`/admin/eventmanager/${eventId}/attendance/scan`, {
-        qrData,
-      });
-      return res.data;
-    } catch (err: any) {
-      throw new Error(
-        err?.response?.data?.message || "Failed to scan and verify QR ticket"
-      );
-    }
+  } catch (err: any) {
+    const message =
+      err?.response?.data?.message ||
+      err?.response?.data?.error ||
+      err?.message ||
+      "Failed to scan and verify QR ticket";
+    throw new Error(message);
   }
 };
 

@@ -81,26 +81,42 @@ export const scanAttendanceQr = async (req: Request, res: Response) => {
     let resolvedRegistrationId = directRegId;
 
     if (!resolvedRegistrationId && qrData) {
-      const cleanData = String(qrData).trim();
+      let cleanData = String(qrData).trim();
+
+      // Handle URI encoded strings
+      if (cleanData.includes("%7B") || cleanData.includes("%22") || cleanData.includes("%3A")) {
+        try {
+          cleanData = decodeURIComponent(cleanData);
+        } catch {}
+      }
 
       // 1. Try parsing raw JSON
       try {
         const parsed = JSON.parse(cleanData);
         if (parsed.registrationId) {
           resolvedRegistrationId = parsed.registrationId;
+        } else if (parsed._id) {
+          resolvedRegistrationId = parsed._id;
+        } else if (parsed.id) {
+          resolvedRegistrationId = parsed.id;
         }
       } catch {
-        // 2. Try base64 decoded JSON
+        // 2. Try base64 decoded JSON / string
         try {
           const decoded = Buffer.from(cleanData, "base64").toString("utf-8");
           const parsed = JSON.parse(decoded);
           if (parsed.registrationId) {
             resolvedRegistrationId = parsed.registrationId;
+          } else if (parsed._id) {
+            resolvedRegistrationId = parsed._id;
+          } else if (parsed.id) {
+            resolvedRegistrationId = parsed.id;
           }
         } catch {
-          // 3. Fallback: raw ObjectId string
-          if (mongoose.Types.ObjectId.isValid(cleanData)) {
-            resolvedRegistrationId = cleanData;
+          // 3. Try regex match for ObjectId in URLs or query strings
+          const objectIdMatch = cleanData.match(/[0-9a-fA-F]{24}/);
+          if (objectIdMatch) {
+            resolvedRegistrationId = objectIdMatch[0];
           }
         }
       }
@@ -109,7 +125,7 @@ export const scanAttendanceQr = async (req: Request, res: Response) => {
     if (!resolvedRegistrationId || !mongoose.Types.ObjectId.isValid(resolvedRegistrationId)) {
       return res.status(400).json({
         success: false,
-        message: "Invalid QR code format. Could not extract valid registration data.",
+        message: "Invalid QR code format. Could not extract valid registration ticket data.",
       });
     }
 
@@ -119,7 +135,7 @@ export const scanAttendanceQr = async (req: Request, res: Response) => {
     if (!registration) {
       return res.status(404).json({
         success: false,
-        message: "Registration record not found for this ticket.",
+        message: "Registration ticket record not found in system.",
       });
     }
 
@@ -127,7 +143,7 @@ export const scanAttendanceQr = async (req: Request, res: Response) => {
     if (registration.eventId.toString() !== eventId.toString()) {
       return res.status(400).json({
         success: false,
-        message: "Ticket mismatch: This QR code belongs to a different event!",
+        message: "Ticket Mismatch: This QR code belongs to a different event!",
       });
     }
 
