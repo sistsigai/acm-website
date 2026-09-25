@@ -129,6 +129,9 @@ const MobileScanner: React.FC = () => {
             email: attendee?.email,
             phone: attendee?.phone,
             dept: attendee?.dept,
+            year: attendee?.year,
+            section: attendee?.section,
+            answers: attendee?.answers,
             checkedInAt: res.checkedInAt || attendee?.checkedInAt || undefined,
           });
         } else {
@@ -141,6 +144,9 @@ const MobileScanner: React.FC = () => {
             email: attendee?.email,
             phone: attendee?.phone,
             dept: attendee?.dept,
+            year: attendee?.year,
+            section: attendee?.section,
+            answers: attendee?.answers,
             checkedInAt: res.checkedInAt || new Date().toISOString(),
           });
         }
@@ -152,6 +158,7 @@ const MobileScanner: React.FC = () => {
         });
       }
     } catch (err: any) {
+      console.error("Attendance QR scan error:", err);
       scannerFeedback.playError();
       setScanResult({
         status: "invalid",
