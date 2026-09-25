@@ -62,12 +62,17 @@ export const EventAttendeesModal: React.FC<EventAttendeesModalProps> = ({
   // Filtered Roster
   const filteredRegistrations = useMemo(() => {
     return registrations.filter((att) => {
+      const name = att.name || "";
+      const email = att.email || "";
+      const regNo = att.registerNo || "";
+      const phone = att.phone || "";
+
       const matchSearch =
         !searchTerm.trim() ||
-        att.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        att.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        att.registerNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (att.phone && att.phone.includes(searchTerm));
+        name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        regNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (phone && phone.includes(searchTerm));
 
       const matchStatus =
         statusFilter === "all" ||

@@ -3,6 +3,108 @@ import mongoose from "mongoose";
 import Registration from "../models/Registration";
 import Event from "../models/events";
 
+/**
+ * Helper to get the active registration MongoDB collection(s) dynamically
+ */
+const getRegistrationCollections = async (): Promise<mongoose.mongo.Collection[]> => {
+  const db = mongoose.connection.db;
+  if (!db) {
+    return [mongoose.connection.collection("Eventregistrations")];
+  }
+
+  try {
+    const list = await db.listCollections().toArray();
+    const names = list.map((c) => c.name);
+
+    // Candidates in priority order
+    const candidates = [
+      "Eventregistrations",
+      "eventregistrations",
+      "registrations",
+      "EventRegistrations",
+      "event_registrations",
+    ];
+
+    const matched = candidates.filter((cand) => names.includes(cand));
+    if (matched.length > 0) {
+      return matched.map((name) => db.collection(name));
+    }
+  } catch (e) {
+    console.warn("Could not list collections:", e);
+  }
+
+  return [mongoose.connection.collection("Eventregistrations")];
+};
+
+/**
+ * Normalize an attendee document to ensure all standard fields are populated
+ */
+const normalizeAttendeeDoc = (doc: any) => {
+  const answersMap =
+    doc.answers instanceof Map
+      ? Object.fromEntries(doc.answers)
+      : typeof doc.answers === "object" && doc.answers !== null
+      ? doc.answers
+      : {};
+
+  const name =
+    doc.name ||
+    answersMap["Full Name"] ||
+    answersMap["Name"] ||
+    answersMap["fullname"] ||
+    answersMap["name"] ||
+    "Attendee";
+
+  const registerNo =
+    doc.registerNo ||
+    answersMap["Register Number"] ||
+    answersMap["Register No"] ||
+    answersMap["regno"] ||
+    answersMap["regNumber"] ||
+    "N/A";
+
+  const email =
+    doc.email ||
+    answersMap["Email ID"] ||
+    answersMap["Email Address"] ||
+    answersMap["email"] ||
+    "N/A";
+
+  const phone =
+    doc.phone ||
+    answersMap["Mobile Number"] ||
+    answersMap["Phone Number"] ||
+    answersMap["phone"] ||
+    "N/A";
+
+  const dept =
+    doc.dept ||
+    answersMap["Department"] ||
+    answersMap["dept"] ||
+    "N/A";
+
+  const year = doc.year || answersMap["Year"] || answersMap["year"] || "";
+  const section = doc.section || answersMap["Section"] || answersMap["section"] || "";
+
+  return {
+    _id: String(doc._id),
+    eventId: String(doc.eventId),
+    name,
+    registerNo,
+    dept,
+    year,
+    section,
+    email,
+    phone,
+    answers: answersMap,
+    entry: Boolean(doc.entry),
+    checkedInAt: doc.checkedInAt || null,
+    qrUrl: doc.qrUrl || null,
+    createdAt: doc.createdAt || new Date().toISOString(),
+    updatedAt: doc.updatedAt || new Date().toISOString(),
+  };
+};
+
 /* ---------------- GET EVENT REGISTRATIONS & METRICS ---------------- */
 export const getEventRegistrations = async (req: Request, res: Response) => {
   try {
@@ -16,42 +118,73 @@ export const getEventRegistrations = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: "Invalid event ID format" });
     }
 
-    // Build base filter
-    const filter: any = { eventId };
+    const eventObjId = new mongoose.Types.ObjectId(eventId);
+    const eventStrId = eventId.toString();
 
-    if (status === "present") {
-      filter.entry = true;
-    } else if (status === "absent") {
-      filter.entry = { $ne: true };
+    const collections = await getRegistrationCollections();
+    let allDocs: any[] = [];
+    let totalRegistered = 0;
+    let totalPresent = 0;
+
+    for (const coll of collections) {
+      // 1. Fetch all docs for this event
+      const rawDocs = await coll
+        .find({
+          $or: [{ eventId: eventObjId }, { eventId: eventStrId }],
+        })
+        .sort({ createdAt: -1 })
+        .toArray();
+
+      if (rawDocs && rawDocs.length > 0) {
+        allDocs.push(...rawDocs);
+      }
     }
 
-    if (search && search.trim()) {
-      const searchRegex = new RegExp(search.trim(), "i");
-      filter.$or = [
-        { name: searchRegex },
-        { email: searchRegex },
-        { registerNo: searchRegex },
-        { phone: searchRegex },
-        { dept: searchRegex },
-      ];
+    // De-duplicate by _id
+    const seenIds = new Set<string>();
+    const uniqueRawDocs: any[] = [];
+    for (const doc of allDocs) {
+      const idStr = String(doc._id);
+      if (!seenIds.has(idStr)) {
+        seenIds.add(idStr);
+        uniqueRawDocs.push(doc);
+      }
     }
 
-    // Fetch registrations
-    const registrations = await Registration.find(filter).sort({ createdAt: -1 }).lean();
+    // Normalize docs
+    const normalizedList = uniqueRawDocs.map(normalizeAttendeeDoc);
 
-    // Calculate overall stats for this event (ignoring search / status filters)
-    const [totalRegistered, totalPresent] = await Promise.all([
-      Registration.countDocuments({ eventId }),
-      Registration.countDocuments({ eventId, entry: true }),
-    ]);
-
+    // Calculate metrics
+    totalRegistered = normalizedList.length;
+    totalPresent = normalizedList.filter((d) => d.entry).length;
     const totalAbsent = Math.max(0, totalRegistered - totalPresent);
     const attendanceRate =
       totalRegistered > 0 ? Math.round((totalPresent / totalRegistered) * 100) : 0;
 
+    // Apply filtering on normalized data
+    let filteredList = normalizedList;
+
+    if (status === "present") {
+      filteredList = filteredList.filter((d) => d.entry);
+    } else if (status === "absent") {
+      filteredList = filteredList.filter((d) => !d.entry);
+    }
+
+    if (search && search.trim()) {
+      const q = search.trim().toLowerCase();
+      filteredList = filteredList.filter(
+        (d) =>
+          d.name.toLowerCase().includes(q) ||
+          d.email.toLowerCase().includes(q) ||
+          d.registerNo.toLowerCase().includes(q) ||
+          d.phone.toLowerCase().includes(q) ||
+          d.dept.toLowerCase().includes(q)
+      );
+    }
+
     return res.status(200).json({
       success: true,
-      registrations,
+      registrations: filteredList,
       metrics: {
         totalRegistered,
         totalPresent,
@@ -113,7 +246,7 @@ export const scanAttendanceQr = async (req: Request, res: Response) => {
             resolvedRegistrationId = parsed.id;
           }
         } catch {
-          // 3. Try regex match for ObjectId in URLs or query strings
+          // 3. Try regex match for ObjectId in URLs or strings
           const objectIdMatch = cleanData.match(/[0-9a-fA-F]{24}/);
           if (objectIdMatch) {
             resolvedRegistrationId = objectIdMatch[0];
@@ -129,10 +262,24 @@ export const scanAttendanceQr = async (req: Request, res: Response) => {
       });
     }
 
-    // Find the attendee registration
-    const registration = await Registration.findById(resolvedRegistrationId);
+    const targetRegObjId = new mongoose.Types.ObjectId(resolvedRegistrationId);
+    const collections = await getRegistrationCollections();
 
-    if (!registration) {
+    let targetDoc: any = null;
+    let targetColl: mongoose.mongo.Collection | null = null;
+
+    for (const coll of collections) {
+      const doc = await coll.findOne({
+        $or: [{ _id: targetRegObjId }, { _id: resolvedRegistrationId as any }],
+      });
+      if (doc) {
+        targetDoc = doc;
+        targetColl = coll;
+        break;
+      }
+    }
+
+    if (!targetDoc || !targetColl) {
       return res.status(404).json({
         success: false,
         message: "Registration ticket record not found in system.",
@@ -140,7 +287,7 @@ export const scanAttendanceQr = async (req: Request, res: Response) => {
     }
 
     // Ensure the ticket belongs to THIS specific event
-    if (registration.eventId.toString() !== eventId.toString()) {
+    if (String(targetDoc.eventId) !== String(eventId)) {
       return res.status(400).json({
         success: false,
         message: "Ticket Mismatch: This QR code belongs to a different event!",
@@ -148,27 +295,34 @@ export const scanAttendanceQr = async (req: Request, res: Response) => {
     }
 
     // Check if attendee is already checked in
-    if (registration.entry === true) {
+    if (targetDoc.entry === true) {
+      const normalized = normalizeAttendeeDoc(targetDoc);
       return res.status(200).json({
         success: true,
         alreadyCheckedIn: true,
         message: "Attendee has already been checked in!",
-        registration,
-        checkedInAt: registration.checkedInAt,
+        registration: normalized,
+        checkedInAt: targetDoc.checkedInAt,
       });
     }
 
     // Mark attendance
-    registration.entry = true;
-    registration.checkedInAt = new Date();
-    await registration.save();
+    const checkedInAt = new Date();
+    await targetColl.updateOne(
+      { _id: targetDoc._id },
+      { $set: { entry: true, checkedInAt } }
+    );
+
+    targetDoc.entry = true;
+    targetDoc.checkedInAt = checkedInAt;
+    const normalized = normalizeAttendeeDoc(targetDoc);
 
     return res.status(200).json({
       success: true,
       alreadyCheckedIn: false,
       message: "Attendance marked successfully!",
-      registration,
-      checkedInAt: registration.checkedInAt,
+      registration: normalized,
+      checkedInAt,
     });
   } catch (error: any) {
     console.error("Error processing QR check-in:", error);
@@ -189,19 +343,43 @@ export const toggleRegistrationAttendance = async (req: Request, res: Response) 
       return res.status(400).json({ success: false, message: "Invalid registration ID" });
     }
 
-    const registration = await Registration.findById(registrationId);
-    if (!registration) {
+    const targetRegObjId = new mongoose.Types.ObjectId(registrationId);
+    const collections = await getRegistrationCollections();
+
+    let targetDoc: any = null;
+    let targetColl: mongoose.mongo.Collection | null = null;
+
+    for (const coll of collections) {
+      const doc = await coll.findOne({
+        $or: [{ _id: targetRegObjId }, { _id: registrationId as any }],
+      });
+      if (doc) {
+        targetDoc = doc;
+        targetColl = coll;
+        break;
+      }
+    }
+
+    if (!targetDoc || !targetColl) {
       return res.status(404).json({ success: false, message: "Registration not found" });
     }
 
-    registration.entry = Boolean(entry);
-    registration.checkedInAt = Boolean(entry) ? (registration.checkedInAt || new Date()) : null;
-    await registration.save();
+    const isEntry = Boolean(entry);
+    const checkedInAt = isEntry ? targetDoc.checkedInAt || new Date() : null;
+
+    await targetColl.updateOne(
+      { _id: targetDoc._id },
+      { $set: { entry: isEntry, checkedInAt } }
+    );
+
+    targetDoc.entry = isEntry;
+    targetDoc.checkedInAt = checkedInAt;
+    const normalized = normalizeAttendeeDoc(targetDoc);
 
     return res.status(200).json({
       success: true,
-      message: `Attendee marked as ${registration.entry ? "Present" : "Absent"}`,
-      registration,
+      message: `Attendee marked as ${isEntry ? "Present" : "Absent"}`,
+      registration: normalized,
     });
   } catch (error: any) {
     console.error("Error toggling attendance:", error);
@@ -226,13 +404,43 @@ export const exportEventRegistrationsCsv = async (req: Request, res: Response) =
       return res.status(404).json({ success: false, message: "Event not found" });
     }
 
-    const registrations = await Registration.find({ eventId }).sort({ createdAt: 1 }).lean();
+    const eventObjId = new mongoose.Types.ObjectId(eventId);
+    const eventStrId = eventId.toString();
+    const collections = await getRegistrationCollections();
 
-    // Build CSV header with exact requested columns
+    let allDocs: any[] = [];
+    for (const coll of collections) {
+      const rawDocs = await coll
+        .find({
+          $or: [{ eventId: eventObjId }, { eventId: eventStrId }],
+        })
+        .sort({ createdAt: 1 })
+        .toArray();
+
+      if (rawDocs && rawDocs.length > 0) {
+        allDocs.push(...rawDocs);
+      }
+    }
+
+    // De-duplicate
+    const seenIds = new Set<string>();
+    const uniqueRawDocs: any[] = [];
+    for (const doc of allDocs) {
+      const idStr = String(doc._id);
+      if (!seenIds.has(idStr)) {
+        seenIds.add(idStr);
+        uniqueRawDocs.push(doc);
+      }
+    }
+
+    const normalizedRegistrations = uniqueRawDocs.map(normalizeAttendeeDoc);
+
+    // Build CSV
     const headers = [
       "Full Name",
       "Register No",
       "Email Address",
+      "Department",
       "Attendance Status",
       "Checked-In Timestamp",
     ];
@@ -245,26 +453,17 @@ export const exportEventRegistrationsCsv = async (req: Request, res: Response) =
 
     const rows = [headers.map(escapeCsv).join(",")];
 
-    for (const r of registrations as any[]) {
-      const answersMap =
-        r.answers instanceof Map
-          ? Object.fromEntries(r.answers)
-          : typeof r.answers === "object"
-          ? r.answers
-          : {};
-
-      const fullName = r.name || answersMap["Full Name"] || answersMap["fullname"] || "N/A";
-      const registerNo = r.registerNo || answersMap["Register Number"] || answersMap["Register No"] || answersMap["regno"] || "N/A";
-      const email = r.email || answersMap["Email ID"] || answersMap["Email Address"] || answersMap["email"] || "N/A";
+    for (const r of normalizedRegistrations) {
       const attendanceStatus = r.entry ? "Present" : "Absent";
       const checkedInTime = r.checkedInAt
         ? new Date(r.checkedInAt).toLocaleString()
         : "N/A";
 
       const row = [
-        escapeCsv(fullName),
-        escapeCsv(registerNo),
-        escapeCsv(email),
+        escapeCsv(r.name),
+        escapeCsv(r.registerNo),
+        escapeCsv(r.email),
+        escapeCsv([r.dept, r.year, r.section].filter(Boolean).join(" • ") || "N/A"),
         escapeCsv(attendanceStatus),
         escapeCsv(checkedInTime),
       ];
@@ -299,8 +498,21 @@ export const deleteEventRegistration = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: "Invalid registration ID" });
     }
 
-    const registration = await Registration.findByIdAndDelete(registrationId);
-    if (!registration) {
+    const targetRegObjId = new mongoose.Types.ObjectId(registrationId);
+    const collections = await getRegistrationCollections();
+
+    let deleted = false;
+    for (const coll of collections) {
+      const result = await coll.deleteOne({
+        $or: [{ _id: targetRegObjId }, { _id: registrationId as any }],
+      });
+      if (result.deletedCount && result.deletedCount > 0) {
+        deleted = true;
+        break;
+      }
+    }
+
+    if (!deleted) {
       return res.status(404).json({ success: false, message: "Registration record not found" });
     }
 
