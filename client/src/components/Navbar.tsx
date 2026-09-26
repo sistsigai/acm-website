@@ -21,6 +21,17 @@ const Navbar = () => {
     document.title = title;
   }, [location.pathname]);
 
+  useEffect(() => {
+    if (menuOpen) {
+      document.body.classList.add('nav-open');
+    } else {
+      document.body.classList.remove('nav-open');
+    }
+    return () => {
+      document.body.classList.remove('nav-open');
+    };
+  }, [menuOpen]);
+
   const toggleMenu = () => setMenuOpen(!menuOpen);
   const closeMenu = () => setMenuOpen(false);
 

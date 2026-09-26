@@ -9,19 +9,16 @@ import helmet from "helmet";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
 import rateLimit from "express-rate-limit";
+import compression from "compression";
 
 import adminAuthRoutes from "./routes/authRoutes";
 import homeRoutes from "./routes/homeRoutes";
 import adminSettingsRoutes from "./routes/adminSettingsRoutes";
-import applicationRoutes from "./routes/applicationRoutes";
-import contactRoutes from "./routes/contactRoutes";
 import dashboardRoutes from "./routes/dashboardRoutes";
-import eventmanagerRoutes from "./routes/eventmanagerRoutes";
+import eventManagerRoutes from "./routes/eventManagerRoutes";
 import memberRoutes from "./routes/memberRoutes";
-import recruitmentRoutes from "./routes/recruitmentRoutes";
-import aboutRoute from "./routes/aboutRoute";
-import joinusRoute from "./routes/joinusRoute";
-import eventRoute from "./routes/eventRoute";
+import aboutRoutes from "./routes/aboutRoutes";
+import eventRoutes from "./routes/eventRoutes";
 
 if (!process.env.MONGO_URI) {
     console.error("❌ ERROR: MONGO_URI environment variable is required");
@@ -38,18 +35,9 @@ const isDevelopment = !isProduction;
 
 const app: Application = express();
 
-// ========== SECURITY ENHANCEMENTS ==========
-// Registered security & route middlewares
+// ========== SECURITY & PERFORMANCE ENHANCEMENTS ==========
 app.use(helmet());
-
-app.use((req: Request, res: Response, next: NextFunction) => {
-    res.setHeader('X-Frame-Options', 'DENY');
-    res.setHeader('X-XSS-Protection', '1; mode=block');
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('X-Powered-By', 'ACM SIGAI');
-
-    next();
-});
+app.use(compression());
 
 const defaultAllowedOrigins = [
     'http://localhost:5173',
@@ -149,19 +137,15 @@ const authLimiter = rateLimit({
 
 // ========== ROUTES ==========
 app.use("/api/home", homeRoutes);
-app.use("/api/about", aboutRoute);
-app.use("/api/joinus", joinusRoute);
-app.use("/api/events", eventRoute);
+app.use("/api/about", aboutRoutes);
+app.use("/api/events", eventRoutes);
 
 app.use("/api/admin/auth", authLimiter, adminAuthRoutes);
 
 app.use("/api/admin", apiLimiter);
 app.use("/api/admin/members", memberRoutes);
-app.use("/api/admin/eventmanager", eventmanagerRoutes);
-app.use("/api/admin/recruitments", recruitmentRoutes);
-app.use("/api/admin/applications", applicationRoutes);
+app.use("/api/admin/eventmanager", eventManagerRoutes);
 app.use("/api/admin/dashboard", dashboardRoutes);
-app.use("/api/admin/contacts", contactRoutes);
 app.use("/api/admin/settings", adminSettingsRoutes);
 
 // ========== HEALTH CHECK ==========

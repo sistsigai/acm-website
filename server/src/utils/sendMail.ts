@@ -28,27 +28,3 @@ export const sendEventMail = async ({
     html,
   });
 };
-
-/* ---------------- CONTACT / ENQUIRY MAIL ---------------- */
-export const sendContactMail = async ({
-  to,
-  subject,
-  html,
-  replyTo,
-}: MailOptions): Promise<void> => {
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: process.env.CONTACT_MAIL_USER,
-      pass: process.env.CONTACT_MAIL_PASS,
-    },
-  });
-
-  await transporter.sendMail({
-    from: `"SIGAI Contact Desk" <${process.env.CONTACT_MAIL_USER}>`,
-    to,
-    subject,
-    html,
-    replyTo,
-  });
-};

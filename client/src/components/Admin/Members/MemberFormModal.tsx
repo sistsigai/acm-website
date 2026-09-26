@@ -1,5 +1,5 @@
 import React from "react";
-import CustomSelect, { type CustomSelectOption } from "./CustomSelect";
+import CustomSelect, { type CustomSelectOption } from "../../Common/CustomSelect";
 import type { Member } from "./MemberCard";
 
 export interface ValidationErrors {

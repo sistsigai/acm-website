@@ -34,12 +34,8 @@ AdminSchema.pre("save", async function () {
 
 // Instance method to compare password
 AdminSchema.methods.comparePassword = async function (candidatePassword: string): Promise<boolean> {
-  const isBcryptHash = /^\$2[aby]\$\d{2}\$/.test(this.password);
-  if (isBcryptHash) {
-    return bcrypt.compare(candidatePassword, this.password);
-  }
-  // Plaintext fallback
-  return candidatePassword === this.password;
+  if (!this.password) return false;
+  return bcrypt.compare(candidatePassword, this.password);
 };
 
 export default mongoose.model<IAdmin>("Admin", AdminSchema);

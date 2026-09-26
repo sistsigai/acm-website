@@ -91,14 +91,6 @@ const Dashboard: React.FC = () => {
               icon = "bi-calendar-plus";
               color = "text-info";
               break;
-            case "recruitment_opened":
-              icon = "bi-door-open";
-              color = "text-warning";
-              break;
-            case "contact_message":
-              icon = "bi-envelope-fill";
-              color = "text-danger";
-              break;
           }
 
           return { ...activity, icon, color };

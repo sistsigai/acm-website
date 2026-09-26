@@ -2,30 +2,7 @@ import { Request, Response } from "express";
 import Member from "../models/Member";
 import sharp from "sharp";
 import cloudinary from "../utils/cloudinary";
-import streamifier from "streamifier";
-
-
-/* ───────────────── CLOUDINARY HELPER ───────────────── */
-
-const uploadToCloudinary = (
-  buffer: Buffer,
-  folder: string
-): Promise<{ url: string; public_id: string }> => {
-  return new Promise((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream(
-      { folder, resource_type: "image" },
-      (error, result) => {
-        if (error || !result) return reject(error);
-        resolve({
-          url: result.secure_url,
-          public_id: result.public_id,
-        });
-      }
-    );
-
-    streamifier.createReadStream(buffer).pipe(stream);
-  });
-};
+import { uploadToCloudinary } from "../utils/uploadHelper";
 
 /* ───────────────── VALIDATIONS (UNCHANGED) ───────────────── */
 

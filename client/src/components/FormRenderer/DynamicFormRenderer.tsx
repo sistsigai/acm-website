@@ -5,7 +5,7 @@ import { CustomTimePicker } from "../CustomTimePicker";
 import {
   uploadEventRegistrationFile,
   deleteEventRegistrationFile,
-} from "../../services/website/webeventService";
+} from "../../services/website/webEventService";
 
 export interface FileUploadInfo {
   questionId: string;

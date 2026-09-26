@@ -10,14 +10,14 @@ import {
   deleteMemberSocial,
   uploadMemberImageDirect,
   deleteMemberImageDirect,
-} from "../../services/admin/membersService";
+} from "../../services/admin/memberService";
 import { getCroppedBlob } from "../../utils/cropUtils";
 import MemberCard, { type Member } from "../../components/Admin/Members/MemberCard";
 import MemberFormModal, { type ValidationErrors } from "../../components/Admin/Members/MemberFormModal";
 import MemberCropperModal from "../../components/Admin/Members/MemberCropperModal";
 import DeleteSocialModal from "../../components/Admin/Members/DeleteSocialModal";
 import ConfirmModal from "../../components/Common/ConfirmModal";
-import CustomSelect from "../../components/Admin/Members/CustomSelect";
+import CustomSelect from "../../components/Common/CustomSelect";
 
 // --- OPTION CONSTANTS ---
 const DESIGNATION_OPTIONS = [

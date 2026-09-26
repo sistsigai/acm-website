@@ -7,7 +7,7 @@ import {
   FaInfoCircle,
   FaHourglassHalf,
 } from "react-icons/fa";
-import type { EventData } from "../../../services/website/webeventService";
+import type { EventData } from "../../../services/website/webEventService";
 
 export interface ExtendedEventData extends EventData {
   isClosed?: boolean | null;

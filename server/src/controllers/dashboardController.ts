@@ -1,10 +1,7 @@
 import { Request, Response } from "express";
 import Member from "../models/Member";
-import Event from "../models/events";
-import Recruitment from "../models/recruitments";
+import Event from "../models/Event";
 import Registration from "../models/Registration";
-import Contact from "../models/Contact";
-import Application from "../models/Application";
 
 export const getDashboardData = async (_req: Request, res: Response) => {
   try {
@@ -23,11 +20,7 @@ export const getDashboardData = async (_req: Request, res: Response) => {
       recentMembers,
       events,
       registrationsByEvent,
-      recruitmentStats,
-      ongoingRecruitments,
-      unreadContacts,
-      recentEventsData,
-      recentRecruitmentsData
+      recentEventsData
     ] = await Promise.all([
       // 1. Total members count
       Member.countDocuments(),
@@ -77,42 +70,11 @@ export const getDashboardData = async (_req: Request, res: Response) => {
         }
       ]),
 
-      // 7. Applications per recruitment
-      Application.aggregate([
-        {
-          $group: {
-            _id: "$recruitmentId",
-            count: { $sum: 1 }
-          }
-        }
-      ]),
-
-      // 8. Ongoing recruitments
-      Recruitment.find({ isOpen: true })
-        .sort({ createdAt: -1 })
-        .limit(6)
-        .select("title role createdAt endDate")
-        .lean(),
-
-      // 9. Unread contact messages
-      Contact.find({ isRead: false })
-        .sort({ createdAt: -1 })
-        .limit(5)
-        .select("Firstname Lastname Message createdAt isRead")
-        .lean(),
-
-      // 10. Recent event creations
+      // 7. Recent event creations
       Event.find()
         .sort({ createdAt: -1 })
-        .limit(3)
+        .limit(5)
         .select("name createdAt")
-        .lean(),
-
-      // 11. Recent recruitments
-      Recruitment.find()
-        .sort({ createdAt: -1 })
-        .limit(2)
-        .select("title role createdAt")
         .lean()
     ]);
 
@@ -172,63 +134,13 @@ export const getDashboardData = async (_req: Request, res: Response) => {
         ? Math.round(((todayRegistrations - yesterdayRegTotal) / yesterdayRegTotal) * 100)
         : todayRegistrations > 0 ? 100 : 0;
 
-    /* ---------------- PROCESS RECRUITMENTS ---------------- */
-    const recruitmentCountMap = new Map<string, number>();
-    recruitmentStats.forEach((r: any) => {
-      if (r._id) {
-        recruitmentCountMap.set(r._id.toString(), r.count);
-      }
-    });
-
-    let topRecruitment: { title: string; applicants: number } | null = null;
-
-    const ongoingRecruitmentsWithCount = ongoingRecruitments.map((rec: any) => {
-      const count = recruitmentCountMap.get(rec._id.toString()) || 0;
-
-      if (!topRecruitment || count > topRecruitment.applicants) {
-        topRecruitment = {
-          title: rec.title,
-          applicants: count
-        };
-      }
-
-      return {
-        _id: rec._id.toString(),
-        title: rec.title,
-        role: rec.role,
-        createdAt: rec.createdAt,
-        applicantCount: count,
-        deadline: rec.endDate ? new Date(rec.endDate).toISOString() : ""
-      };
-    });
-
-    /* ---------------- PROCESS NOTIFICATIONS & RECENT ACTIVITY ---------------- */
-    const contactNotifications = unreadContacts.map((c: any) => ({
-      _id: c._id.toString(),
-      type: "contact_message" as const,
-      title: `${c.Firstname || ""} ${c.Lastname || ""}`.trim(),
-      subtitle:
-        c.Message && c.Message.length > 40
-          ? c.Message.slice(0, 40) + "..."
-          : c.Message || "",
-      time: c.createdAt,
-      isRead: c.isRead
-    }));
-
+    /* ---------------- PROCESS RECENT ACTIVITY ---------------- */
     const recentEvents = recentEventsData.map((e: any) => ({
       _id: e._id.toString(),
       type: "event_created" as const,
       title: e.name,
       subtitle: "Event scheduled",
       time: e.createdAt
-    }));
-
-    const recentRecruitments = recentRecruitmentsData.map((r: any) => ({
-      _id: r._id.toString(),
-      type: "recruitment_opened" as const,
-      title: r.title,
-      subtitle: `Role: ${r.role}`,
-      time: r.createdAt
     }));
 
     const recentMembersActivity = recentMembers.map((m: any) => ({
@@ -240,9 +152,7 @@ export const getDashboardData = async (_req: Request, res: Response) => {
     }));
 
     const recentActivity = [
-      ...contactNotifications,
       ...recentEvents,
-      ...recentRecruitments,
       ...recentMembersActivity
     ]
       .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
@@ -283,11 +193,11 @@ export const getDashboardData = async (_req: Request, res: Response) => {
               registrationMap.get(latestEvent._id.toString())?.count || 0
           }
         : null,
-      ongoingRecruitments: ongoingRecruitmentsWithCount,
+      ongoingRecruitments: [],
       recentActivity,
       topPerformers: {
         topEvent: mostPopularEvent,
-        topRecruitment
+        topRecruitment: null
       },
       systemHealth
     });
@@ -299,10 +209,9 @@ export const getDashboardData = async (_req: Request, res: Response) => {
 
 export const syncDashboardData = async (_req: Request, res: Response) => {
   try {
-    const [memberCount, eventCount, recruitmentCount] = await Promise.all([
+    const [memberCount, eventCount] = await Promise.all([
       Member.countDocuments(),
-      Event.countDocuments({ display: true }),
-      Recruitment.countDocuments({ isOpen: true })
+      Event.countDocuments({ display: true })
     ]);
 
     res.status(200).json({
@@ -311,8 +220,7 @@ export const syncDashboardData = async (_req: Request, res: Response) => {
       syncedAt: new Date().toISOString(),
       summary: {
         members: memberCount,
-        events: eventCount,
-        activeRecruitments: recruitmentCount
+        events: eventCount
       }
     });
   } catch (error) {
@@ -320,34 +228,6 @@ export const syncDashboardData = async (_req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       message: "Failed to synchronize dashboard state"
-    });
-  }
-};
-
-export const markContactAsRead = async (req: Request, res: Response) => {
-  try {
-    const contact = await Contact.findById(req.params.id);
-    if (!contact) {
-      return res.status(404).json({
-        success: false,
-        message: "Message not found"
-      });
-    }
-
-    contact.isRead = !contact.isRead;
-    await contact.save();
-
-    res.status(200).json({
-      success: true,
-      message: contact.isRead ? "Marked as read" : "Marked as unread",
-      isRead: contact.isRead,
-      id: contact._id
-    });
-  } catch (error) {
-    console.error("Toggle read error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to update message status"
     });
   }
 };

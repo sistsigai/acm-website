@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
-import Registration from "../models/Registration";
-import Event from "../models/events";
+import Event from "../models/Event";
 
 /**
  * Helper to get the active registration MongoDB collection(s) dynamically

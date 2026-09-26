@@ -191,7 +191,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
       )}
 
       {/* Page Content */}
-      <div className="flex-grow-1 p-3 p-md-4 p-lg-5" style={{ overflowY: "auto", minWidth: 0 }}>
+      <div className="flex-grow-1 p-3 p-md-4 p-lg-5 admin-main-viewport" style={{ overflowY: "auto", minWidth: 0 }}>
         {children}
       </div>
     </div>

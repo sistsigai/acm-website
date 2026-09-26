@@ -20,31 +20,17 @@ export interface UpcomingEvent {
   totalRegistrations: number;
 }
 
-export interface OngoingRecruitment {
-  _id: string;
-  title: string;
-  role: string;
-  createdAt: string;
-  applicantCount: number;
-  deadline?: string;
-}
-
 export interface Activity {
   _id: string;
-  type:
-  | 'member_joined'
-  | 'event_created'
-  | 'recruitment_opened'
-  | 'contact_message';
+  type: 'member_joined' | 'event_created';
   title: string;
   subtitle: string;
   time: string;
-  isRead?: boolean;
 }
 
 export interface TopPerformers {
-  topEvent: { name: string; registrations: number; } | null;
-  topRecruitment: { title: string; applicants: number; } | null;
+  topEvent: { name: string; registrations: number } | null;
+  topRecruitment: null;
 }
 
 export interface SystemHealth {
@@ -57,7 +43,7 @@ export interface SystemHealth {
 export interface DashboardResponse {
   stats: DashboardStats;
   latestEvent: UpcomingEvent | null;
-  ongoingRecruitments: OngoingRecruitment[];
+  ongoingRecruitments: any[];
   recentActivity: Activity[];
   topPerformers: TopPerformers;
   systemHealth: SystemHealth;
@@ -84,18 +70,5 @@ export const syncDashboard = async () => {
     }
 
     throw new Error("Dashboard sync failed");
-  }
-};
-
-export const markContactAsRead = async (id: string) => {
-  try {
-    const res = await axiosInstance.patch(
-      `/admin/dashboard/contact/${id}/read`
-    );
-    return res.data;
-  } catch (err: any) {
-    throw new Error(
-      err.response?.data?.message || "Failed to update message"
-    );
   }
 };

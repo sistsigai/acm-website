@@ -35,11 +35,10 @@ export const DashboardRecentActivity: React.FC<DashboardRecentActivityProps> = (
       </div>
 
       <ul className="list-unstyled m-0 d-flex flex-column gap-3 flex-grow-1">
-        {activities.filter((a) => a.type !== "contact_message").length === 0 ? (
+        {activities.length === 0 ? (
           <li className="text-secondary text-center py-4 small">No recent activity</li>
         ) : (
           activities
-            .filter((a) => a.type !== "contact_message")
             .slice(0, 4)
             .map((a, i) => (
               <li

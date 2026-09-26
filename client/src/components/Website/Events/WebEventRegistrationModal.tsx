@@ -10,7 +10,7 @@ import type { ExtendedEventData } from "./WebEventCard";
 import {
   type EventRegistrationPayload,
   deleteEventRegistrationFile,
-} from "../../../services/website/webeventService";
+} from "../../../services/website/webEventService";
 
 interface WebEventRegistrationModalProps {
   show: boolean;
