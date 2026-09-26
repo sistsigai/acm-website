@@ -252,25 +252,8 @@ const MobileScanner: React.FC = () => {
             <span className="text-truncate">{selectedEvent.name}</span>
           </div>
 
-          {/* Torch / Flash Toggle Button */}
-          <button
-            type="button"
-            className="btn rounded-circle d-flex align-items-center justify-content-center"
-            style={{
-              width: "44px",
-              height: "44px",
-              background: torchOn ? "#38bdf8" : "rgba(255, 255, 255, 0.15)",
-              color: torchOn ? "#041527" : "#ffffff",
-              backdropFilter: "blur(12px)",
-              WebkitBackdropFilter: "blur(12px)",
-              border: torchOn ? "1px solid #38bdf8" : "1px solid rgba(255, 255, 255, 0.25)",
-              boxShadow: torchOn ? "0 0 16px rgba(56, 189, 248, 0.5)" : "0 4px 12px rgba(0, 0, 0, 0.3)",
-            }}
-            onClick={() => setTorchOn((prev) => !prev)}
-            aria-label="Toggle flashlight"
-          >
-            <i className={`bi ${torchOn ? "bi-flashlight-fill" : "bi-flashlight"} fs-5`}></i>
-          </button>
+          {/* Invisible spacer so the event title chip remains perfectly centered */}
+          <div style={{ width: "44px", height: "44px", pointerEvents: "none" }} />
         </div>
 
         {/* Fullscreen Camera View */}

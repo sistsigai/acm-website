@@ -161,7 +161,6 @@ export const adminLogin = async (req: Request, res: Response) => {
     return res.status(200).json({
       success: true,
       message: "Login successful",
-      token,
       user: {
         id: admin._id,
         username: admin.username,

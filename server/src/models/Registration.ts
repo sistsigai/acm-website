@@ -9,14 +9,6 @@ const RegistrationSchema = new mongoose.Schema(
       index: true,
     },
 
-    name: { type: String, required: true, trim: true },
-    registerNo: { type: String, required: true, trim: true },
-    dept: { type: String, required: true, trim: true },
-    year: { type: String, required: true, trim: true },
-    section: { type: String, required: true, trim: true },
-    email: { type: String, required: true, lowercase: true, trim: true },
-    phone: { type: String, required: true, trim: true },
-
     answers: {
       type: Map,
       of: mongoose.Schema.Types.Mixed,
@@ -32,8 +24,14 @@ const RegistrationSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-    collection: "Eventregistrations", // ✅ EXACT collection name
+    collection: "Eventregistrations",
+    strict: true,
   }
 );
+
+// Delete any previously cached model instance in hot-reload
+if (mongoose.models && mongoose.models.EventRegistration) {
+  delete mongoose.models.EventRegistration;
+}
 
 export default mongoose.model("EventRegistration", RegistrationSchema);

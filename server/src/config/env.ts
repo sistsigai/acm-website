@@ -15,7 +15,7 @@ const possibleDirs = [
     process.cwd(),
     path.resolve(__dirname, "../.."), // when compiled in dist/config or dist/
     path.resolve(__dirname, ".."),
-    "/home/sistsigaihosting/api.sistsigai.acm.org"
+    ...(process.env.APP_ROOT ? [process.env.APP_ROOT] : [])
 ];
 
 const targetFiles = [

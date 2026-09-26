@@ -174,7 +174,6 @@ export const ManualCheckInModal: React.FC<ManualCheckInModalProps> = ({
                       </div>
                       <div className="text-info small font-monospace mt-0.5">
                         {attendee.registerNo || "N/A"}
-                        {attendee.dept && ` • ${attendee.dept}`}
                       </div>
                       <div className="text-secondary small font-monospace text-truncate">
                         {attendee.email}

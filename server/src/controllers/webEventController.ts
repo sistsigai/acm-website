@@ -147,156 +147,75 @@ const validateField = (fieldName: string, value: string): string => {
 // --- COMPREHENSIVE VALIDATION FUNCTION ---
 const validateRegistrationData = (body: any): { isValid: boolean; errors: ValidationErrors; sanitizedData: any } => {
   const errors: ValidationErrors = {};
-  const sanitizedData: any = {};
+  const sanitizedAnswers: Record<string, any> = {};
 
-  // Map field names to standardized keys
-  const fieldMapping: Record<string, string> = {
-    'name': 'name',
-    'full name': 'name',
-    'register': 'registerNo',
-    'register number': 'registerNo',
-    'register no': 'registerNo',
-    'dept': 'dept',
-    'department': 'dept',
-    'year': 'year',
-    'section': 'section',
-    'email': 'email',
-    'email id': 'email',
-    'phone': 'phone',
-    'mobile number': 'phone',
-    'mobile': 'phone'
-  };
-
-  // Validate and sanitize core fields
-  const coreFields = ['name', 'registerNo', 'dept', 'year', 'section', 'email', 'phone'];
-
-  coreFields.forEach(field => {
-    // Find the field in the body (check multiple possible keys)
-    let value = '';
-    Object.keys(fieldMapping).forEach(key => {
-      if (fieldMapping[key] === field && body[key]) {
-        value = body[key];
-      }
-    });
-
-    // If not found in mapped keys, check direct field name
-    if (!value && body[field]) {
-      value = body[field];
-    }
-
-    // Sanitize based on field type
-    const sanitizedValue = sanitizeInput(value || '', field);
-    sanitizedData[field] = sanitizedValue;
-
-    // Validate
-    const error = validateField(field, sanitizedValue);
-    if (error) {
-      errors[field] = error;
-    }
-  });
-
-  // Validate and extract from additional answers (dynamic form questions)
+  // 1. If body.answers was supplied (from dynamic or custom questions), collect and sanitize them
   if (body.answers && typeof body.answers === "object") {
-    sanitizedData.answers = {};
     Object.keys(body.answers).forEach((key) => {
       const value = body.answers[key];
       const sanitizedValue = typeof value === "string" ? sanitizeInput(value, "text") : value;
-      sanitizedData.answers[key] = sanitizedValue;
-
-      // Check if question key indicates it is required
-      if (
-        key.toLowerCase().includes("required") &&
-        (!sanitizedValue || (typeof sanitizedValue === "string" && !sanitizedValue.trim()))
-      ) {
-        errors[key] = "This field is required";
-      }
+      sanitizedAnswers[key] = sanitizedValue;
     });
+  }
 
-    // 1. If email was not provided directly, extract from answers
-    if (!sanitizedData.email) {
-      for (const [key, val] of Object.entries(body.answers)) {
-        if (/email|mail/i.test(key) && typeof val === "string" && val.includes("@")) {
-          sanitizedData.email = val.toLowerCase().trim();
-          delete errors.email;
-          break;
-        }
-        if (
-          typeof val === "string" &&
-          /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(val.trim())
-        ) {
-          sanitizedData.email = val.toLowerCase().trim();
-          delete errors.email;
-          break;
-        }
+  // 2. Also incorporate any top-level properties passed in body
+  const ignoredKeys = new Set(["eventId", "answers", "joinedWhatsapp", "entry", "checkedInAt", "qrUrl"]);
+  Object.keys(body).forEach((key) => {
+    if (!ignoredKeys.has(key) && body[key] !== undefined && body[key] !== null && body[key] !== "") {
+      if (!sanitizedAnswers[key]) {
+        sanitizedAnswers[key] = typeof body[key] === "string" ? sanitizeInput(body[key], "text") : body[key];
+      }
+    }
+  });
+
+  // 3. Extract identifier fields from sanitized answers (for email tickets, duplicate check, and greeting)
+  let email = "";
+  let name = "";
+  let registerNo = "";
+  let phone = "";
+
+  for (const [key, val] of Object.entries(sanitizedAnswers)) {
+    const valStr = typeof val === "string" ? val.trim() : "";
+    const keyLower = key.toLowerCase();
+
+    // Detect email
+    if (!email && (/email|mail/i.test(keyLower) || /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(valStr))) {
+      if (valStr.includes("@")) {
+        email = valStr.toLowerCase();
       }
     }
 
-    // 2. If name was not provided directly, extract from answers
-    if (!sanitizedData.name) {
-      for (const [key, val] of Object.entries(body.answers)) {
-        if (/name/i.test(key) && typeof val === "string" && val.trim()) {
-          sanitizedData.name = val.trim();
-          delete errors.name;
-          break;
-        }
-      }
+    // Detect name
+    if (!name && /name/i.test(keyLower) && valStr) {
+      name = valStr;
     }
 
-    // 3. If phone was not provided directly, extract from answers
-    if (!sanitizedData.phone) {
-      for (const [key, val] of Object.entries(body.answers)) {
-        if (/phone|mobile|whatsapp/i.test(key) && typeof val === "string" && val.trim()) {
-          sanitizedData.phone = val.replace(/\D/g, "");
-          delete errors.phone;
-          break;
-        }
-      }
+    // Detect register number
+    if (!registerNo && /register|reg\s*no|roll|admission/i.test(keyLower) && valStr) {
+      registerNo = valStr;
     }
 
-    // 4. If register number was not provided directly, extract from answers
-    if (!sanitizedData.registerNo) {
-      for (const [key, val] of Object.entries(body.answers)) {
-        if (/register|reg\s*no|roll|admission/i.test(key) && typeof val === "string" && val.trim()) {
-          sanitizedData.registerNo = val.trim();
-          delete errors.registerNo;
-          break;
-        }
-      }
+    // Detect phone
+    if (!phone && /phone|mobile|whatsapp/i.test(keyLower) && valStr) {
+      phone = valStr;
     }
+  }
 
-    // For dynamic forms, default missing non-critical institutional fields to "N/A"
-    if (Object.keys(body.answers).length > 0) {
-      if (!sanitizedData.name) {
-        sanitizedData.name = "Attendee";
-        delete errors.name;
-      }
-      if (!sanitizedData.registerNo) {
-        sanitizedData.registerNo = "N/A";
-        delete errors.registerNo;
-      }
-      if (!sanitizedData.dept) {
-        sanitizedData.dept = "N/A";
-        delete errors.dept;
-      }
-      if (!sanitizedData.year) {
-        sanitizedData.year = "N/A";
-        delete errors.year;
-      }
-      if (!sanitizedData.section) {
-        sanitizedData.section = "N/A";
-        delete errors.section;
-      }
-      if (!sanitizedData.phone) {
-        sanitizedData.phone = "N/A";
-        delete errors.phone;
-      }
-    }
+  if (!email) {
+    // If no email found anywhere, flag error so confirmation email can be delivered
+    errors.email = "A valid email address is required for registration and ticket delivery";
   }
 
   return {
     isValid: Object.keys(errors).length === 0,
     errors,
-    sanitizedData,
+    sanitizedData: {
+      answers: sanitizedAnswers,
+      email: email || "attendee@sistsigai.acm.org",
+      name: name || "Attendee",
+      registerNo: registerNo || "",
+      phone: phone || "",
+    },
   };
 };
 
@@ -319,14 +238,8 @@ export const getAllEvents = async (_req: Request, res: Response) => {
 
 interface EventRegistrationBody {
   eventId: string;
-  name: string;
-  registerNo: string;
-  dept: string;
-  year: string;
-  section: string;
-  email: string;
-  phone: string;
-  answers: Record<string, any>;
+  answers?: Record<string, any>;
+  [key: string]: any;
 }
 
 export const registerForEvent = async (
@@ -334,7 +247,7 @@ export const registerForEvent = async (
   res: Response
 ) => {
   try {
-    const { eventId, answers } = req.body;
+    const { eventId } = req.body;
 
     /* ---------------- COMPREHENSIVE VALIDATION ---------------- */
     // Step 1: Basic required field validation
@@ -360,12 +273,12 @@ export const registerForEvent = async (
       return res.status(400).json({
         success: false,
         message: "Validation failed",
-        errors: validationResult.errors
+        errors: validationResult.errors,
       });
     }
 
     const { sanitizedData } = validationResult;
-    const { name, registerNo, dept, year, section, email, phone } = sanitizedData;
+    const { name, registerNo, email, phone } = sanitizedData;
 
     /* ---------------- CHECK EVENT ---------------- */
     const event = await Event.findById(eventId).lean();
@@ -378,7 +291,7 @@ export const registerForEvent = async (
 
     // Additional validation: Check if event is closed
     const currentDate = new Date();
-    
+
     // If a custom registration end date is specified, close at end of that date
     if (event.registrationEndDate) {
       const regEndDateTime = new Date(`${event.registrationEndDate}T23:59:59`);
@@ -390,7 +303,7 @@ export const registerForEvent = async (
       }
     } else {
       const startTimeStr = event.time ? event.time.split(/[-–—]|to/i)[0]?.trim() : "";
-      const eventDateTime = new Date(event.date + ' ' + startTimeStr);
+      const eventDateTime = new Date(event.date + " " + startTimeStr);
 
       if (!isNaN(eventDateTime.getTime()) && eventDateTime < currentDate) {
         return res.status(400).json({
@@ -401,18 +314,54 @@ export const registerForEvent = async (
     }
 
     /* ---------------- DUPLICATE CHECK ---------------- */
-    // Check by email
-    const alreadyRegisteredByEmail = await Registration.findOne({ eventId, email });
-    if (alreadyRegisteredByEmail) {
-      return res.status(409).json({
-        success: false,
-        message: "This email has already been registered for this event",
+    const existingRegistrations = await Registration.find({ eventId }).lean();
+
+    // Check duplicate by email
+    if (email) {
+      const alreadyRegisteredByEmail = existingRegistrations.find((r: any) => {
+        const a = r.answers instanceof Map ? Object.fromEntries(r.answers) : r.answers || {};
+        const regEmail =
+          r.email ||
+          a["Email"] ||
+          a["Email ID"] ||
+          a["Email Address"] ||
+          a["email"] ||
+          Object.values(a).find(
+            (v: any) =>
+              typeof v === "string" && v.toLowerCase().trim() === email.toLowerCase().trim()
+          );
+        return Boolean(
+          regEmail &&
+            typeof regEmail === "string" &&
+            regEmail.toLowerCase().trim() === email.toLowerCase().trim()
+        );
       });
+
+      if (alreadyRegisteredByEmail) {
+        return res.status(409).json({
+          success: false,
+          message: "This email has already been registered for this event",
+        });
+      }
     }
 
-    // Check by register number (if provided and not N/A)
+    // Check duplicate by register number
     if (registerNo && registerNo !== "N/A") {
-      const alreadyRegisteredByRegNo = await Registration.findOne({ eventId, registerNo });
+      const alreadyRegisteredByRegNo = existingRegistrations.find((r: any) => {
+        const a = r.answers instanceof Map ? Object.fromEntries(r.answers) : r.answers || {};
+        const regNo =
+          r.registerNo ||
+          a["Register Number"] ||
+          a["Register No"] ||
+          a["registerNo"] ||
+          a["regno"];
+        return Boolean(
+          regNo &&
+            typeof regNo === "string" &&
+            regNo.trim().toLowerCase() === registerNo.trim().toLowerCase()
+        );
+      });
+
       if (alreadyRegisteredByRegNo) {
         return res.status(409).json({
           success: false,
@@ -422,15 +371,9 @@ export const registerForEvent = async (
     }
 
     /* ---------------- SAVE REGISTRATION ---------------- */
+    // Only saving eventId and answers in the database
     const registration = await Registration.create({
       eventId,
-      name,
-      registerNo,
-      dept,
-      year,
-      section,
-      email,
-      phone,
       answers: sanitizedData.answers || {},
     });
 
@@ -456,9 +399,23 @@ export const registerForEvent = async (
       overwrite: false,
     });
 
-    /* ---------------- SAVE QR URL ---------------- */
+    /* ---------------- SAVE QR URL & STRIP ANY ROOT FIELDS ---------------- */
     registration.qrUrl = uploadResult.secure_url;
-    await registration.save();
+    await Registration.collection.updateOne(
+      { _id: registration._id },
+      {
+        $set: { qrUrl: uploadResult.secure_url },
+        $unset: {
+          name: "",
+          registerNo: "",
+          dept: "",
+          year: "",
+          section: "",
+          email: "",
+          phone: "",
+        },
+      }
+    );
 
     /* ---------------- SEND CONFIRMATION EMAIL ---------------- */
     await sendEventMail({
@@ -639,18 +596,12 @@ export const registerForEvent = async (
       registrationId: registration._id,
       qrUrl: uploadResult.secure_url,
       data: {
-        name,
-        registerNo,
-        dept,
-        year,
-        section,
-        email,
-        phone,
+        answers: sanitizedData.answers,
         eventName: event.name,
         eventDate: event.date,
         eventTime: event.time,
-        venue: event.venue
-      }
+        venue: event.venue,
+      },
     });
   } catch (error: any) {
     console.error("❌ Event registration error:", error);

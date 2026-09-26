@@ -94,8 +94,6 @@ export const WebEventRegistrationModal: React.FC<WebEventRegistrationModalProps>
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, []);
 
-  if (!show || !selectedEvent) return null;
-
   const handleDynamicSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedEvent?.customQuestions) return;
@@ -121,27 +119,8 @@ export const WebEventRegistrationModal: React.FC<WebEventRegistrationModalProps>
       answersMap[q.question] = dynamicAnswers[q.id] || "";
     });
 
-    const findAnswer = (keywords: string[]): string => {
-      for (const q of selectedEvent.customQuestions!) {
-        const lower = q.question.toLowerCase();
-        for (const kw of keywords) {
-          if (lower.includes(kw)) {
-            return String(dynamicAnswers[q.id] || "");
-          }
-        }
-      }
-      return "";
-    };
-
     const payload: EventRegistrationPayload = {
       eventId: selectedEvent._id,
-      name: findAnswer(["name"]),
-      registerNo: findAnswer(["register", "reg no", "registration"]),
-      dept: findAnswer(["department", "dept"]),
-      year: findAnswer(["year"]),
-      section: findAnswer(["section"]),
-      email: findAnswer(["email"]),
-      phone: findAnswer(["phone", "mobile", "whatsapp"]),
       answers: answersMap,
     };
 
@@ -174,38 +153,8 @@ export const WebEventRegistrationModal: React.FC<WebEventRegistrationModalProps>
 
     const payload: EventRegistrationPayload = {
       eventId: selectedEvent._id,
-      name: formData["Name"] || formData["Full Name"] || "",
-      registerNo: formData["Register Number"] || formData["Register No"] || "",
-      dept: formData["Department"] || formData["Dept"] || "",
-      year: formData["Year"] || "",
-      section: formData["Section"] || "",
-      email: formData["Email"] || formData["Email ID"] || "",
-      phone: formData["Mobile Number"] || formData["Phone"] || "",
-      answers: Object.fromEntries(
-        Object.entries(formData).filter(
-          ([key]) =>
-            ![
-              "Name",
-              "Full Name",
-              "Register Number",
-              "Register No",
-              "Department",
-              "Dept",
-              "Year",
-              "Section",
-              "Email",
-              "Email ID",
-              "Mobile Number",
-              "Phone",
-            ].includes(key)
-        )
-      ),
+      answers: formData,
     };
-
-    if (!payload.name || !payload.registerNo || !payload.email || !payload.phone) {
-      showToast("Please fill all required fields", "error");
-      return;
-    }
 
     await onSubmit(payload);
   };
@@ -219,23 +168,27 @@ export const WebEventRegistrationModal: React.FC<WebEventRegistrationModalProps>
       />
       {createPortal(
         <AnimatePresence>
-          <m.div
-            className="reg-modal-backdrop"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="reg-title"
-        onClick={handleClose}
-      >
-        <m.div
-          className="reg-modal-content"
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.8, opacity: 0 }}
-          onClick={(e) => e.stopPropagation()}
-        >
+          {show && selectedEvent && (
+            <m.div
+              key="reg-modal-backdrop"
+              className="reg-modal-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="reg-title"
+              onClick={handleClose}
+            >
+              <m.div
+                className="reg-modal-content"
+                initial={{ scale: 0.9, opacity: 0, y: 15 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.9, opacity: 0, y: 15 }}
+                transition={{ type: "spring", stiffness: 320, damping: 25 }}
+                onClick={(e) => e.stopPropagation()}
+              >
           {/* Static Modal Header */}
           <div className="reg-modal-header">
             <h2 id="reg-title" className="reg-title">
@@ -352,6 +305,7 @@ export const WebEventRegistrationModal: React.FC<WebEventRegistrationModalProps>
           </div>
         </m.div>
       </m.div>
+      )}
     </AnimatePresence>,
     document.body
   )}

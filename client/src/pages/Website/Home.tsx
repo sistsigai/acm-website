@@ -154,16 +154,16 @@ const Home: React.FC = () => {
             </div>
             <p className="cta-text">Have questions or want to collaborate?</p>
             <a
-              href="mailto:sist.sigai@gmail.com"
+              href={`mailto:${adminSettings?.contact?.email || "sist.sigai@gmail.com"}`}
               className="write-us-btn"
               style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
             >
               Write to Us <FaEnvelope style={{ marginLeft: '8px', display: 'inline' }} />
             </a>
             <div className="social-icons">
-              <a href={adminSettings?.socials.twitter} target="_blank" aria-label="Twitter" className="social-icon twitter"><FaTwitter /></a>
-              <a href={adminSettings?.socials.instagram} target="_blank" aria-label="Instagram" className="social-icon instagram"><FaInstagram /></a>
-              <a href={adminSettings?.socials.linkedin} target="_blank" aria-label="LinkedIn" className="social-icon linkedin"><FaLinkedin /></a>
+              <a href={adminSettings?.socials?.twitter || "#"} target="_blank" rel="noopener noreferrer" aria-label="Twitter" className="social-icon twitter"><FaTwitter /></a>
+              <a href={adminSettings?.socials?.instagram || "#"} target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="social-icon instagram"><FaInstagram /></a>
+              <a href={adminSettings?.socials?.linkedin || "#"} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" className="social-icon linkedin"><FaLinkedin /></a>
             </div>
           </div>
 

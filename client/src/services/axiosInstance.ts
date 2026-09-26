@@ -12,24 +12,33 @@ const axiosInstance = axios.create({
   baseURL: BASE_URL,
   timeout: 20000,
   withCredentials: true,
+  headers: {
+    "Cache-Control": "no-cache, no-store, must-revalidate",
+    "Pragma": "no-cache",
+    "Expires": "0",
+  },
 });
 
 /* ---------------- REQUEST INTERCEPTOR ---------------- */
 axiosInstance.interceptors.request.use(
   (config) => {
-    // If a bearer token exists in memory/fallback storage, include it
-    const token =
-      sessionStorage.getItem("adminToken") ||
-      localStorage.getItem("adminToken");
-
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-
     if (config.data instanceof FormData) {
       delete config.headers["Content-Type"];
     } else {
       config.headers["Content-Type"] = "application/json";
+    }
+
+    // Always enforce no-cache headers on every outgoing request
+    config.headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
+    config.headers["Pragma"] = "no-cache";
+    config.headers["Expires"] = "0";
+
+    // Cache buster for GET requests to prevent browser disk cache and CDN edge caching
+    if (config.method?.toLowerCase() === "get") {
+      config.params = {
+        ...config.params,
+        _t: Date.now(),
+      };
     }
 
     return config;
@@ -47,3 +56,4 @@ axiosInstance.interceptors.response.use(
 );
 
 export default axiosInstance;
+

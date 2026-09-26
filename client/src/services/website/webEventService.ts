@@ -29,14 +29,8 @@ export interface EventData {
 
 export interface EventRegistrationPayload {
   eventId: string;
-  name: string;
-  registerNo: string;
-  dept: string;
-  year: string;
-  section: string;
-  email: string;
-  phone: string;
-  answers: Record<string, string>;
+  answers: Record<string, any>;
+  [key: string]: any;
 }
 
 /* ---------------- GET EVENTS ---------------- */

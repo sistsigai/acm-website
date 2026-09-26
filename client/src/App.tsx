@@ -5,23 +5,25 @@ import { AuthProvider } from "./context/AuthContext";
 import { ToastProvider } from "./context/ToastContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 
-/* ---------------- ADMIN PAGES ---------------- */
-import Dashboard from "./pages/Admin/Dashboard";
-import Members from "./pages/Admin/Members";
-import EventManager from "./pages/Admin/EventManager";
-import AdminSettings from "./pages/Admin/AdminSettings";
-import AdminLogin from "./pages/Admin/AdminLogin";
-import MobileScanner from "./pages/Admin/MobileScanner";
+/* ---------------- ADMIN PAGES (Lazy-loaded) ---------------- */
+const Dashboard = lazy(() => import("./pages/Admin/Dashboard"));
+const Members = lazy(() => import("./pages/Admin/Members"));
+const EventManager = lazy(() => import("./pages/Admin/EventManager"));
+const AdminSettings = lazy(() => import("./pages/Admin/AdminSettings"));
+const AdminLogin = lazy(() => import("./pages/Admin/AdminLogin"));
+const MobileScanner = lazy(() => import("./pages/Admin/MobileScanner"));
 
-/* ---------------- WEBSITE PAGES ---------------- */
-import Home from "./pages/Website/Home";
-import About from "./pages/Website/AboutUs";
-import Membership from "./pages/Website/Membership";
-import OurRoots from "./pages/Website/OurRoots";
-import JoinUs from "./pages/Website/JoinUs";
-import Archives from "./pages/Website/Archives";
-import Blogs from "./pages/Website/Blogs";
-import Events from "./pages/Website/Events";
+/* ---------------- WEBSITE PAGES (Lazy-loaded) ---------------- */
+const Home = lazy(() => import("./pages/Website/Home"));
+const About = lazy(() => import("./pages/Website/AboutUs"));
+const Membership = lazy(() => import("./pages/Website/Membership"));
+const OurRoots = lazy(() => import("./pages/Website/OurRoots"));
+const JoinUs = lazy(() => import("./pages/Website/JoinUs"));
+const Archives = lazy(() => import("./pages/Website/Archives"));
+const Blogs = lazy(() => import("./pages/Website/Blogs"));
+const Events = lazy(() => import("./pages/Website/Events"));
+const ArchiveEventDetail = lazy(() => import("./pages/Website/ArchiveEventDetail"));
+const NotFound = lazy(() => import("./pages/Website/NotFound"));
 
 /* ---------------- COMPONENTS ---------------- */
 import Nav from "./components/Navbar";
@@ -30,9 +32,6 @@ import LogoLoading from "./components/LogoLoader";
 
 /* ---------------- STYLES ---------------- */
 import "./App.css";
-
-/* ---------------- OTHERS ---------------- */
-const ArchiveEventDetail = lazy(() => import("./pages/Website/ArchiveEventDetail"));
 
 function App() {
   const location = useLocation();
@@ -63,7 +62,11 @@ function App() {
 
   /* ---------------- PUBLIC ATTENDANCE SCANNER ---------------- */
   if (isScannerRoute) {
-    return <MobileScanner />;
+    return (
+      <Suspense fallback={<LogoLoading />}>
+        <MobileScanner />
+      </Suspense>
+    );
   }
 
   const isAdminRoute = location.pathname.startsWith("/admin");
@@ -71,43 +74,45 @@ function App() {
   /* ---------------- ADMIN ROUTES ---------------- */
   if (isAdminRoute) {
     return (
-      <Routes location={location} key={location.pathname}>
-        <Route path="/admin/login" element={<AdminLogin />} />
-        <Route
-          path="/admin/dashboard"
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/members"
-          element={
-            <ProtectedRoute>
-              <Members />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/eventmanager"
-          element={
-            <ProtectedRoute>
-              <EventManager />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/settings"
-          element={
-            <ProtectedRoute>
-              <AdminSettings />
-            </ProtectedRoute>
-          }
-        />
-        {/* Admin Catch-All */}
-        <Route path="/admin/*" element={<Navigate to="/admin/dashboard" replace />} />
-      </Routes>
+      <Suspense fallback={<LogoLoading />}>
+        <Routes location={location} key={location.pathname}>
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route
+            path="/admin/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/members"
+            element={
+              <ProtectedRoute>
+                <Members />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/eventmanager"
+            element={
+              <ProtectedRoute>
+                <EventManager />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/settings"
+            element={
+              <ProtectedRoute>
+                <AdminSettings />
+              </ProtectedRoute>
+            }
+          />
+          {/* Admin Catch-All */}
+          <Route path="/admin/*" element={<Navigate to="/admin/dashboard" replace />} />
+        </Routes>
+      </Suspense>
     );
   }
 
@@ -128,29 +133,24 @@ function App() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <Routes location={location}>
-              <Route path="/" element={<Home />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/membership" element={<Membership />} />
-              <Route path="/archives" element={<Archives />} />
-              <Route path="/blogs" element={<Blogs />} />
-              <Route path="/our-roots" element={<OurRoots />} />
-              <Route path="/join-us" element={<JoinUs />} />
-              <Route path="/events" element={<Events />} />
+            <Suspense fallback={<LogoLoading />}>
+              <Routes location={location}>
+                <Route path="/" element={<Home />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/membership" element={<Membership />} />
+                <Route path="/archives" element={<Archives />} />
+                <Route path="/blogs" element={<Blogs />} />
+                <Route path="/our-roots" element={<OurRoots />} />
+                <Route path="/join-us" element={<JoinUs />} />
+                <Route path="/events" element={<Events />} />
 
-              {/* Dynamic Archive Event Route */}
-              <Route
-                path="/archives/:eventId"
-                element={
-                  <Suspense fallback={<LogoLoading />}>
-                    <ArchiveEventDetail />
-                  </Suspense>
-                }
-              />
+                {/* Dynamic Archive Event Route */}
+                <Route path="/archives/:eventId" element={<ArchiveEventDetail />} />
 
-              {/* Website Catch-All */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
+                {/* 404 Page */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
           </motion.div>
         )}
       </AnimatePresence>
@@ -172,4 +172,4 @@ function Root() {
   );
 }
 
-export default Root;
+export default Root;

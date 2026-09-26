@@ -33,6 +33,37 @@ const connectDB = async () => {
         
         console.log("✅ MongoDB Connected Successfully");
 
+        // Clean up legacy root fields from Eventregistrations collection in MongoDB
+        try {
+            const db = mongoose.connection.db;
+            if (db) {
+                const rawCollections = await db.listCollections().toArray();
+                for (const colInfo of rawCollections) {
+                    if (/eventregistrations/i.test(colInfo.name)) {
+                        const result = await db.collection(colInfo.name).updateMany(
+                            {},
+                            {
+                                $unset: {
+                                    name: "",
+                                    registerNo: "",
+                                    dept: "",
+                                    year: "",
+                                    section: "",
+                                    email: "",
+                                    phone: "",
+                                },
+                            }
+                        );
+                        if (result.modifiedCount > 0) {
+                            console.log(`🧹 Cleaned up legacy root fields from ${result.modifiedCount} registration documents in ${colInfo.name}`);
+                        }
+                    }
+                }
+            }
+        } catch (cleanupErr) {
+            console.warn("⚠️ Legacy fields cleanup warning:", cleanupErr);
+        }
+
     } catch (error) {
         console.error("❌ MongoDB Connection Failed:", error instanceof Error ? error.message : error);
         

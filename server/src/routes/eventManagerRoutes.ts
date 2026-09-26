@@ -21,7 +21,7 @@ import {
 
 const router = express.Router();
 
-router.post("/upload-image", upload.single("image"), verifyAdminToken, uploadEventImage);
+router.post("/upload-image", verifyAdminToken, upload.single("image"), uploadEventImage);
 router.post("/delete-image", verifyAdminToken, deleteEventImage);
 router.post("/add", verifyAdminToken, addEvent);
 router.get("/getAll", verifyAdminToken, getAllEvents);

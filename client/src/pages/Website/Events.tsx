@@ -5,10 +5,12 @@ import {
   submitEventRegistration,
   type EventRegistrationPayload,
 } from "../../services/website/webEventService";
+import { useToast } from "../../context/ToastContext";
 import { GlobalLoader } from "../../components/GlobalLoader";
 import WebEventCard, { type ExtendedEventData } from "../../components/Website/Events/WebEventCard";
 import WebEventDetailModal from "../../components/Website/Events/WebEventDetailModal";
 import WebEventRegistrationModal from "../../components/Website/Events/WebEventRegistrationModal";
+import RegistrationSuccessOverlay from "../../components/Website/Events/RegistrationSuccessOverlay";
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
@@ -16,6 +18,7 @@ const containerVariants: Variants = {
 };
 
 const Events: React.FC = () => {
+  const { showToast } = useToast();
   const [events, setEvents] = useState<ExtendedEventData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -23,6 +26,8 @@ const Events: React.FC = () => {
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [globalLoading, setGlobalLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [successEventName, setSuccessEventName] = useState<string>("");
+  const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
 
   // Fetch events
   useEffect(() => {
@@ -51,10 +56,19 @@ const Events: React.FC = () => {
     try {
       setIsSubmitting(true);
       setGlobalLoading(true);
+      const currentEventName = selectedEvent?.name || "";
       await submitEventRegistration(payload);
       setShowRegisterModal(false);
+      setSelectedEvent(null);
+      setSuccessEventName(currentEventName);
+      setShowSuccessOverlay(true);
     } catch (err: any) {
       console.error("Registration failed", err);
+      showToast({
+        title: "Registration Failed",
+        message: err.message || "Failed to submit registration. Please try again.",
+        variant: "error",
+      });
     } finally {
       setIsSubmitting(false);
       setGlobalLoading(false);
@@ -130,7 +144,7 @@ const Events: React.FC = () => {
 
       {/* Details Split-View Modal */}
       <WebEventDetailModal
-        selectedEvent={selectedEvent}
+        selectedEvent={showRegisterModal ? null : selectedEvent}
         onClose={() => setSelectedEvent(null)}
         onRegisterClick={() => setShowRegisterModal(true)}
       />
@@ -143,6 +157,13 @@ const Events: React.FC = () => {
         isSubmitting={isSubmitting}
         onClose={() => setShowRegisterModal(false)}
         onSubmit={handleRegistrationSubmit}
+      />
+
+      {/* Full-Screen Registration Success Overlay */}
+      <RegistrationSuccessOverlay
+        show={showSuccessOverlay}
+        eventName={successEventName}
+        onRefresh={() => window.location.reload()}
       />
     </div>
   );

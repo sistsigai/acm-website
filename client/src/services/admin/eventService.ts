@@ -108,15 +108,18 @@ export const createEvent = async (payload: CreateEventPayload) => {
 /* ---------------- GET ALL EVENTS ---------------- */
 export const getAllEvents = async () => {
   try {
-    const res = await axiosInstance.get("/events/getallmem");
+    const res = await axiosInstance.get("/admin/eventmanager/getAll");
     return {
       success: true,
       events: Array.isArray(res.data) ? res.data : (res.data?.events || []),
     };
   } catch {
     try {
-      const res = await axiosInstance.get("/admin/eventmanager/getAll");
-      return res.data;
+      const res = await axiosInstance.get("/events/getallmem");
+      return {
+        success: true,
+        events: Array.isArray(res.data) ? res.data : (res.data?.events || []),
+      };
     } catch (err: any) {
       throw new Error(
         err?.response?.data?.message ||

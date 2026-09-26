@@ -1,5 +1,4 @@
 import axiosInstance from "../axiosInstance";
-import { setAuthToken } from "../../utils/authToken";
 
 export interface AdminLoginPayload {
   username: string;
@@ -10,7 +9,6 @@ export interface AdminLoginPayload {
 export interface AdminLoginResponse {
   success: boolean;
   message: string;
-  token?: string;
   code?: string;
   field?: string;
   user?: {
@@ -43,10 +41,6 @@ export const adminLogin = async (
     );
 
     const response = res.data;
-
-    if (response.success && response.token) {
-      setAuthToken(response.token, payload.rememberMe);
-    }
 
     return response;
 
@@ -95,3 +89,4 @@ export const getCurrentAdmin = async (): Promise<{ success: boolean; user?: any 
     return { success: false };
   }
 };
+

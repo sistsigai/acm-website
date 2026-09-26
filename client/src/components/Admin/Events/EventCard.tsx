@@ -216,7 +216,7 @@ export const EventCard: React.FC<EventCardProps> = ({
                 whileTap={{ scale: 0.98 }}
                 aria-label={`View details for ${event.name}`}
               >
-                <FaInfoCircle size={16} />
+                <FaInfoCircle size={18} />
                 <span>View Details</span>
               </m.button>
 
@@ -229,13 +229,8 @@ export const EventCard: React.FC<EventCardProps> = ({
                   whileTap={{ scale: 0.92 }}
                   title="Attendees & QR Attendance Scanner"
                   aria-label="Attendees and QR Attendance Scanner"
-                  style={{
-                    background: "rgba(56, 189, 248, 0.15)",
-                    borderColor: "rgba(56, 189, 248, 0.4)",
-                    color: "#38bdf8",
-                  }}
                 >
-                  <FaQrcode size={18} />
+                  <FaQrcode size={20} />
                 </m.button>
               )}
 
@@ -248,7 +243,7 @@ export const EventCard: React.FC<EventCardProps> = ({
                 title="Edit Event"
                 aria-label="Edit Event"
               >
-                <FaPencilAlt size={16} />
+                <FaPencilAlt size={18} />
               </m.button>
 
               <m.button
@@ -260,7 +255,7 @@ export const EventCard: React.FC<EventCardProps> = ({
                 title="Delete Event"
                 aria-label="Delete Event"
               >
-                <FaTrashAlt size={16} />
+                <FaTrashAlt size={18} />
               </m.button>
             </div>
           </div>

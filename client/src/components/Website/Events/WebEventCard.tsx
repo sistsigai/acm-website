@@ -312,7 +312,7 @@ export const WebEventCard: React.FC<WebEventCardProps> = ({ event, onSelect }) =
               whileTap={{ scale: 0.98 }}
               aria-label={`View details for ${event.name}`}
             >
-              <FaInfoCircle size={14} />
+              <FaInfoCircle size={18} />
               <span>View Details</span>
             </m.button>
           </div>

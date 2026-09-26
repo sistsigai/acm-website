@@ -34,7 +34,6 @@ export const EventAttendeesModal: React.FC<EventAttendeesModalProps> = ({
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "present" | "absent">("all");
-  const [selectedAttendeeAnswers, setSelectedAttendeeAnswers] = useState<AttendeeRecord | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<AttendeeRecord | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -177,42 +176,45 @@ export const EventAttendeesModal: React.FC<EventAttendeesModalProps> = ({
           exit={{ scale: 0.94, opacity: 0, y: 15 }}
           transition={{ type: "spring", stiffness: 320, damping: 25 }}
           style={{
-            maxWidth: "1240px",
-            width: "96%",
+            maxWidth: "1060px",
+            width: "100%",
+            height: "86vh",
+            minHeight: "580px",
             maxHeight: "92vh",
             display: "flex",
             flexDirection: "column",
             background: "linear-gradient(165deg, #0f172a 0%, #090d16 100%)",
             borderRadius: "16px",
-            boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.08)",
+            boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.08)",
           }}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Modal Header */}
-          <div className="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom border-dark border-opacity-50 flex-shrink-0">
+          <div className="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom flex-shrink-0" style={{ borderColor: "rgba(255, 255, 255, 0.1)" }}>
             <div className="d-flex align-items-center gap-3">
               <div
                 className="d-flex align-items-center justify-content-center flex-shrink-0"
                 style={{
-                  width: 42,
-                  height: 42,
-                  borderRadius: "12px",
+                  width: 46,
+                  height: 46,
+                  borderRadius: "14px",
                   background: "rgba(56, 189, 248, 0.15)",
-                  border: "1px solid rgba(56, 189, 248, 0.3)",
+                  border: "1.5px solid rgba(56, 189, 248, 0.35)",
                   color: "#38bdf8",
+                  boxShadow: "0 0 16px rgba(56, 189, 248, 0.25)",
                 }}
               >
                 <i className="bi bi-people-fill fs-5"></i>
               </div>
               <div>
-                <div className="d-flex align-items-center gap-2">
-                  <h5 className="m-0 fw-bold text-white tracking-tight" style={{ fontSize: "1.2rem" }}>
+                <div className="d-flex align-items-center gap-2 flex-wrap">
+                  <h5 className="m-0 fw-bold text-white tracking-tight" style={{ fontSize: "1.25rem" }}>
                     Event Attendance
                   </h5>
                   <span
-                    className="badge rounded-pill px-2.5 py-1"
+                    className="badge rounded-pill px-3 py-1"
                     style={{
-                      fontSize: "0.75rem",
+                      fontSize: "0.78rem",
                       background: "rgba(56, 189, 248, 0.15)",
                       border: "1px solid rgba(56, 189, 248, 0.4)",
                       color: "#38bdf8",
@@ -223,105 +225,147 @@ export const EventAttendeesModal: React.FC<EventAttendeesModalProps> = ({
                     {event.name}
                   </span>
                 </div>
-                <p className="text-secondary small mb-0 mt-0.5" style={{ fontSize: "0.8rem" }}>
+                <p className="text-secondary small mb-0 mt-1" style={{ fontSize: "0.82rem" }}>
                   {event.date} • {event.time} • Track and manage live event check-ins
                 </p>
               </div>
             </div>
-            <m.button
-              type="button"
-              onClick={onClose}
-              className="btn btn-sm btn-link text-secondary text-decoration-none p-2 rounded-circle"
-              style={{ lineHeight: 1 }}
-              whileHover={{ scale: 1.15, rotate: 90, color: "#f87171" }}
-              whileTap={{ scale: 0.9 }}
-              aria-label="Close dialog"
-            >
-              <i className="bi bi-x-lg fs-6"></i>
-            </m.button>
+            
+            <div className="d-flex align-items-center gap-2">
+              <button
+                type="button"
+                className="btn btn-sm d-inline-flex align-items-center justify-content-center px-3 py-1.5 rounded-3 text-secondary"
+                style={{
+                  fontSize: "0.82rem",
+                  borderColor: "rgba(255, 255, 255, 0.12)",
+                  background: "rgba(255, 255, 255, 0.05)",
+                  color: "#cbd5e1",
+                  height: "38px",
+                  minWidth: "100px",
+                  fontWeight: 600,
+                }}
+                onClick={fetchAttendees}
+                disabled={loading}
+                title="Refresh Attendees"
+              >
+                {loading ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style={{ width: "13px", height: "13px" }}></span>
+                    <span>Syncing...</span>
+                  </>
+                ) : (
+                  <>
+                    <i className="bi bi-arrow-repeat me-2"></i>
+                    <span>Refresh</span>
+                  </>
+                )}
+              </button>
+
+              <m.button
+                type="button"
+                onClick={onClose}
+                className="btn btn-sm btn-link text-secondary text-decoration-none p-2 rounded-circle"
+                style={{ lineHeight: 1 }}
+                whileHover={{ scale: 1.15, rotate: 90, color: "#f87171" }}
+                whileTap={{ scale: 0.9 }}
+                aria-label="Close dialog"
+              >
+                <i className="bi bi-x-lg fs-5"></i>
+              </m.button>
+            </div>
           </div>
 
-          {/* Metrics Ribbon */}
-          <div
-            className="d-flex align-items-center justify-content-between mb-3 p-2 rounded-3 flex-shrink-0 flex-wrap"
-            style={{
-              background: "#060911",
-              border: "1px solid #1e293b",
-              gap: "12px",
-            }}
-          >
-            <div className="d-flex align-items-center flex-wrap flex-grow-1" style={{ gap: "12px" }}>
-              {/* Total Registered */}
-              <div
-                className="flex-fill d-flex align-items-center justify-content-center px-3 py-2 rounded-2"
-                style={{
-                  background: "rgba(59, 130, 246, 0.12)",
-                  border: "1px solid rgba(59, 130, 246, 0.3)",
-                  color: "#60a5fa",
-                  fontSize: "0.85rem",
-                  gap: "8px",
-                  minWidth: "150px",
-                }}
-              >
-                <i className="bi bi-people-fill"></i>
-                <span className="text-white-50">Registered:</span>
-                <span className="text-white fw-bold">{metrics.totalRegistered}</span>
-              </div>
-
-              {/* Present */}
-              <div
-                className="flex-fill d-flex align-items-center justify-content-center px-3 py-2 rounded-2"
-                style={{
-                  background: "rgba(34, 197, 94, 0.12)",
-                  border: "1px solid rgba(34, 197, 94, 0.3)",
-                  color: "#4ade80",
-                  fontSize: "0.85rem",
-                  gap: "8px",
-                  minWidth: "150px",
-                }}
-              >
-                <i className="bi bi-check-circle-fill"></i>
-                <span className="text-white-50">Present:</span>
-                <span className="text-success fw-bold">{metrics.totalPresent}</span>
-              </div>
-
-              {/* Absent */}
-              <div
-                className="flex-fill d-flex align-items-center justify-content-center px-3 py-2 rounded-2"
-                style={{
-                  background: "rgba(239, 68, 68, 0.12)",
-                  border: "1px solid rgba(239, 68, 68, 0.3)",
-                  color: "#f87171",
-                  fontSize: "0.85rem",
-                  gap: "8px",
-                  minWidth: "150px",
-                }}
-              >
-                <i className="bi bi-clock-fill"></i>
-                <span className="text-white-50">Pending / Absent:</span>
-                <span className="text-danger fw-bold">{metrics.totalAbsent}</span>
+          {/* Stats Cards Grid - 3 Equal Columns */}
+          <div className="row g-3 mb-3 flex-shrink-0">
+            {/* Total Registered Card */}
+            <div className="col-12 col-md-4">
+              <div className="glass-panel rounded-4 p-3 d-flex align-items-center justify-content-between h-100">
+                <div>
+                  <span className="text-secondary small text-uppercase fw-semibold tracking-wider" style={{ fontSize: "0.72rem" }}>
+                    Total Registered
+                  </span>
+                  <h3 className="fw-bold text-white mb-0 mt-1" style={{ fontSize: "1.65rem", lineHeight: 1.2 }}>
+                    {metrics.totalRegistered}
+                  </h3>
+                  <small className="text-secondary" style={{ fontSize: "0.74rem" }}>Total signups received</small>
+                </div>
+                <div
+                  className="d-flex align-items-center justify-content-center rounded-3 p-2 flex-shrink-0"
+                  style={{
+                    background: "rgba(56, 189, 248, 0.12)",
+                    border: "1px solid rgba(56, 189, 248, 0.25)",
+                    color: "#38bdf8",
+                    width: 44,
+                    height: 44,
+                  }}
+                >
+                  <i className="bi bi-people-fill fs-5"></i>
+                </div>
               </div>
             </div>
 
-            {/* Refresh Button */}
-            <button
-              type="button"
-              className="btn btn-sm btn-outline-secondary d-inline-flex align-items-center justify-content-center px-3 py-2 rounded-2 text-secondary"
-              style={{ fontSize: "0.85rem", borderColor: "#1e293b", background: "rgba(255,255,255,0.03)", height: "38px" }}
-              onClick={fetchAttendees}
-              disabled={loading}
-              title="Refresh Attendees"
-            >
-              <i className={`bi bi-arrow-repeat me-2 ${loading ? "spinner-border spinner-border-sm border-0" : ""}`}></i>
-              <span>Refresh</span>
-            </button>
+            {/* Present / Checked-In Card */}
+            <div className="col-12 col-md-4">
+              <div className="glass-panel rounded-4 p-3 d-flex align-items-center justify-content-between h-100">
+                <div>
+                  <span className="text-secondary small text-uppercase fw-semibold tracking-wider" style={{ fontSize: "0.72rem" }}>
+                    Checked-In / Present
+                  </span>
+                  <h3 className="fw-bold text-success mb-0 mt-1" style={{ fontSize: "1.65rem", lineHeight: 1.2 }}>
+                    {metrics.totalPresent}
+                  </h3>
+                  <small className="text-success" style={{ fontSize: "0.74rem", opacity: 0.9 }}>
+                    {metrics.totalRegistered > 0 ? `${Math.round((metrics.totalPresent / metrics.totalRegistered) * 100)}% attendance rate` : "0% attendance"}
+                  </small>
+                </div>
+                <div
+                  className="d-flex align-items-center justify-content-center rounded-3 p-2 flex-shrink-0"
+                  style={{
+                    background: "rgba(34, 197, 94, 0.12)",
+                    border: "1px solid rgba(34, 197, 94, 0.25)",
+                    color: "#4ade80",
+                    width: 44,
+                    height: 44,
+                  }}
+                >
+                  <i className="bi bi-check-circle-fill fs-5"></i>
+                </div>
+              </div>
+            </div>
+
+            {/* Pending / Absent Card */}
+            <div className="col-12 col-md-4">
+              <div className="glass-panel rounded-4 p-3 d-flex align-items-center justify-content-between h-100">
+                <div>
+                  <span className="text-secondary small text-uppercase fw-semibold tracking-wider" style={{ fontSize: "0.72rem" }}>
+                    Pending / Absent
+                  </span>
+                  <h3 className="fw-bold text-danger mb-0 mt-1" style={{ fontSize: "1.65rem", lineHeight: 1.2 }}>
+                    {metrics.totalAbsent}
+                  </h3>
+                  <small className="text-danger" style={{ fontSize: "0.74rem", opacity: 0.9 }}>Awaiting entry scan</small>
+                </div>
+                <div
+                  className="d-flex align-items-center justify-content-center rounded-3 p-2 flex-shrink-0"
+                  style={{
+                    background: "rgba(244, 63, 94, 0.12)",
+                    border: "1px solid rgba(244, 63, 94, 0.25)",
+                    color: "#f87171",
+                    width: 44,
+                    height: 44,
+                  }}
+                >
+                  <i className="bi bi-clock-history fs-5"></i>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Search & Actions Bar */}
-          <div className="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2.5 flex-shrink-0">
-            {/* Search Box */}
-            <div className="d-flex align-items-center flex-grow-1" style={{ maxWidth: "380px" }}>
-              <div className="admin-search-bar w-100" style={{ margin: 0, height: "38px" }}>
+          <div className="d-flex flex-column flex-md-row align-items-stretch align-items-md-center justify-content-between gap-3 mb-3 flex-shrink-0">
+            {/* Search Box using unified admin-search-bar */}
+            <div className="flex-grow-1" style={{ maxWidth: "420px" }}>
+              <div className="admin-search-bar w-100">
                 <i className="bi bi-search search-icon"></i>
                 <input
                   type="text"
@@ -329,7 +373,6 @@ export const EventAttendeesModal: React.FC<EventAttendeesModalProps> = ({
                   placeholder="Search by name, email, reg no, phone..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  style={{ height: "38px", fontSize: "0.84rem" }}
                 />
                 {searchTerm && (
                   <button
@@ -345,38 +388,69 @@ export const EventAttendeesModal: React.FC<EventAttendeesModalProps> = ({
             </div>
 
             {/* Filter & Export Buttons */}
-            <div className="d-flex align-items-center gap-2">
-              <div className="btn-group btn-group-sm" role="group" style={{ height: "38px" }}>
+            <div className="d-flex align-items-center gap-2.5 flex-wrap justify-content-md-end">
+              {/* Status Filter Tabs */}
+              <div
+                className="d-inline-flex align-items-center p-1 rounded-3"
+                style={{
+                  background: "rgba(15, 23, 42, 0.8)",
+                  border: "1px solid rgba(255, 255, 255, 0.1)",
+                  gap: "4px",
+                  height: "40px",
+                }}
+              >
                 <button
                   type="button"
-                  className={`btn px-3 fw-semibold d-inline-flex align-items-center ${statusFilter === "all" ? "btn-primary" : "btn-outline-secondary text-secondary"}`}
-                  style={{ borderColor: "#1e293b", fontSize: "0.82rem" }}
+                  className="btn btn-sm px-3 fw-bold rounded-2 transition-all"
+                  style={{
+                    fontSize: "0.82rem",
+                    border: "none",
+                    background: statusFilter === "all" ? "linear-gradient(135deg, #0284c7, #2563eb)" : "transparent",
+                    color: statusFilter === "all" ? "#ffffff" : "#94a3b8",
+                    boxShadow: statusFilter === "all" ? "0 2px 10px rgba(56, 189, 248, 0.4)" : "none",
+                  }}
                   onClick={() => setStatusFilter("all")}
                 >
                   All ({metrics.totalRegistered})
                 </button>
                 <button
                   type="button"
-                  className={`btn px-3 fw-semibold d-inline-flex align-items-center ${statusFilter === "present" ? "btn-success" : "btn-outline-secondary text-secondary"}`}
-                  style={{ borderColor: "#1e293b", fontSize: "0.82rem" }}
+                  className="btn btn-sm px-3 fw-bold rounded-2 transition-all"
+                  style={{
+                    fontSize: "0.82rem",
+                    border: "none",
+                    background: statusFilter === "present" ? "linear-gradient(135deg, #16a34a, #059669)" : "transparent",
+                    color: statusFilter === "present" ? "#ffffff" : "#94a3b8",
+                    boxShadow: statusFilter === "present" ? "0 2px 10px rgba(34, 197, 94, 0.4)" : "none",
+                  }}
                   onClick={() => setStatusFilter("present")}
                 >
                   Present ({metrics.totalPresent})
                 </button>
                 <button
                   type="button"
-                  className={`btn px-3 fw-semibold d-inline-flex align-items-center ${statusFilter === "absent" ? "btn-danger" : "btn-outline-secondary text-secondary"}`}
-                  style={{ borderColor: "#1e293b", fontSize: "0.82rem" }}
+                  className="btn btn-sm px-3 fw-bold rounded-2 transition-all"
+                  style={{
+                    fontSize: "0.82rem",
+                    border: "none",
+                    background: statusFilter === "absent" ? "linear-gradient(135deg, #e11d48, #be123c)" : "transparent",
+                    color: statusFilter === "absent" ? "#ffffff" : "#94a3b8",
+                    boxShadow: statusFilter === "absent" ? "0 2px 10px rgba(225, 29, 72, 0.4)" : "none",
+                  }}
                   onClick={() => setStatusFilter("absent")}
                 >
                   Absent ({metrics.totalAbsent})
                 </button>
               </div>
 
+              {/* Export CSV Button */}
               <button
                 type="button"
-                className="btn btn-sm btn-info text-dark d-inline-flex align-items-center px-3 fw-semibold rounded-2"
-                style={{ fontSize: "0.82rem", height: "38px" }}
+                className="btn btn-primary btn-sm d-inline-flex align-items-center px-3.5 fw-semibold rounded-3 shadow"
+                style={{
+                  height: "40px",
+                  fontSize: "0.84rem",
+                }}
                 onClick={handleExportCsv}
                 title="Export CSV"
               >
@@ -388,49 +462,56 @@ export const EventAttendeesModal: React.FC<EventAttendeesModalProps> = ({
 
           {/* Attendees Table Container */}
           <div
-            className="rounded-3 overflow-hidden flex-grow-1"
+            className="rounded-4 overflow-hidden flex-grow-1"
             style={{
-              border: "1px solid #1e293b",
-              background: "#060911",
+              border: "1px solid rgba(255, 255, 255, 0.08)",
+              background: "rgba(11, 17, 32, 0.7)",
               minHeight: "260px",
               display: "flex",
               flexDirection: "column",
             }}
           >
-            <div className="table-responsive flex-grow-1" style={{ maxHeight: "50vh", overflowY: "auto" }}>
+            <div className="table-responsive flex-grow-1" style={{ maxHeight: "48vh", overflowY: "auto" }}>
               <table
                 className="table table-hover m-0 align-middle"
                 style={{
                   width: "100%",
-                  tableLayout: "fixed",
-                  fontSize: "0.84rem",
+                  fontSize: "0.85rem",
                   color: "#cbd5e1",
                   backgroundColor: "transparent",
                   borderColor: "rgba(255, 255, 255, 0.07)",
                   ["--bs-table-bg" as any]: "transparent",
-                  ["--bs-table-hover-bg" as any]: "rgba(255, 255, 255, 0.03)",
+                  ["--bs-table-hover-bg" as any]: "rgba(56, 189, 248, 0.04)",
                   ["--bs-table-color" as any]: "#cbd5e1",
                   ["--bs-table-border-color" as any]: "rgba(255, 255, 255, 0.07)",
                 }}
               >
                 <thead>
-                  <tr style={{ background: "#0b1222", borderBottom: "1px solid #1e293b" }}>
-                    <th className="py-2.5 px-2 text-center text-uppercase fw-semibold" style={{ fontSize: "0.72rem", width: "5%", whiteSpace: "nowrap", background: "#0b1222", color: "#94a3b8", borderColor: "#1e293b" }}>
+                  <tr
+                    style={{
+                      background: "#0f172a",
+                      borderBottom: "1.5px solid rgba(255, 255, 255, 0.1)",
+                      position: "sticky",
+                      top: 0,
+                      zIndex: 5,
+                    }}
+                  >
+                    <th className="py-3 px-3 text-center text-uppercase fw-bold" style={{ fontSize: "0.74rem", width: "50px", color: "#94a3b8", letterSpacing: "0.6px" }}>
                       #
                     </th>
-                    <th className="py-2.5 px-3 text-start text-uppercase fw-semibold" style={{ fontSize: "0.72rem", width: "27%", whiteSpace: "nowrap", background: "#0b1222", color: "#94a3b8", borderColor: "#1e293b" }}>
+                    <th className="py-3 px-3 text-start text-uppercase fw-bold" style={{ fontSize: "0.74rem", width: "26%", color: "#94a3b8", letterSpacing: "0.6px" }}>
                       Attendee
                     </th>
-                    <th className="py-2.5 px-3 text-start text-uppercase fw-semibold" style={{ fontSize: "0.72rem", width: "18%", whiteSpace: "nowrap", background: "#0b1222", color: "#94a3b8", borderColor: "#1e293b" }}>
+                    <th className="py-3 px-3 text-start text-uppercase fw-bold" style={{ fontSize: "0.74rem", width: "18%", color: "#94a3b8", letterSpacing: "0.6px" }}>
                       Reg No
                     </th>
-                    <th className="py-2.5 px-3 text-start text-uppercase fw-semibold" style={{ fontSize: "0.72rem", width: "19%", whiteSpace: "nowrap", background: "#0b1222", color: "#94a3b8", borderColor: "#1e293b" }}>
-                      Contact
+                    <th className="py-3 px-3 text-start text-uppercase fw-bold" style={{ fontSize: "0.74rem", width: "26%", color: "#94a3b8", letterSpacing: "0.6px" }}>
+                      Email
                     </th>
-                    <th className="py-2.5 px-2 text-center text-uppercase fw-semibold" style={{ fontSize: "0.72rem", width: "15%", whiteSpace: "nowrap", background: "#0b1222", color: "#94a3b8", borderColor: "#1e293b" }}>
+                    <th className="py-3 px-3 text-center text-uppercase fw-bold" style={{ fontSize: "0.74rem", width: "15%", color: "#94a3b8", letterSpacing: "0.6px" }}>
                       Attendance
                     </th>
-                    <th className="py-2.5 px-2 text-center text-uppercase fw-semibold" style={{ fontSize: "0.72rem", width: "16%", whiteSpace: "nowrap", background: "#0b1222", color: "#94a3b8", borderColor: "#1e293b" }}>
+                    <th className="py-3 px-3 text-center text-uppercase fw-bold" style={{ fontSize: "0.74rem", width: "15%", color: "#94a3b8", letterSpacing: "0.6px" }}>
                       Action
                     </th>
                   </tr>
@@ -439,63 +520,81 @@ export const EventAttendeesModal: React.FC<EventAttendeesModalProps> = ({
                   {loading ? (
                     <tr>
                       <td colSpan={6} className="text-center py-5 text-secondary" style={{ background: "transparent", borderColor: "transparent" }}>
-                        <i className="bi bi-arrow-repeat spinner-border spinner-border-sm text-primary me-2"></i>
-                        <span>Loading registered attendees...</span>
+                        <div className="d-flex flex-column align-items-center justify-content-center py-5">
+                          <div
+                            className="d-flex align-items-center justify-content-center rounded-circle mb-3"
+                            style={{
+                              width: 60,
+                              height: 60,
+                              background: "rgba(56, 189, 248, 0.08)",
+                              border: "1px solid rgba(56, 189, 248, 0.2)",
+                              color: "#38bdf8",
+                            }}
+                          >
+                            <div className="spinner-border text-info" style={{ width: "2rem", height: "2rem" }} role="status">
+                              <span className="visually-hidden">Loading...</span>
+                            </div>
+                          </div>
+                          <span className="fw-semibold text-white mb-1" style={{ fontSize: "0.95rem" }}>Syncing Attendees...</span>
+                          <small className="text-secondary">Fetching latest live event registrations and metrics.</small>
+                        </div>
                       </td>
                     </tr>
                   ) : filteredRegistrations.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="text-center py-5 text-secondary" style={{ background: "transparent", borderColor: "transparent" }}>
-                        <div className="d-flex flex-column align-items-center justify-content-center py-4">
-                          <i className="bi bi-people mb-2 opacity-40 fs-1" style={{ color: "#64748b" }}></i>
-                          <span style={{ fontSize: "0.88rem", color: "#94a3b8" }}>No attendees found matching current filter.</span>
+                        <div className="d-flex flex-column align-items-center justify-content-center py-5">
+                          <div
+                            className="d-flex align-items-center justify-content-center rounded-circle mb-3"
+                            style={{
+                              width: 60,
+                              height: 60,
+                              background: "rgba(56, 189, 248, 0.08)",
+                              border: "1px solid rgba(56, 189, 248, 0.2)",
+                              color: "#38bdf8",
+                            }}
+                          >
+                            <i className="bi bi-people fs-2"></i>
+                          </div>
+                          <span className="fw-semibold text-white mb-1" style={{ fontSize: "0.95rem" }}>No Attendees Found</span>
+                          <small className="text-secondary">No registrations match the current filter or search criteria.</small>
                         </div>
                       </td>
                     </tr>
                   ) : (
                     filteredRegistrations.map((attendee, index) => (
                       <tr key={attendee._id} style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", background: "transparent" }}>
-                        <td className="px-2 text-center text-secondary font-monospace" style={{ width: "5%" }}>{index + 1}</td>
-                        <td className="px-3 text-start text-truncate" style={{ width: "27%", maxWidth: 0 }}>
-                          <div className="fw-semibold text-white text-truncate" title={attendee.name}>{attendee.name}</div>
-                          <div className="text-secondary small font-monospace d-flex align-items-center text-truncate mt-0.5" title={attendee.email}>
-                            <i className="bi bi-envelope text-white-50 flex-shrink-0 me-2" style={{ fontSize: "0.8rem" }}></i>
-                            <span className="text-truncate">{attendee.email}</span>
-                          </div>
+                        <td className="px-3 text-center text-secondary font-monospace" style={{ width: "50px" }}>{index + 1}</td>
+                        <td className="px-3 text-start text-truncate" style={{ width: "26%", maxWidth: 0 }}>
+                          <div className="fw-bold text-white text-truncate" title={attendee.name}>{attendee.name}</div>
                         </td>
                         <td className="px-3 text-start text-truncate" style={{ width: "18%", maxWidth: 0 }}>
-                          <div className="text-info fw-semibold font-monospace" style={{ fontSize: "0.85rem", letterSpacing: "0.5px" }}>
+                          <div className="text-info fw-bold font-monospace" style={{ fontSize: "0.88rem", letterSpacing: "0.5px" }}>
                             {attendee.registerNo || "N/A"}
                           </div>
                         </td>
-                        <td className="px-3 text-start text-truncate" style={{ width: "19%", maxWidth: 0 }}>
-                          {attendee.phone && attendee.phone !== "N/A" ? (
-                            <a
-                              href={`tel:${attendee.phone}`}
-                              className="text-decoration-none text-light d-inline-flex align-items-center text-truncate"
-                              style={{ fontSize: "0.85rem" }}
-                            >
-                              <i className="bi bi-telephone-fill text-success flex-shrink-0 me-2" style={{ fontSize: "0.8rem" }}></i>
-                              <span className="text-truncate">{attendee.phone}</span>
-                            </a>
-                          ) : (
-                            <span className="text-secondary" style={{ fontSize: "0.85rem" }}>N/A</span>
-                          )}
+                        <td className="px-3 text-start text-truncate" style={{ width: "26%", maxWidth: 0 }}>
+                          <div className="text-secondary font-monospace d-flex align-items-center text-truncate" title={attendee.email}>
+                            <i className="bi bi-envelope text-info flex-shrink-0 me-2" style={{ fontSize: "0.8rem" }}></i>
+                            <span className="text-truncate">{attendee.email || "N/A"}</span>
+                          </div>
                         </td>
-                        <td className="px-2 text-center" style={{ width: "15%" }}>
+                        <td className="px-3 text-center" style={{ width: "15%" }}>
                           {attendee.entry ? (
                             <div className="d-flex flex-column align-items-center justify-content-center">
                               <span
                                 className="badge px-3 py-1.5 d-inline-flex align-items-center"
                                 style={{
                                   background: "rgba(34, 197, 94, 0.15)",
-                                  border: "1px solid rgba(34, 197, 94, 0.4)",
+                                  border: "1px solid rgba(34, 197, 94, 0.45)",
                                   color: "#4ade80",
-                                  fontWeight: 600,
-                                  fontSize: "0.75rem",
+                                  fontWeight: 700,
+                                  fontSize: "0.76rem",
+                                  boxShadow: "0 0 12px rgba(34, 197, 94, 0.2)",
+                                  gap: "7px",
                                 }}
                               >
-                                <i className="bi bi-check-circle-fill me-2" style={{ fontSize: "0.8rem" }}></i>
+                                <i className="bi bi-check-circle-fill" style={{ fontSize: "0.82rem" }}></i>
                                 <span>Present</span>
                               </span>
                               {attendee.checkedInAt && (
@@ -508,38 +607,39 @@ export const EventAttendeesModal: React.FC<EventAttendeesModalProps> = ({
                             <span
                               className="badge px-3 py-1.5 d-inline-flex align-items-center"
                               style={{
-                                background: "rgba(148, 163, 184, 0.12)",
-                                border: "1px solid rgba(148, 163, 184, 0.25)",
-                                color: "#94a3b8",
-                                fontWeight: 500,
-                                fontSize: "0.75rem",
+                                background: "rgba(244, 63, 94, 0.12)",
+                                border: "1px solid rgba(244, 63, 94, 0.35)",
+                                color: "#f87171",
+                                fontWeight: 600,
+                                fontSize: "0.76rem",
+                                gap: "7px",
                               }}
                             >
-                              <i className="bi bi-clock-fill me-2" style={{ fontSize: "0.8rem" }}></i>
+                              <i className="bi bi-clock-fill" style={{ fontSize: "0.82rem" }}></i>
                               <span>Absent</span>
                             </span>
                           )}
                         </td>
-                        <td className="px-2 text-center" style={{ width: "16%" }}>
-                          <div className="d-inline-flex align-items-center justify-content-center" style={{ gap: "12px" }}>
+                        <td className="px-3 text-center" style={{ width: "15%" }}>
+                          <div className="d-inline-flex align-items-center justify-content-center" style={{ gap: "8px" }}>
                             <button
                               type="button"
-                              className={`btn btn-sm py-1.5 px-3 rounded-2 fw-semibold ${
+                              className={`btn btn-sm py-1 px-2.5 rounded-3 fw-semibold ${
                                 attendee.entry ? "btn-outline-danger" : "btn-outline-success"
                               }`}
-                              style={{ fontSize: "0.75rem", whiteSpace: "nowrap" }}
+                              style={{ fontSize: "0.76rem", whiteSpace: "nowrap" }}
                               onClick={() => handleToggleAttendance(attendee)}
                             >
                               {attendee.entry ? "Mark Absent" : "Mark Present"}
                             </button>
                             <button
                               type="button"
-                              className="btn btn-sm btn-outline-danger p-1.5 rounded-2 d-inline-flex align-items-center justify-content-center"
-                              style={{ width: "32px", height: "32px", borderColor: "rgba(239, 68, 68, 0.35)" }}
+                              className="btn btn-sm btn-outline-danger p-1 rounded-3 d-inline-flex align-items-center justify-content-center"
+                              style={{ width: "30px", height: "30px", borderColor: "rgba(239, 68, 68, 0.4)" }}
                               title="Delete Attendee"
                               onClick={() => setDeleteTarget(attendee)}
                             >
-                              <i className="bi bi-trash3" style={{ fontSize: "0.85rem" }}></i>
+                              <i className="bi bi-trash3" style={{ fontSize: "0.82rem" }}></i>
                             </button>
                           </div>
                         </td>
@@ -552,25 +652,20 @@ export const EventAttendeesModal: React.FC<EventAttendeesModalProps> = ({
           </div>
 
           {/* Modal Footer */}
-          <div className="d-flex justify-content-between align-items-center mt-3 pt-3 border-top border-dark border-opacity-50 flex-shrink-0">
+          <div className="d-flex justify-content-between align-items-center mt-3 pt-3 border-top flex-shrink-0" style={{ borderColor: "rgba(255, 255, 255, 0.1)" }}>
+            <div className="text-secondary small">
+              Showing <span className="text-white fw-bold">{filteredRegistrations.length}</span> of <span className="text-white fw-bold">{registrations.length}</span> registered
+            </div>
             <button
               type="button"
-              className="btn btn-secondary px-4 py-2"
+              className="btn btn-secondary px-4 py-2 rounded-3 fw-semibold"
               style={{
-                background: "rgba(255, 255, 255, 0.06)",
-                borderColor: "rgba(255, 255, 255, 0.12)",
-                color: "#cbd5e1",
-                borderRadius: "8px",
                 fontSize: "0.88rem",
-                fontWeight: 500,
               }}
               onClick={onClose}
             >
               Close
             </button>
-            <div className="text-secondary small">
-              Showing <span className="text-white fw-semibold">{filteredRegistrations.length}</span> of <span className="text-white fw-semibold">{registrations.length}</span> registered
-            </div>
           </div>
         </m.div>
 
@@ -584,77 +679,6 @@ export const EventAttendeesModal: React.FC<EventAttendeesModalProps> = ({
           onConfirm={handleConfirmDelete}
           onCancel={() => setDeleteTarget(null)}
         />
-
-        {/* Custom Answers Popover / Sub-Modal */}
-        {selectedAttendeeAnswers && (
-          <m.div
-            className="admin-modal-overlay"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setSelectedAttendeeAnswers(null)}
-            style={{ zIndex: 1200 }}
-          >
-            <m.div
-              className="p-4 rounded-4 text-white"
-              initial={{ scale: 0.92, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.92, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              style={{
-                width: "90%",
-                maxWidth: "500px",
-                background: "#0c1322",
-                border: "1px solid rgba(56, 189, 248, 0.3)",
-                boxShadow: "0 20px 40px rgba(0,0,0,0.9)",
-              }}
-            >
-              <div className="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
-                <div>
-                  <h6 className="fw-bold mb-0 text-white">{selectedAttendeeAnswers.name}</h6>
-                  <small className="text-secondary font-monospace">{selectedAttendeeAnswers.email}</small>
-                </div>
-                <button
-                  type="button"
-                  className="btn btn-sm btn-icon text-secondary"
-                  onClick={() => setSelectedAttendeeAnswers(null)}
-                >
-                  <i className="bi bi-x-lg"></i>
-                </button>
-              </div>
-
-              <div className="d-flex flex-column gap-2.5 overflow-y-auto" style={{ maxHeight: "350px" }}>
-                {selectedAttendeeAnswers.answers &&
-                  Object.entries(selectedAttendeeAnswers.answers).map(([q, ans], i) => (
-                    <div key={i} className="p-2.5 rounded-3" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                      <div className="text-secondary small fw-semibold mb-1">{q}</div>
-                      <div className="text-light small font-monospace">
-                        {Array.isArray(ans) ? (
-                          ans.map((item, idx) => (
-                            <div key={idx}>
-                              {typeof item === "string" && item.startsWith("http") ? (
-                                <a href={item} target="_blank" rel="noreferrer" className="text-info text-decoration-none d-inline-flex align-items-center gap-1">
-                                  <span>View Uploaded File {idx + 1}</span>
-                                </a>
-                              ) : (
-                                String(item)
-                              )}
-                            </div>
-                          ))
-                        ) : typeof ans === "string" && ans.startsWith("http") ? (
-                          <a href={ans} target="_blank" rel="noreferrer" className="text-info text-decoration-none d-inline-flex align-items-center gap-1">
-                            <span>Open Attachment / File</span>
-                          </a>
-                        ) : (
-                          String(ans || "No answer")
-                        )}
-                      </div>
-                    </div>
-                  ))}
-              </div>
-            </m.div>
-          </m.div>
-        )}
       </m.div>
     </AnimatePresence>
   );

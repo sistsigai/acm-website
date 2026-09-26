@@ -61,11 +61,6 @@ export const ScanResultOverlay: React.FC<ScanResultOverlayProps> = ({
     answersMap["regNumber"] ||
     "";
 
-  const attendeeDept =
-    [result.dept, result.year, result.section].filter(Boolean).join(" • ") ||
-    answersMap["Department"] ||
-    answersMap["dept"] ||
-    "";
 
   const themeConfig = isSuccess
     ? {
@@ -145,25 +140,26 @@ export const ScanResultOverlay: React.FC<ScanResultOverlayProps> = ({
       onClick={onDismiss}
     >
       <div
-        className="w-100 rounded-4 overflow-hidden position-relative"
+        className="w-100 rounded-4 overflow-hidden position-relative text-center"
         style={{
-          maxWidth: "420px",
+          maxWidth: "400px",
           background: "#0c1322",
           border: `2px solid ${themeConfig.border}`,
+          borderRadius: "24px",
           boxShadow: `0 25px 60px -10px rgba(0, 0, 0, 0.95), 0 0 40px ${themeConfig.glow}`,
           color: "#f8fafc",
-          padding: "26px 20px 22px",
+          padding: "30px 22px 24px",
           animation: "scannerModalSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards",
         }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Status Icon */}
-        <div className="text-center mb-3">
+        <div className="text-center mb-3 pb-1">
           <div
-            className="d-inline-flex align-items-center justify-content-center rounded-circle mb-2"
+            className="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
             style={{
-              width: "64px",
-              height: "64px",
+              width: "66px",
+              height: "66px",
               background: themeConfig.iconBg,
               color: themeConfig.btnText,
               fontSize: "2rem",
@@ -173,17 +169,18 @@ export const ScanResultOverlay: React.FC<ScanResultOverlayProps> = ({
             <i className={`bi ${themeConfig.icon} fw-bold`}></i>
           </div>
 
-          <h4
-            className="fw-bold mb-1 tracking-tight"
+          <h3
+            className="fw-bold mb-1.5 tracking-tight text-white"
             style={{
               color: themeConfig.textColor,
-              fontSize: "1.38rem",
+              fontSize: "1.45rem",
+              letterSpacing: "-0.02em",
             }}
           >
             {themeConfig.title}
-          </h4>
+          </h3>
 
-          <p className="text-secondary small mb-0" style={{ fontSize: "0.88rem", color: "#94a3b8" }}>
+          <p className="small mb-0" style={{ fontSize: "0.88rem", color: "#94a3b8" }}>
             {result.message}
           </p>
         </div>
@@ -191,14 +188,14 @@ export const ScanResultOverlay: React.FC<ScanResultOverlayProps> = ({
         {/* Event Mismatch Comparison Card */}
         {isMismatch && result.ticketEventName && (
           <div
-            className="rounded-4 p-3 mb-3"
+            className="rounded-4 p-3 mb-3 text-start"
             style={{
               background: "rgba(249, 115, 22, 0.08)",
               border: "1px solid rgba(249, 115, 22, 0.3)",
             }}
           >
             <div className="mb-2">
-              <span className="text-secondary small text-uppercase fw-bold tracking-wider d-block mb-0.5" style={{ fontSize: "0.68rem" }}>
+              <span className="text-uppercase fw-bold tracking-wider d-block mb-0.5" style={{ fontSize: "0.68rem", color: "#94a3b8" }}>
                 Ticket belongs to
               </span>
               <div className="d-flex align-items-center gap-2 text-warning fw-semibold" style={{ fontSize: "0.95rem" }}>
@@ -209,7 +206,7 @@ export const ScanResultOverlay: React.FC<ScanResultOverlayProps> = ({
 
             {result.currentEventName && (
               <div className="pt-2 border-top border-secondary border-opacity-20">
-                <span className="text-secondary small text-uppercase fw-bold tracking-wider d-block mb-0.5" style={{ fontSize: "0.68rem" }}>
+                <span className="text-uppercase fw-bold tracking-wider d-block mb-0.5" style={{ fontSize: "0.68rem", color: "#94a3b8" }}>
                   Active scanner for
                 </span>
                 <div className="d-flex align-items-center gap-2 text-secondary" style={{ fontSize: "0.85rem" }}>
@@ -221,38 +218,56 @@ export const ScanResultOverlay: React.FC<ScanResultOverlayProps> = ({
           </div>
         )}
 
-        {/* Attendee Details Card */}
+        {/* Attendee Details Card (Cleaned: Only Name & Register Number) */}
         {attendeeName ? (
           <div
-            className="rounded-4 p-3 mb-3.5"
+            className="rounded-4 p-3.5 mb-4 text-start"
             style={{
               background: "linear-gradient(145deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%)",
               border: "1px solid rgba(255, 255, 255, 0.12)",
+              borderRadius: "18px",
             }}
           >
             {/* Full Name */}
-            <div className="mb-2.5">
-              <span className="text-secondary small text-uppercase fw-bold tracking-wider d-block mb-1" style={{ fontSize: "0.7rem", color: "#64748b" }}>
-                Attendee Name
+            <div className="mb-3">
+              <span
+                className="text-uppercase fw-bold d-block mb-1"
+                style={{
+                  fontSize: "0.68rem",
+                  color: "#64748b",
+                  letterSpacing: "0.8px",
+                }}
+              >
+                ATTENDEE NAME
               </span>
-              <h5 className="fw-bold text-white mb-0 text-truncate" style={{ fontSize: "1.22rem", letterSpacing: "-0.01em" }}>
+              <h4
+                className="fw-bold text-white mb-0 text-truncate"
+                style={{ fontSize: "1.25rem", letterSpacing: "-0.01em" }}
+              >
                 {attendeeName}
-              </h5>
+              </h4>
             </div>
 
-            {/* Register Number Chip */}
+            {/* Register Number */}
             {attendeeRegNo && (
-              <div className="mb-2.5">
-                <span className="text-secondary small text-uppercase fw-bold tracking-wider d-block mb-1" style={{ fontSize: "0.7rem", color: "#64748b" }}>
-                  Register Number
+              <div>
+                <span
+                  className="text-uppercase fw-bold d-block mb-1.5"
+                  style={{
+                    fontSize: "0.68rem",
+                    color: "#64748b",
+                    letterSpacing: "0.8px",
+                  }}
+                >
+                  REGISTER NUMBER
                 </span>
                 <div
                   className="d-inline-flex align-items-center gap-2 px-3 py-1.5 rounded-3 fw-bold font-monospace"
                   style={{
-                    background: "rgba(56, 189, 248, 0.15)",
+                    background: "rgba(56, 189, 248, 0.12)",
                     border: "1px solid rgba(56, 189, 248, 0.35)",
                     color: "#38bdf8",
-                    fontSize: "1rem",
+                    fontSize: "0.95rem",
                     letterSpacing: "0.5px",
                   }}
                 >
@@ -262,17 +277,16 @@ export const ScanResultOverlay: React.FC<ScanResultOverlayProps> = ({
               </div>
             )}
 
-            {/* Department & Year (if present) */}
-            {attendeeDept && (
-              <div className="pt-2 border-top border-secondary border-opacity-25 d-flex align-items-center justify-content-between small text-secondary">
-                <span>Department</span>
-                <span className="text-light fw-medium">{attendeeDept}</span>
-              </div>
-            )}
-
             {/* Timestamp */}
             {result.checkedInAt && (
-              <div className="pt-2 mt-2 border-top border-secondary border-opacity-25 d-flex align-items-center justify-content-between small text-secondary">
+              <div
+                className="pt-2.5 mt-3 border-top d-flex align-items-center justify-content-between"
+                style={{
+                  borderColor: "rgba(255, 255, 255, 0.08)",
+                  fontSize: "0.82rem",
+                  color: "#94a3b8",
+                }}
+              >
                 <span>Checked in at</span>
                 <span className="text-white font-monospace fw-semibold">
                   {new Date(result.checkedInAt).toLocaleTimeString([], {
@@ -287,11 +301,11 @@ export const ScanResultOverlay: React.FC<ScanResultOverlayProps> = ({
         ) : null}
 
         {/* Buttons */}
-        <div className="d-flex flex-column gap-2">
+        <div className="d-flex flex-column gap-2.5">
           {isMismatch && result.ticketEventId && onSwitchEvent && (
             <button
               type="button"
-              className="w-100 py-2.5 rounded-pill fw-bold d-flex align-items-center justify-content-center gap-2 border-0"
+              className="w-100 py-3 rounded-pill fw-bold d-flex align-items-center justify-content-center gap-2 border-0"
               style={{
                 background: "linear-gradient(135deg, #f97316 0%, #ea580c 100%)",
                 color: "#ffffff",
@@ -313,15 +327,15 @@ export const ScanResultOverlay: React.FC<ScanResultOverlayProps> = ({
               background: themeConfig.btnBg,
               color: themeConfig.btnText,
               boxShadow: themeConfig.btnShadow,
-              fontSize: "1.05rem",
+              fontSize: "1rem",
               letterSpacing: "0.2px",
               cursor: "pointer",
             }}
             onClick={onDismiss}
           >
-            <i className="bi bi-qr-code-scan fs-5"></i>
+            <i className="bi bi-qr-code-scan"></i>
             <span>Scan Next Ticket</span>
-            <i className="bi bi-arrow-right fs-5 ms-1"></i>
+            <i className="bi bi-arrow-right ms-1"></i>
           </button>
         </div>
       </div>

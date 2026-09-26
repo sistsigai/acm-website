@@ -1,32 +1,15 @@
-import axiosInstance from "../services/axiosInstance";
+/* ---------------- AUTH TOKEN UTILITIES ---------------- */
+/* Auth is now handled entirely via httpOnly cookies.           */
+/* This module only provides a cleanup function for logout.    */
 
-/* ---------------- TOKEN STORAGE ---------------- */
-
-export const getTokenStorage = (rememberMe: boolean = false): Storage => {
-  return rememberMe ? localStorage : sessionStorage;
-};
-
-/* ---------------- SET TOKEN ---------------- */
-
-export const setAuthToken = (
-  token: string,
-  rememberMe: boolean = true
-): void => {
-  if (rememberMe) {
-    localStorage.setItem("adminToken", token);
-  }
-  sessionStorage.setItem("adminToken", token);
-
-  axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-};
-
-/* ---------------- REMOVE TOKEN ---------------- */
+/* ---------------- CLEAR LEGACY STORAGE ---------------- */
 
 export const clearAuthToken = (): void => {
   try {
+    // Remove any legacy token entries from previous versions
     localStorage.removeItem("adminToken");
     sessionStorage.removeItem("adminToken");
-    
+
     // Clear any additional auth or admin state from storage
     Object.keys(localStorage).forEach((key) => {
       if (key.startsWith("admin") || key.startsWith("auth")) {
@@ -40,31 +23,5 @@ export const clearAuthToken = (): void => {
     });
   } catch (e) {
     console.error("Error clearing auth storage:", e);
-  }
-
-  delete axiosInstance.defaults.headers.common["Authorization"];
-};
-
-/* ---------------- GET TOKEN ---------------- */
-
-export const getAuthToken = (): string | null => {
-  return (
-    sessionStorage.getItem("adminToken") ||
-    localStorage.getItem("adminToken")
-  );
-};
-
-/* ---------------- AUTH CHECK ---------------- */
-
-export const isAuthenticated = (): boolean => {
-  const token = getAuthToken();
-  if (!token) return false;
-
-  try {
-    const payload = JSON.parse(atob(token.split(".")[1]));
-    const now = Math.floor(Date.now() / 1000);
-    return payload.exp > now;
-  } catch {
-    return false;
   }
 };

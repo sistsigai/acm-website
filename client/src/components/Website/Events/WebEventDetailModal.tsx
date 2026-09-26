@@ -39,44 +39,46 @@ export const WebEventDetailModal: React.FC<WebEventDetailModalProps> = ({
     }
   }, [selectedEvent]);
 
-  if (!selectedEvent) return null;
-
-  const eventDate = parseEventDateTime(selectedEvent.date, selectedEvent.time);
+  const eventDate = selectedEvent ? parseEventDateTime(selectedEvent.date, selectedEvent.time) : null;
   const isPast = !!eventDate && new Date() > eventDate;
-  const isClosed =
-    (selectedEvent.isClosed ?? false) ||
-    isPast ||
-    isRegistrationClosed(selectedEvent.registrationEndDate);
-  const posterImage = selectedEvent.posterUrl || selectedEvent.thumbnailUrl;
+  const isClosed = selectedEvent
+    ? (selectedEvent.isClosed ?? false) ||
+      isPast ||
+      isRegistrationClosed(selectedEvent.registrationEndDate)
+    : false;
+  const posterImage = selectedEvent ? selectedEvent.posterUrl || selectedEvent.thumbnailUrl : null;
 
   return createPortal(
     <AnimatePresence>
-      <m.div
-        className="web-event-modal-backdrop"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        onClick={onClose}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="web-event-detail-title"
-      >
+      {selectedEvent && (
         <m.div
-          className="web-event-modal-content"
-          initial={{ scale: 0.94, opacity: 0, y: 20 }}
-          animate={{ scale: 1, opacity: 1, y: 0 }}
-          exit={{ scale: 0.94, opacity: 0, y: 20 }}
-          transition={{ type: "spring", stiffness: 320, damping: 25 }}
-          onClick={(e) => e.stopPropagation()}
+          key="web-event-detail-modal"
+          className="web-event-modal-backdrop"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          onClick={onClose}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="web-event-detail-title"
         >
-          {/* Close Button */}
-          <button
-            className="web-event-modal-close"
-            onClick={onClose}
-            aria-label="Close modal"
+          <m.div
+            className="web-event-modal-content"
+            initial={{ scale: 0.94, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.94, opacity: 0, y: 20 }}
+            transition={{ type: "spring", stiffness: 320, damping: 25 }}
+            onClick={(e) => e.stopPropagation()}
           >
-            <FaTimes size={16} />
-          </button>
+            {/* Close Button */}
+            <button
+              className="web-event-modal-close"
+              onClick={onClose}
+              aria-label="Close modal"
+            >
+              <FaTimes size={16} />
+            </button>
 
           {/* LEFT SIDE: Full Poster Showcase */}
           <div className="web-event-modal-poster-col">
@@ -327,6 +329,7 @@ export const WebEventDetailModal: React.FC<WebEventDetailModalProps> = ({
           </div>
         </m.div>
       </m.div>
+      )}
     </AnimatePresence>,
     document.body
   );

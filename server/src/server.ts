@@ -65,7 +65,16 @@ const corsOptions: cors.CorsOptions = {
         return callback(new Error(`Origin ${origin} not allowed by CORS`));
     },
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "Accept"],
+    allowedHeaders: [
+        "Content-Type",
+        "Authorization",
+        "Accept",
+        "Cache-Control",
+        "Pragma",
+        "Expires",
+        "X-Requested-With",
+        "Origin"
+    ],
     credentials: true,
     maxAge: 86400
 };
@@ -133,6 +142,19 @@ const authLimiter = rateLimit({
         code: "AUTH_RATE_LIMIT_EXCEEDED"
     },
     skipSuccessfulRequests: true
+});
+
+// ========== STRICT NO-CACHE HEADERS FOR DYNAMIC API ENDPOINTS ==========
+// Ensures reverse proxies (Cloudflare, Nginx, Hostinger), CDNs, and browsers NEVER serve stale API responses
+app.set("etag", false);
+app.use("/api", (req: Request, res: Response, next: NextFunction) => {
+    res.set({
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+        "Pragma": "no-cache",
+        "Expires": "0",
+        "Surrogate-Control": "no-store"
+    });
+    next();
 });
 
 // ========== ROUTES ==========
@@ -296,8 +318,9 @@ const PORT = RAW_PORT && isNaN(Number(RAW_PORT)) ? RAW_PORT : (Number(RAW_PORT) 
         }
 
     } catch (error) {
-        console.error("❌ Server failed to start:");
-        console.error(error);
+        console.error("❌ Server failed to start:", error);
         process.exit(1);
     }
 })();
+
+// Schema and API routes reloaded cleanly.

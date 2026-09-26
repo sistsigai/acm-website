@@ -12,6 +12,7 @@ import {
   toggleRegistrationAttendance,
 } from "../controllers/eventAttendanceController";
 import { uploadRegistrationFile } from "../middleware/upload";
+import verifyAdminToken from "../middleware/verifyAdminToken";
 
 const router = Router();
 
@@ -40,14 +41,15 @@ const handleRegistrationFileUpload = (req: Request, res: Response, next: NextFun
   });
 };
 
+/* --- Public Website Endpoints --- */
 router.get("/getallmem", getAllEvents);
 router.post("/register", registerForEvent);
 router.post("/upload-file", handleRegistrationFileUpload, uploadEventRegistrationFile);
 router.post("/delete-file", deleteEventRegistrationFile);
 
-/* --- Public Attendance Scanner Endpoints --- */
-router.put("/registration/:registrationId/attendance", toggleRegistrationAttendance);
-router.get("/:eventId/registrations", getEventRegistrations);
-router.post("/:eventId/attendance/scan", scanAttendanceQr);
+/* --- Authenticated Attendance Scanner Endpoints --- */
+router.put("/registration/:registrationId/attendance", verifyAdminToken, toggleRegistrationAttendance);
+router.get("/:eventId/registrations", verifyAdminToken, getEventRegistrations);
+router.post("/:eventId/attendance/scan", verifyAdminToken, scanAttendanceQr);
 
 export default router;
