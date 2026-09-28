@@ -47,9 +47,9 @@ router.post("/register", registerForEvent);
 router.post("/upload-file", handleRegistrationFileUpload, uploadEventRegistrationFile);
 router.post("/delete-file", deleteEventRegistrationFile);
 
-/* --- Authenticated Attendance Scanner Endpoints --- */
+/* --- Attendance Scanner Endpoints --- */
 router.put("/registration/:registrationId/attendance", verifyAdminToken, toggleRegistrationAttendance);
 router.get("/:eventId/registrations", verifyAdminToken, getEventRegistrations);
-router.post("/:eventId/attendance/scan", verifyAdminToken, scanAttendanceQr);
+router.post("/:eventId/attendance/scan", scanAttendanceQr);
 
 export default router;

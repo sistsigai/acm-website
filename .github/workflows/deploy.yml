@@ -282,8 +282,22 @@ jobs:
             fi
 
             cd /home/sistsigaihosting/api.sistsigai.acm.org
-            echo "Installing production dependencies..."
-            npm ci --omit=dev
+            
+            # Check if dependencies have changed to avoid unnecessary disk I/O spikes
+            NEW_LOCK_HASH="$(sha256sum package-lock.json | awk '{print $1}')"
+            OLD_LOCK_HASH=""
+            if [ -f .package-lock.hash ]; then
+              OLD_LOCK_HASH="$(cat .package-lock.hash 2>/dev/null || true)"
+            fi
+
+            if [ "$NEW_LOCK_HASH" != "$OLD_LOCK_HASH" ] || [ ! -d "node_modules" ]; then
+              echo "Dependencies changed or missing. Running npm ci --omit=dev..."
+              npm ci --omit=dev
+              echo "$NEW_LOCK_HASH" > .package-lock.hash
+              echo "Production dependencies installed successfully."
+            else
+              echo "Dependencies unchanged ($NEW_LOCK_HASH). Skipping npm ci to save server disk I/O."
+            fi
 
             echo "Restarting cPanel Passenger application..."
             mkdir -p /home/sistsigaihosting/api.sistsigai.acm.org/tmp

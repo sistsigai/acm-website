@@ -8,11 +8,21 @@ import {
 } from "../../services/admin/eventService";
 import CameraScanner from "../../components/Scanner/CameraScanner";
 import ScanResultOverlay, { type ScanResultData } from "../../components/Scanner/ScanResultOverlay";
+import ScannerPinGate from "../../components/Scanner/ScannerPinGate";
 import { scannerFeedback } from "../../utils/scannerFeedback";
 
 const MobileScanner: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialEventId = searchParams.get("eventId");
+
+  // PIN Verification State (Persistent per browser session)
+  const [isPinVerified, setIsPinVerified] = useState<boolean>(() => {
+    try {
+      return sessionStorage.getItem("scanner_pin_verified") === "true";
+    } catch {
+      return false;
+    }
+  });
 
   const [events, setEvents] = useState<EventItem[]>([]);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(initialEventId || null);
@@ -187,6 +197,13 @@ const MobileScanner: React.FC = () => {
     setScanResult(null);
     setIsProcessing(false);
   };
+
+  // -------------------------------------------------------------
+  // VIEW 0: 4-DIGIT PIN ENTRY GATE (PIN: 2026)
+  // -------------------------------------------------------------
+  if (!isPinVerified) {
+    return <ScannerPinGate onSuccess={() => setIsPinVerified(true)} />;
+  }
 
   // -------------------------------------------------------------
   // VIEW 1: SIMPLE GOOGLE PAY STYLE CAMERA SCANNER
