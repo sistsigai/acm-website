@@ -1,5 +1,6 @@
 import { Router, Request, Response, NextFunction } from "express";
 import multer from "multer";
+import rateLimit from "express-rate-limit";
 import {
   getAllEvents,
   registerForEvent,
@@ -15,6 +16,19 @@ import { uploadRegistrationFile } from "../middleware/upload";
 import verifyAdminToken from "../middleware/verifyAdminToken";
 
 const router = Router();
+
+// Registration rate limiter: allows up to 60 registrations per 5 minutes per IP (supports campus NAT/Wi-Fi while preventing bot flooding)
+const registrationRateLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000,
+  max: 60,
+  message: {
+    success: false,
+    message: "Too many registration requests from this network. Please wait a few minutes before trying again.",
+    code: "REGISTRATION_RATE_LIMIT_EXCEEDED",
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 // Middleware to handle registration file upload with clear error responses
 const handleRegistrationFileUpload = (req: Request, res: Response, next: NextFunction) => {
@@ -43,7 +57,7 @@ const handleRegistrationFileUpload = (req: Request, res: Response, next: NextFun
 
 /* --- Public Website Endpoints --- */
 router.get("/getallmem", getAllEvents);
-router.post("/register", registerForEvent);
+router.post("/register", registrationRateLimiter, registerForEvent);
 router.post("/upload-file", handleRegistrationFileUpload, uploadEventRegistrationFile);
 router.post("/delete-file", deleteEventRegistrationFile);
 

@@ -5,6 +5,7 @@ interface MailOptions {
   subject: string;
   html: string;
   replyTo?: string;
+  attachments?: nodemailer.SendMailOptions["attachments"];
 }
 
 let transporterInstance: nodemailer.Transporter | null = null;
@@ -31,6 +32,7 @@ export const sendEventMail = async ({
   subject,
   html,
   replyTo,
+  attachments,
 }: MailOptions): Promise<void> => {
   const transporter = getTransporter();
 
@@ -40,6 +42,7 @@ export const sendEventMail = async ({
     subject,
     html,
     ...(replyTo ? { replyTo } : {}),
+    ...(attachments ? { attachments } : {}),
   });
 };
 

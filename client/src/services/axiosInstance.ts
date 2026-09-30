@@ -10,7 +10,7 @@ const BASE_URL = cleanBase.endsWith("/api") ? cleanBase : `${cleanBase}/api`;
 
 const axiosInstance = axios.create({
   baseURL: BASE_URL,
-  timeout: 20000,
+  timeout: 25000,
   withCredentials: true,
   headers: {
     "Cache-Control": "no-cache, no-store, must-revalidate",

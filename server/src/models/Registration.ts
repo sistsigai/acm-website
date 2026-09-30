@@ -29,6 +29,9 @@ const RegistrationSchema = new mongoose.Schema(
   }
 );
 
+// Compound index to accelerate attendee lookups, scanner validation, and de-duplication
+RegistrationSchema.index({ eventId: 1, createdAt: -1 });
+
 // Delete any previously cached model instance in hot-reload
 if (mongoose.models && mongoose.models.EventRegistration) {
   delete mongoose.models.EventRegistration;
