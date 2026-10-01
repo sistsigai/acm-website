@@ -11,6 +11,7 @@ import ScanResultOverlay, { type ScanResultData } from "../../components/Scanner
 import ScannerPinGate from "../../components/Scanner/ScannerPinGate";
 import { scannerFeedback } from "../../utils/scannerFeedback";
 import { scannerQueue } from "../../utils/scannerQueue";
+import { scannerManifest } from "../../utils/scannerManifest";
 
 const MobileScanner: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -29,8 +30,9 @@ const MobileScanner: React.FC = () => {
   const [selectedEventId, setSelectedEventId] = useState<string | null>(initialEventId || null);
   const [isLoadingEvents, setIsLoadingEvents] = useState(true);
 
-  // Offline network and queue state
+  // Offline network, manifest cache, and queue state
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
+  const [cachedAttendeesCount, setCachedAttendeesCount] = useState<number>(0);
   const [pendingScansCount, setPendingScansCount] = useState<number>(0);
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const [syncStatusMsg, setSyncStatusMsg] = useState<string | null>(null);
@@ -56,6 +58,14 @@ const MobileScanner: React.FC = () => {
 
   useEffect(() => {
     setPendingScansCount(scannerQueue.getPendingCount(selectedEventId || undefined));
+    if (selectedEventId) {
+      setCachedAttendeesCount(scannerManifest.getAttendeeCount(selectedEventId));
+      scannerManifest.prefetchEventManifest(selectedEventId).then((res) => {
+        if (res.count > 0) {
+          setCachedAttendeesCount(res.count);
+        }
+      });
+    }
   }, [selectedEventId]);
 
   const triggerAutoSync = async (eventId: string) => {
@@ -160,25 +170,75 @@ const MobileScanner: React.FC = () => {
     setTorchOn(false);
     setSearchParams({});
   };
-    // Handle QR Scan
+
+  // Handle QR Scan with Instant Local Manifest Verification
   const handleQrScan = async (qrData: string) => {
     if (!selectedEventId || isProcessing) return;
 
-    // 1. Offline immediate queueing if disconnected
-    if (!navigator.onLine) {
+    // 1. Instant local verification (< 5ms) against pre-cached manifest
+    const localCheck = scannerManifest.verifyTicketLocally(selectedEventId, qrData);
+
+    // A. 🟡 DUPLICATE ATTEMPT -> REJECT IMMEDIATELY AT GATE
+    if (localCheck.status === "already_checked_in") {
+      scannerFeedback.playWarning();
+      setScanResult({
+        status: "already_checked_in",
+        message: localCheck.message,
+        name: localCheck.name,
+        registerNo: localCheck.registerNo,
+        email: localCheck.email,
+        phone: localCheck.phone,
+        dept: localCheck.dept,
+        year: localCheck.year,
+        section: localCheck.section,
+        answers: localCheck.answers,
+        checkedInAt: localCheck.checkedInAt,
+      });
+      return;
+    }
+
+    // B. 🔴 EVENT MISMATCH -> REJECT AT GATE
+    if (localCheck.status === "mismatch") {
+      scannerFeedback.playError();
+      setScanResult({
+        status: "mismatch",
+        message: localCheck.message,
+      });
+      return;
+    }
+
+    // C. 🔴 OFFLINE UNREGISTERED TICKET -> REJECT AT GATE
+    if (!navigator.onLine && localCheck.status === "invalid") {
+      scannerFeedback.playError();
+      setScanResult({
+        status: "invalid",
+        message: "Invalid ticket! Attendee is not registered for this event.",
+      });
+      return;
+    }
+
+    // D. 🟢 OFFLINE VALID TICKET -> ADMIT ATTENDEE & QUEUE TO LOCAL BATCH
+    if (!navigator.onLine && localCheck.status === "success") {
       const queued = scannerQueue.enqueue(selectedEventId, qrData);
       setPendingScansCount(scannerQueue.getPendingCount(selectedEventId));
       scannerFeedback.playSuccess();
       setScanResult({
         status: "success",
-        message: "Saved to Offline Queue! Will auto-sync when online.",
-        name: "Offline Attendee Pass",
-        registerNo: "SAVED OFFLINE",
+        message: "Attendance verified & marked (Offline Verified)!",
+        name: localCheck.name,
+        registerNo: localCheck.registerNo,
+        email: localCheck.email,
+        phone: localCheck.phone,
+        dept: localCheck.dept,
+        year: localCheck.year,
+        section: localCheck.section,
+        answers: localCheck.answers,
         checkedInAt: queued.scannedAt,
       });
       return;
     }
 
+    // E. 🌐 ONLINE MODE: Verify with live server and update MongoDB
     try {
       setIsProcessing(true);
       const res = await scanAttendanceQr(selectedEventId, qrData);
@@ -189,6 +249,7 @@ const MobileScanner: React.FC = () => {
 
         if (isAlready) {
           scannerFeedback.playWarning();
+          scannerManifest.markAttendeeAsPresent(selectedEventId, attendee._id, res.checkedInAt || attendee.checkedInAt || undefined);
           setScanResult({
             status: "already_checked_in",
             message: res.message || "Attendee already checked in.",
@@ -204,6 +265,7 @@ const MobileScanner: React.FC = () => {
           });
         } else {
           scannerFeedback.playSuccess();
+          scannerManifest.markAttendeeAsPresent(selectedEventId, attendee._id, res.checkedInAt || new Date().toISOString());
           setScanResult({
             status: "success",
             message: "Attendance marked successfully!",
@@ -232,19 +294,27 @@ const MobileScanner: React.FC = () => {
     } catch (err: any) {
       console.error("Attendance QR scan error:", err);
 
-      // If network error occurred, save to offline queue seamlessly
+      // If network dropped mid-request, fallback safely to local verified state
       if (!navigator.onLine || !err?.response || err.message === "Network Error") {
-        const queued = scannerQueue.enqueue(selectedEventId, qrData);
-        setPendingScansCount(scannerQueue.getPendingCount(selectedEventId));
-        scannerFeedback.playSuccess();
-        setScanResult({
-          status: "success",
-          message: "Network dropped! Scanned pass saved to Offline Queue.",
-          name: "Offline Attendee Pass",
-          registerNo: "QUEUED",
-          checkedInAt: queued.scannedAt,
-        });
-        return;
+        if (localCheck.status === "success") {
+          const queued = scannerQueue.enqueue(selectedEventId, qrData);
+          setPendingScansCount(scannerQueue.getPendingCount(selectedEventId));
+          scannerFeedback.playSuccess();
+          setScanResult({
+            status: "success",
+            message: "Network dropped! Verified locally & queued for sync.",
+            name: localCheck.name,
+            registerNo: localCheck.registerNo,
+            email: localCheck.email,
+            phone: localCheck.phone,
+            dept: localCheck.dept,
+            year: localCheck.year,
+            section: localCheck.section,
+            answers: localCheck.answers,
+            checkedInAt: queued.scannedAt,
+          });
+          return;
+        }
       }
 
       scannerFeedback.playError();
@@ -373,7 +443,7 @@ const MobileScanner: React.FC = () => {
           </div>
 
           {/* Offline / Pending Sync Floating Status Bar */}
-          {(!isOnline || pendingScansCount > 0 || syncStatusMsg) && (
+          {(!isOnline || pendingScansCount > 0 || syncStatusMsg || cachedAttendeesCount > 0) && (
             <div
               className="mt-2 d-flex align-items-center justify-content-between px-3 py-1.5 rounded-pill text-white"
               style={{
@@ -385,8 +455,8 @@ const MobileScanner: React.FC = () => {
             >
               <span>
                 {!isOnline
-                  ? `📡 Offline Mode (${pendingScansCount} queued)`
-                  : syncStatusMsg || `🔄 ${pendingScansCount} offline scans pending sync`}
+                  ? `📡 Offline Mode (📋 ${cachedAttendeesCount} cached, ${pendingScansCount} queued)`
+                  : syncStatusMsg || (pendingScansCount > 0 ? `🔄 ${pendingScansCount} offline scans pending sync` : `📋 ${cachedAttendeesCount} attendees ready for offline check`)}
               </span>
               {isOnline && pendingScansCount > 0 && (
                 <button

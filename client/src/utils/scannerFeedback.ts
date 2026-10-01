@@ -1,4 +1,4 @@
-// Audio & Haptic Feedback Utilities for Mobile Scanner
+// Audio & Haptic Feedback Utilities for Mobile Scanner (Web Audio + Web Vibration API)
 
 class ScannerFeedback {
   private audioCtx: AudioContext | null = null;
@@ -14,7 +14,7 @@ class ScannerFeedback {
         }
       }
       if (this.audioCtx && this.audioCtx.state === "suspended") {
-        this.audioCtx.resume().catch(() => {});
+        this.audioCtx.resume().catch(() => { });
       }
       return this.audioCtx;
     } catch {
@@ -22,9 +22,9 @@ class ScannerFeedback {
     }
   }
 
-  // 🟢 Success Chime (Double High Note)
-  playSuccess() {
-    this.vibrate([80, 40, 100]);
+  // 🟢 Success Chime + Haptic (Double High Note)
+  async playSuccess() {
+    this.vibrateSuccess();
     const ctx = this.getAudioContext();
     if (!ctx) return;
 
@@ -60,8 +60,8 @@ class ScannerFeedback {
   }
 
   // 🟡 Warning Buzz (Already Checked In)
-  playWarning() {
-    this.vibrate([150, 80, 150]);
+  async playWarning() {
+    this.vibrateWarning();
     const ctx = this.getAudioContext();
     if (!ctx) return;
 
@@ -84,8 +84,8 @@ class ScannerFeedback {
   }
 
   // 🔴 Error Tone (Invalid Ticket / Wrong Event)
-  playError() {
-    this.vibrate([300]);
+  async playError() {
+    this.vibrateError();
     const ctx = this.getAudioContext();
     if (!ctx) return;
 
@@ -107,12 +107,24 @@ class ScannerFeedback {
     }
   }
 
-  // Haptic vibration with fallback
-  private vibrate(pattern: number | number[]) {
+  // Web Vibration API Haptics
+  private vibrateSuccess() {
+    this.webVibrate([80, 40, 100]);
+  }
+
+  private vibrateWarning() {
+    this.webVibrate([150, 80, 150]);
+  }
+
+  private vibrateError() {
+    this.webVibrate([300]);
+  }
+
+  private webVibrate(pattern: number | number[]) {
     if (typeof navigator !== "undefined" && "vibrate" in navigator) {
       try {
         navigator.vibrate(pattern);
-      } catch {}
+      } catch { }
     }
   }
 }
