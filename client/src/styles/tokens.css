@@ -1,0 +1,116 @@
+/* =========================================================
+   SIST ACM SIGAI DESIGN SYSTEM TOKENS & SHARED UTILITIES
+   ========================================================= */
+
+:root {
+  /* Color Palette */
+  --bg-primary: #05050a;
+  --bg-secondary: #0d0e1a;
+  --bg-tertiary: #131527;
+  --bg-glass: rgba(13, 14, 26, 0.7);
+  --bg-glass-card: rgba(18, 20, 39, 0.65);
+  --bg-glass-hover: rgba(26, 30, 58, 0.85);
+
+  /* Brand Accents */
+  --accent-cyan: #00f0ff;
+  --accent-blue: #0070f3;
+  --accent-purple: #7928ca;
+  --accent-magenta: #ff0080;
+  --accent-emerald: #10b981;
+  --accent-amber: #f59e0b;
+  --accent-rose: #f43f5e;
+
+  /* Gradients */
+  --grad-cyan-blue: linear-gradient(135deg, #00f0ff 0%, #0070f3 100%);
+  --grad-purple-magenta: linear-gradient(135deg, #7928ca 0%, #ff0080 100%);
+  --grad-cyber: linear-gradient(135deg, #00f0ff 0%, #7928ca 50%, #ff0080 100%);
+  --grad-dark-surface: linear-gradient(180deg, rgba(20, 24, 48, 0.8) 0%, rgba(10, 12, 24, 0.95) 100%);
+
+  /* Text & Foreground */
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --text-dark: #0f172a;
+
+  /* Borders & Glows */
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-light: rgba(255, 255, 255, 0.16);
+  --border-cyan: rgba(0, 240, 255, 0.35);
+  --border-purple: rgba(121, 40, 202, 0.35);
+
+  --glow-cyan: 0 0 20px rgba(0, 240, 255, 0.35);
+  --glow-blue: 0 0 20px rgba(0, 112, 243, 0.35);
+  --glow-purple: 0 0 20px rgba(121, 40, 202, 0.35);
+  --glow-magenta: 0 0 20px rgba(255, 0, 128, 0.35);
+
+  /* Shadows */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.6);
+  --shadow-neon: 0 0 30px rgba(0, 240, 255, 0.2);
+
+  /* Border Radii */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-full: 9999px;
+
+  /* Transitions */
+  --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --trans-fast: 0.15s var(--ease-smooth);
+  --trans-normal: 0.3s var(--ease-smooth);
+  --trans-bounce: 0.4s var(--ease-spring);
+}
+
+/* =========================================================
+   SKELETON LOADERS
+   ========================================================= */
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.03) 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.03) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.8s infinite ease-in-out;
+  border-radius: var(--radius-md);
+}
+
+@keyframes skeletonShimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.skeleton-card {
+  height: 280px;
+  width: 100%;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-glass-card);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.skeleton-line {
+  height: 16px;
+  border-radius: var(--radius-sm);
+}
+
+.skeleton-line.title {
+  height: 28px;
+  width: 65%;
+}
+
+.skeleton-line.short {
+  width: 40%;
+}

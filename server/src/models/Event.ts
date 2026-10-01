@@ -83,5 +83,8 @@ const EventSchema = new Schema<EventDocument>(
   { timestamps: true }
 );
 
+EventSchema.index({ display: 1, isClosed: 1, createdAt: -1 });
+
 const Event = mongoose.model<EventDocument>("Event", EventSchema);
+
 export default Event;

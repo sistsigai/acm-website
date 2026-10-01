@@ -11,6 +11,7 @@ import WebEventCard, { type ExtendedEventData } from "../../components/Website/E
 import WebEventDetailModal from "../../components/Website/Events/WebEventDetailModal";
 import WebEventRegistrationModal from "../../components/Website/Events/WebEventRegistrationModal";
 import RegistrationSuccessOverlay from "../../components/Website/Events/RegistrationSuccessOverlay";
+import SEO from "../../components/Common/SEO";
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
@@ -78,6 +79,11 @@ const Events: React.FC = () => {
   if (loading) {
     return (
       <div className="events-page">
+        <SEO
+          title="Events & Hackathons | SIST ACM SIGAI"
+          description="Explore upcoming AI bootcamps, workshops, tech competitions, and hackathons hosted by SIST ACM SIGAI."
+          url="https://sistsigai.acm.org/events"
+        />
         <h1 className="text-gradient">
           SIGAI EVENTS
         </h1>
@@ -91,6 +97,11 @@ const Events: React.FC = () => {
   if (error) {
     return (
       <div className="events-page">
+        <SEO
+          title="Events | SIST ACM SIGAI"
+          description="Upcoming events by SIST ACM SIGAI"
+          url="https://sistsigai.acm.org/events"
+        />
         <div className="glitch-container">
           <div className="glitch-404">ERROR</div>
           <div className="error-msg">FAILED_TO_LOAD_EVENTS</div>
@@ -105,6 +116,36 @@ const Events: React.FC = () => {
 
   return (
     <div className="events-page">
+      <SEO
+        title="Events & Hackathons | SIST ACM SIGAI"
+        description="Explore upcoming AI bootcamps, workshops, tech competitions, and hackathons hosted by SIST ACM SIGAI."
+        url="https://sistsigai.acm.org/events"
+        structuredData={{
+          "@context": "https://schema.org",
+          "@type": "ItemList",
+          "itemListElement": events.map((ev, index) => ({
+            "@type": "ListItem",
+            "position": index + 1,
+            "item": {
+              "@type": "Event",
+              "name": ev.name,
+              "startDate": ev.date,
+              "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
+              "location": {
+                "@type": "Place",
+                "name": ev.venue,
+                "address": "Sathyabama Institute of Science and Technology, Chennai"
+              },
+              "description": ev.description,
+              "organizer": {
+                "@type": "Organization",
+                "name": "SIST ACM SIGAI",
+                "url": "https://sistsigai.acm.org"
+              }
+            }
+          }))
+        }}
+      />
       <GlobalLoader isLoading={globalLoading} />
 
       <m.h1

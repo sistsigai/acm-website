@@ -8,7 +8,9 @@ const LogoLoading = () => {
     flexDirection: 'column' as const,
     justifyContent: 'center',
     alignItems: 'center',
-    height: '100vh',
+    minHeight: '75vh',
+    width: '100%',
+    background: 'transparent',
   };
 
   const loadingImageStyle: CSSProperties = {

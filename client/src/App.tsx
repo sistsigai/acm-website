@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from "react-router-dom";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { AuthProvider } from "./context/AuthContext";
 import { ToastProvider } from "./context/ToastContext";
@@ -35,6 +35,17 @@ import "./App.css";
 
 function App() {
   const location = useLocation();
+  const [isPageLoading, setIsPageLoading] = useState(false);
+
+  // Trigger smooth LogoLoader on every page change
+  useEffect(() => {
+    setIsPageLoading(true);
+    const timer = setTimeout(() => {
+      setIsPageLoading(false);
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, [location.pathname]);
 
   const isScannerRoute =
     location.pathname === "/scanner" ||
@@ -99,54 +110,71 @@ function App() {
 
   /* ---------------- WEBSITE ROUTES ---------------- */
   return (
-    <>
+    <div className="main-contentapp">
       <Nav />
 
       <AnimatePresence mode="wait">
-        <motion.div
-          key={location.pathname}
-          className="main-contentapp"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.3 }}
-        >
-          <Suspense fallback={<LogoLoading />}>
-            <Routes location={location}>
-              <Route path="/" element={<Home />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/membership" element={<Membership />} />
-              <Route path="/archives" element={<Archives />} />
-              <Route path="/blogs" element={<Blogs />} />
-              <Route path="/our-roots" element={<OurRoots />} />
-              <Route path="/join-us" element={<JoinUs />} />
-              <Route path="/events" element={<Events />} />
+        {isPageLoading ? (
+          <motion.div
+            key="page-logo-loader"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}
+          >
+            <LogoLoading />
+          </motion.div>
+        ) : (
+          <motion.div
+            key={location.pathname}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            style={{ flex: 1, display: "flex", flexDirection: "column" }}
+          >
+            <Suspense fallback={null}>
+              <Routes location={location}>
+                <Route path="/" element={<Home />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/membership" element={<Membership />} />
+                <Route path="/archives" element={<Archives />} />
+                <Route path="/blogs" element={<Blogs />} />
+                <Route path="/our-roots" element={<OurRoots />} />
+                <Route path="/join-us" element={<JoinUs />} />
+                <Route path="/events" element={<Events />} />
 
-              {/* Dynamic Archive Event Route */}
-              <Route path="/archives/:eventId" element={<ArchiveEventDetail />} />
+                {/* Dynamic Archive Event Route */}
+                <Route path="/archives/:eventId" element={<ArchiveEventDetail />} />
 
-              {/* 404 Page */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
-        </motion.div>
+                {/* 404 Page */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
+          </motion.div>
+        )}
       </AnimatePresence>
-    </>
+    </div>
   );
 }
+
+import { HelmetProvider } from "react-helmet-async";
 
 /* ---------------- ROOT WRAPPER ---------------- */
 function Root() {
   return (
-    <Router>
-      <AuthProvider>
-        <ToastProvider>
-          <ScrollToTop />
-          <App />
-        </ToastProvider>
-      </AuthProvider>
-    </Router>
+    <HelmetProvider>
+      <Router>
+        <AuthProvider>
+          <ToastProvider>
+            <ScrollToTop />
+            <App />
+          </ToastProvider>
+        </AuthProvider>
+      </Router>
+    </HelmetProvider>
   );
 }
 
-export default Root;
+export default Root;

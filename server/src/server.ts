@@ -19,6 +19,9 @@ import eventManagerRoutes from "./routes/eventManagerRoutes";
 import memberRoutes from "./routes/memberRoutes";
 import aboutRoutes from "./routes/aboutRoutes";
 import eventRoutes from "./routes/eventRoutes";
+import timelineRoutes from "./routes/timelineRoutes";
+import swaggerUi from "swagger-ui-express";
+import { swaggerSpec } from "./config/swagger";
 
 if (!process.env.MONGO_URI) {
     console.error("❌ ERROR: MONGO_URI environment variable is required");
@@ -161,6 +164,17 @@ app.use("/api", (req: Request, res: Response, next: NextFunction) => {
 app.use("/api/home", homeRoutes);
 app.use("/api/about", aboutRoutes);
 app.use("/api/events", eventRoutes);
+app.use("/api/timeline", timelineRoutes);
+
+// ========== SWAGGER API DOCS ==========
+app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+    customCss: ".swagger-ui .topbar { display: none }",
+    customSiteTitle: "SIST ACM SIGAI API Docs",
+}));
+app.get("/api/docs.json", (req: Request, res: Response) => {
+    res.setHeader("Content-Type", "application/json");
+    res.send(swaggerSpec);
+});
 
 app.use("/api/admin/auth", authLimiter, adminAuthRoutes);
 

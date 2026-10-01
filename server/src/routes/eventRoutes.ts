@@ -10,10 +10,14 @@ import {
 import {
   getEventRegistrations,
   scanAttendanceQr,
+  batchScanAttendance,
   toggleRegistrationAttendance,
 } from "../controllers/eventAttendanceController";
 import { uploadRegistrationFile } from "../middleware/upload";
 import verifyAdminToken from "../middleware/verifyAdminToken";
+import { validateBody } from "../middleware/validateRequest";
+import { eventRegistrationSchema, batchScanAttendanceSchema } from "../validations/eventValidation";
+import { cacheResponse } from "../middleware/cacheMiddleware";
 
 const router = Router();
 
@@ -56,8 +60,8 @@ const handleRegistrationFileUpload = (req: Request, res: Response, next: NextFun
 };
 
 /* --- Public Website Endpoints --- */
-router.get("/getallmem", getAllEvents);
-router.post("/register", registrationRateLimiter, registerForEvent);
+router.get("/getallmem", cacheResponse(180), getAllEvents);
+router.post("/register", registrationRateLimiter, validateBody(eventRegistrationSchema), registerForEvent);
 router.post("/upload-file", handleRegistrationFileUpload, uploadEventRegistrationFile);
 router.post("/delete-file", deleteEventRegistrationFile);
 
@@ -65,5 +69,6 @@ router.post("/delete-file", deleteEventRegistrationFile);
 router.put("/registration/:registrationId/attendance", verifyAdminToken, toggleRegistrationAttendance);
 router.get("/:eventId/registrations", verifyAdminToken, getEventRegistrations);
 router.post("/:eventId/attendance/scan", scanAttendanceQr);
+router.post("/:eventId/attendance/batch-scan", validateBody(batchScanAttendanceSchema), batchScanAttendance);
 
 export default router;

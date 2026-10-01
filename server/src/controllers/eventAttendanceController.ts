@@ -567,3 +567,102 @@ export const deleteEventRegistration = async (req: Request, res: Response) => {
   }
 };
 
+/* ---------------- BATCH SCAN ATTENDANCE (OFFLINE SYNC) ---------------- */
+export const batchScanAttendance = async (req: Request, res: Response) => {
+  try {
+    const { eventId } = req.params;
+    const { scans } = req.body; // Array of { qrData: string, scannedAt?: string }
+
+    if (!mongoose.Types.ObjectId.isValid(eventId)) {
+      return res.status(400).json({ success: false, message: "Invalid event ID" });
+    }
+
+    if (!Array.isArray(scans) || scans.length === 0) {
+      return res.status(400).json({ success: false, message: "Scans array cannot be empty" });
+    }
+
+    const collections = await getRegistrationCollections();
+    const targetEventId = new mongoose.Types.ObjectId(eventId);
+
+    const results: Array<{ qrData: string; success: boolean; message: string; attendee?: any }> = [];
+
+    for (const item of scans) {
+      const { qrData, scannedAt } = item;
+      let resolvedRegId: string | null = null;
+      let cleanData = String(qrData).trim();
+
+      try {
+        if (cleanData.includes("%7B") || cleanData.includes("%22")) {
+          cleanData = decodeURIComponent(cleanData);
+        }
+        const parsed = JSON.parse(cleanData);
+        if (parsed.registrationId && mongoose.Types.ObjectId.isValid(parsed.registrationId)) {
+          resolvedRegId = parsed.registrationId;
+        } else if (parsed._id && mongoose.Types.ObjectId.isValid(parsed._id)) {
+          resolvedRegId = parsed._id;
+        }
+      } catch {}
+
+      let matchedDoc: any = null;
+      let matchedColl: any = null;
+
+      for (const coll of collections) {
+        if (resolvedRegId) {
+          matchedDoc = await coll.findOne({
+            $and: [
+              { $or: [{ _id: new mongoose.Types.ObjectId(resolvedRegId) }, { _id: resolvedRegId }] },
+              { $or: [{ eventId: targetEventId }, { eventId: String(eventId) }] },
+            ],
+          } as any);
+        }
+        if (matchedDoc) {
+          matchedColl = coll;
+          break;
+        }
+      }
+
+      if (!matchedDoc) {
+        results.push({ qrData, success: false, message: "Record not found or invalid event" });
+        continue;
+      }
+
+      const checkInTime = scannedAt ? new Date(scannedAt) : new Date();
+
+      if (matchedDoc.entry) {
+        results.push({
+          qrData,
+          success: true,
+          message: "Already marked present earlier",
+          attendee: normalizeAttendeeDoc(matchedDoc),
+        });
+      } else {
+        await matchedColl.updateOne(
+          { _id: matchedDoc._id },
+          { $set: { entry: true, checkedInAt: checkInTime } }
+        );
+        matchedDoc.entry = true;
+        matchedDoc.checkedInAt = checkInTime;
+        results.push({
+          qrData,
+          success: true,
+          message: "Marked present successfully via batch sync",
+          attendee: normalizeAttendeeDoc(matchedDoc),
+        });
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `Processed ${scans.length} batch scans`,
+      results,
+    });
+  } catch (error: any) {
+    console.error("Error processing batch scans:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to process batch scans",
+    });
+  }
+};
+
+

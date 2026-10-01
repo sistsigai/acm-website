@@ -16,7 +16,7 @@ import {
 } from 'react-icons/fa';
 import { type AdminSettings, getAdminSettings } from '../../services/website/homeService';
 import CopyrightFooter from '../../components/Footer';
-
+import SEO from '../../components/Common/SEO';
 
 const Home: React.FC = () => {
   const [adminSettings, setAdminSettings] = useState<AdminSettings | null>(null);
@@ -33,10 +33,30 @@ const Home: React.FC = () => {
     fetchSettings();
   }, []);
 
-
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "EducationalOrganization",
+    "name": "SIST ACM SIGAI",
+    "alternateName": "Sathyabama ACM Special Interest Group on Artificial Intelligence",
+    "url": "https://sistsigai.acm.org",
+    "logo": "https://raw.githubusercontent.com/Bersinberz/acm-website/main/client/src/assets/acm-logo.png",
+    "sameAs": [
+      adminSettings?.socials?.linkedin || "https://www.linkedin.com/company/sist-acm-sigai",
+      adminSettings?.socials?.instagram || "https://www.instagram.com/sist_acm_sigai",
+      adminSettings?.socials?.twitter || "https://twitter.com/sistsigai"
+    ],
+    "description": adminSettings?.about || "SIST ACM SIGAI is the official student chapter dedicated to artificial intelligence and technology innovation at Sathyabama Institute of Science and Technology."
+  };
 
   return (
     <>
+      <SEO
+        title="Home | Fostering AI Innovation"
+        description={adminSettings?.about || "Empowering students through cutting-edge AI workshops, hackathons, and research at Sathyabama Institute of Science and Technology."}
+        url="https://sistsigai.acm.org"
+        structuredData={structuredData}
+      />
+
       {/* --- HERO SECTION --- */}
       <div className='main'>
         <video

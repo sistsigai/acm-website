@@ -10,6 +10,7 @@ import CameraScanner from "../../components/Scanner/CameraScanner";
 import ScanResultOverlay, { type ScanResultData } from "../../components/Scanner/ScanResultOverlay";
 import ScannerPinGate from "../../components/Scanner/ScannerPinGate";
 import { scannerFeedback } from "../../utils/scannerFeedback";
+import { scannerQueue } from "../../utils/scannerQueue";
 
 const MobileScanner: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -27,6 +28,49 @@ const MobileScanner: React.FC = () => {
   const [events, setEvents] = useState<EventItem[]>([]);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(initialEventId || null);
   const [isLoadingEvents, setIsLoadingEvents] = useState(true);
+
+  // Offline network and queue state
+  const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
+  const [pendingScansCount, setPendingScansCount] = useState<number>(0);
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
+  const [syncStatusMsg, setSyncStatusMsg] = useState<string | null>(null);
+
+  // Monitor online / offline network state
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      if (selectedEventId) {
+        triggerAutoSync(selectedEventId);
+      }
+    };
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, [selectedEventId]);
+
+  useEffect(() => {
+    setPendingScansCount(scannerQueue.getPendingCount(selectedEventId || undefined));
+  }, [selectedEventId]);
+
+  const triggerAutoSync = async (eventId: string) => {
+    const pending = scannerQueue.getPendingCount(eventId);
+    if (pending > 0) {
+      setIsSyncing(true);
+      const res = await scannerQueue.syncQueue(eventId);
+      setPendingScansCount(scannerQueue.getPendingCount(eventId));
+      setIsSyncing(false);
+      if (res.success && res.syncedCount > 0) {
+        setSyncStatusMsg(`✅ Synced ${res.syncedCount} offline scans to server!`);
+        setTimeout(() => setSyncStatusMsg(null), 4000);
+      }
+    }
+  };
 
   // Scanner State
   const [isProcessing, setIsProcessing] = useState(false);
@@ -116,10 +160,24 @@ const MobileScanner: React.FC = () => {
     setTorchOn(false);
     setSearchParams({});
   };
-
-  // Handle QR Scan
+    // Handle QR Scan
   const handleQrScan = async (qrData: string) => {
     if (!selectedEventId || isProcessing) return;
+
+    // 1. Offline immediate queueing if disconnected
+    if (!navigator.onLine) {
+      const queued = scannerQueue.enqueue(selectedEventId, qrData);
+      setPendingScansCount(scannerQueue.getPendingCount(selectedEventId));
+      scannerFeedback.playSuccess();
+      setScanResult({
+        status: "success",
+        message: "Saved to Offline Queue! Will auto-sync when online.",
+        name: "Offline Attendee Pass",
+        registerNo: "SAVED OFFLINE",
+        checkedInAt: queued.scannedAt,
+      });
+      return;
+    }
 
     try {
       setIsProcessing(true);
@@ -173,6 +231,22 @@ const MobileScanner: React.FC = () => {
       }
     } catch (err: any) {
       console.error("Attendance QR scan error:", err);
+
+      // If network error occurred, save to offline queue seamlessly
+      if (!navigator.onLine || !err?.response || err.message === "Network Error") {
+        const queued = scannerQueue.enqueue(selectedEventId, qrData);
+        setPendingScansCount(scannerQueue.getPendingCount(selectedEventId));
+        scannerFeedback.playSuccess();
+        setScanResult({
+          status: "success",
+          message: "Network dropped! Scanned pass saved to Offline Queue.",
+          name: "Offline Attendee Pass",
+          registerNo: "QUEUED",
+          checkedInAt: queued.scannedAt,
+        });
+        return;
+      }
+
       scannerFeedback.playError();
       const data = err?.data;
       setScanResult({
@@ -198,6 +272,16 @@ const MobileScanner: React.FC = () => {
     setIsProcessing(false);
   };
 
+  const handleManualSync = async () => {
+    if (!selectedEventId || isSyncing) return;
+    setIsSyncing(true);
+    const res = await scannerQueue.syncQueue(selectedEventId);
+    setPendingScansCount(scannerQueue.getPendingCount(selectedEventId));
+    setIsSyncing(false);
+    setSyncStatusMsg(res.message);
+    setTimeout(() => setSyncStatusMsg(null), 4000);
+  };
+
   // -------------------------------------------------------------
   // VIEW 0: 4-DIGIT PIN ENTRY GATE (PIN: 2026)
   // -------------------------------------------------------------
@@ -221,7 +305,7 @@ const MobileScanner: React.FC = () => {
       >
         {/* Minimal Google Pay Top Overlay Bar */}
         <div
-          className="position-absolute d-flex align-items-center justify-content-between px-3 py-3 w-100"
+          className="position-absolute d-flex flex-column px-3 py-3 w-100"
           style={{
             top: 0,
             left: 0,
@@ -230,47 +314,93 @@ const MobileScanner: React.FC = () => {
             background: "linear-gradient(180deg, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.4) 60%, transparent 100%)",
           }}
         >
-          {/* Back Button */}
-          <button
-            type="button"
-            className="btn rounded-circle d-flex align-items-center justify-content-center text-white"
-            style={{
-              width: "44px",
-              height: "44px",
-              background: "rgba(255, 255, 255, 0.15)",
-              backdropFilter: "blur(12px)",
-              WebkitBackdropFilter: "blur(12px)",
-              border: "1px solid rgba(255, 255, 255, 0.25)",
-              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3)",
-            }}
-            onClick={handleBackToList}
-            aria-label="Back to event selection"
-          >
-            <i className="bi bi-arrow-left fs-5"></i>
-          </button>
+          <div className="d-flex align-items-center justify-content-between w-100">
+            {/* Back Button */}
+            <button
+              type="button"
+              className="btn rounded-circle d-flex align-items-center justify-content-center text-white"
+              style={{
+                width: "44px",
+                height: "44px",
+                background: "rgba(255, 255, 255, 0.15)",
+                backdropFilter: "blur(12px)",
+                WebkitBackdropFilter: "blur(12px)",
+                border: "1px solid rgba(255, 255, 255, 0.25)",
+                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3)",
+              }}
+              onClick={handleBackToList}
+              aria-label="Back to event selection"
+            >
+              <i className="bi bi-arrow-left fs-5"></i>
+            </button>
 
-          {/* Minimal Event Title Chip */}
-          <div
-            className="d-flex align-items-center gap-2 px-3 py-1.5 rounded-pill text-white fw-semibold"
-            style={{
-              maxWidth: "220px",
-              fontSize: "0.88rem",
-              background: "rgba(15, 23, 42, 0.8)",
-              backdropFilter: "blur(10px)",
-              WebkitBackdropFilter: "blur(10px)",
-              border: "1px solid rgba(255, 255, 255, 0.18)",
-              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3)",
-            }}
-          >
-            <span
-              className="d-inline-block rounded-circle bg-success flex-shrink-0"
-              style={{ width: "8px", height: "8px", boxShadow: "0 0 6px #22c55e" }}
-            />
-            <span className="text-truncate">{selectedEvent.name}</span>
+            {/* Minimal Event Title Chip */}
+            <div
+              className="d-flex align-items-center gap-2 px-3 py-1.5 rounded-pill text-white fw-semibold"
+              style={{
+                maxWidth: "220px",
+                fontSize: "0.88rem",
+                background: "rgba(15, 23, 42, 0.8)",
+                backdropFilter: "blur(10px)",
+                WebkitBackdropFilter: "blur(10px)",
+                border: "1px solid rgba(255, 255, 255, 0.18)",
+                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3)",
+              }}
+            >
+              <span
+                className={`d-inline-block rounded-circle flex-shrink-0 ${isOnline ? "bg-success" : "bg-warning"}`}
+                style={{ width: "8px", height: "8px", boxShadow: isOnline ? "0 0 6px #22c55e" : "0 0 6px #eab308" }}
+              />
+              <span className="text-truncate">{selectedEvent.name}</span>
+            </div>
+
+            {/* Torch toggle / Status Icon */}
+            <button
+              type="button"
+              className="btn rounded-circle d-flex align-items-center justify-content-center text-white"
+              style={{
+                width: "44px",
+                height: "44px",
+                background: torchOn ? "#38bdf8" : "rgba(255, 255, 255, 0.15)",
+                backdropFilter: "blur(12px)",
+                border: "1px solid rgba(255, 255, 255, 0.25)",
+              }}
+              onClick={() => setTorchOn(!torchOn)}
+              aria-label="Toggle Torch"
+            >
+              <i className={`bi ${torchOn ? "bi-lightbulb-fill text-dark" : "bi-lightbulb"}`}></i>
+            </button>
           </div>
 
-          {/* Invisible spacer so the event title chip remains perfectly centered */}
-          <div style={{ width: "44px", height: "44px", pointerEvents: "none" }} />
+          {/* Offline / Pending Sync Floating Status Bar */}
+          {(!isOnline || pendingScansCount > 0 || syncStatusMsg) && (
+            <div
+              className="mt-2 d-flex align-items-center justify-content-between px-3 py-1.5 rounded-pill text-white"
+              style={{
+                background: !isOnline ? "rgba(234, 179, 8, 0.2)" : "rgba(56, 189, 248, 0.2)",
+                border: !isOnline ? "1px solid rgba(234, 179, 8, 0.4)" : "1px solid rgba(56, 189, 248, 0.4)",
+                backdropFilter: "blur(8px)",
+                fontSize: "0.8rem",
+              }}
+            >
+              <span>
+                {!isOnline
+                  ? `📡 Offline Mode (${pendingScansCount} queued)`
+                  : syncStatusMsg || `🔄 ${pendingScansCount} offline scans pending sync`}
+              </span>
+              {isOnline && pendingScansCount > 0 && (
+                <button
+                  type="button"
+                  className="btn btn-sm btn-primary py-0 px-2 rounded-pill ms-2"
+                  style={{ fontSize: "0.75rem" }}
+                  onClick={handleManualSync}
+                  disabled={isSyncing}
+                >
+                  {isSyncing ? "Syncing..." : "Sync Now"}
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Fullscreen Camera View */}
