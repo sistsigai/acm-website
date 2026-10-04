@@ -215,9 +215,8 @@ export const WebEventCard: React.FC<WebEventCardProps> = ({ event, onSelect }) =
         {/* Top Controls / Badges */}
         <div className="admin-card-top-controls">
           <m.span
-            className={`admin-card-badge ${
-              !isPast ? "badge-visible" : "badge-hidden"
-            }`}
+            className={`admin-card-badge ${!isPast ? "badge-visible" : "badge-hidden"
+              }`}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >

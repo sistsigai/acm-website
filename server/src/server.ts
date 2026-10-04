@@ -19,7 +19,6 @@ import eventManagerRoutes from "./routes/eventManagerRoutes";
 import memberRoutes from "./routes/memberRoutes";
 import aboutRoutes from "./routes/aboutRoutes";
 import eventRoutes from "./routes/eventRoutes";
-import timelineRoutes from "./routes/timelineRoutes";
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./config/swagger";
 
@@ -164,7 +163,6 @@ app.use("/api", (req: Request, res: Response, next: NextFunction) => {
 app.use("/api/home", homeRoutes);
 app.use("/api/about", aboutRoutes);
 app.use("/api/events", eventRoutes);
-app.use("/api/timeline", timelineRoutes);
 
 // ========== SWAGGER API DOCS ==========
 app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, {

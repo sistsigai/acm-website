@@ -11,6 +11,7 @@ import WebEventCard, { type ExtendedEventData } from "../../components/Website/E
 import WebEventDetailModal from "../../components/Website/Events/WebEventDetailModal";
 import WebEventRegistrationModal from "../../components/Website/Events/WebEventRegistrationModal";
 import RegistrationSuccessOverlay from "../../components/Website/Events/RegistrationSuccessOverlay";
+import { EventCardSkeleton } from "../../components/Common/CardSkeleton";
 import SEO from "../../components/Common/SEO";
 
 const containerVariants: Variants = {
@@ -87,8 +88,10 @@ const Events: React.FC = () => {
         <h1 className="text-gradient">
           SIGAI EVENTS
         </h1>
-        <div className="glitch-container">
-          <div className="terminal-subtext">Loading events...</div>
+        <div className="events-grid">
+          {Array.from({ length: 6 }).map((_, idx) => (
+            <EventCardSkeleton key={idx} />
+          ))}
         </div>
       </div>
     );

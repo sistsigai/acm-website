@@ -26,6 +26,7 @@ export interface EventDocument extends Document {
   posterPublicId?: string;
   isClosed: boolean;
   display: boolean;
+  isCompleted: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -79,11 +80,16 @@ const EventSchema = new Schema<EventDocument>(
       type: Boolean,
       default: true,
     },
+
+    isCompleted: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );
 
-EventSchema.index({ display: 1, isClosed: 1, createdAt: -1 });
+EventSchema.index({ display: 1, isClosed: 1, isCompleted: 1, createdAt: -1 });
 
 const Event = mongoose.model<EventDocument>("Event", EventSchema);
 

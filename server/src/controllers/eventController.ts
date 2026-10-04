@@ -3,6 +3,7 @@ import Event from "../models/Event";
 import sharp from "sharp";
 import cloudinary from "../utils/cloudinary";
 import { uploadToCloudinary } from "../utils/uploadHelper";
+import { autoExpireFinishedEvents, isEventFinished } from "../utils/eventExpiration";
 
 // --- TYPE DEFINITIONS ---
 interface ContactPerson {
@@ -422,6 +423,7 @@ export const addEvent = async (req: Request, res: Response): Promise<Response> =
 
 export const getAllEvents = async (req: any, res: any) => {
   try {
+    await autoExpireFinishedEvents();
     const events = await Event.find().sort({ createdAt: 1 });
 
     return res.json({
@@ -648,23 +650,40 @@ export const toggleEventDisplay = async (req: any, res: any) => {
       });
     }
 
-    const event = await Event.findByIdAndUpdate(
-      id,
-      { display },
-      { new: true }
-    );
-
-    if (!event) {
+    const existing = await Event.findById(id);
+    if (!existing) {
       return res.status(404).json({
         success: false,
         message: "Event not found",
       });
     }
 
+    // If event is finished/completed, keep display false and return warning
+    if (existing.isCompleted || isEventFinished(existing.date, existing.time)) {
+      if (display === true) {
+        return res.status(400).json({
+          success: false,
+          message: "Cannot show an event that has already ended.",
+        });
+      }
+      existing.isCompleted = true;
+      existing.isClosed = true;
+      existing.display = false;
+      await existing.save();
+      return res.status(200).json({
+        success: true,
+        message: "Event has completed and remains hidden.",
+        event: existing,
+      });
+    }
+
+    existing.display = display;
+    await existing.save();
+
     return res.status(200).json({
       success: true,
       message: `Event ${display ? "shown" : "hidden"} successfully`,
-      event,
+      event: existing,
     });
   } catch (error: any) {
     console.error("Toggle display error:", error);

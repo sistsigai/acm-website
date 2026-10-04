@@ -12,7 +12,7 @@ import {
 } from "../../services/admin/eventService";
 import type { Area, Point } from "react-easy-crop";
 import { getCroppedBlob } from "../../utils/cropUtils";
-import EventCard, { type AdminEvent } from "../../components/Admin/Events/EventCard";
+import EventCard, { type AdminEvent, isEventFinished } from "../../components/Admin/Events/EventCard";
 import EventStudioModal, {
   type EventFormData,
   type EventStudioSection,
@@ -274,14 +274,14 @@ const EventManager: React.FC = () => {
   const isInfoValid = (): boolean => {
     return Boolean(
       form.name &&
-        form.name.trim().length >= 3 &&
-        form.description &&
-        form.description.trim().length >= 10 &&
-        form.date &&
-        startTime &&
-        form.venue &&
-        form.venue.trim().length >= 2 &&
-        validateRegistrationEndDate(form.registrationEndDate, form.date, Boolean(editingId)) === ""
+      form.name.trim().length >= 3 &&
+      form.description &&
+      form.description.trim().length >= 10 &&
+      form.date &&
+      startTime &&
+      form.venue &&
+      form.venue.trim().length >= 2 &&
+      validateRegistrationEndDate(form.registrationEndDate, form.date, Boolean(editingId)) === ""
     );
   };
 
@@ -485,10 +485,10 @@ const EventManager: React.FC = () => {
       contactPersons:
         event.contactPersons && event.contactPersons.length > 0
           ? event.contactPersons.map((cp) => ({
-              name: cp.name || "",
-              phone: cp.phone || "",
-              role: cp.role || "Student Coordinator",
-            }))
+            name: cp.name || "",
+            phone: cp.phone || "",
+            role: cp.role || "Student Coordinator",
+          }))
           : [{ name: "", phone: "", role: "Student Coordinator" }],
       registrationQuestions: event.registrationQuestions || INITIAL_REGISTRATION_QUESTIONS,
       customQuestions: ensureCompulsoryQuestions(event.customQuestions || []),
@@ -501,6 +501,12 @@ const EventManager: React.FC = () => {
   };
 
   const handleToggleDisplay = async (id: string, currentDisplay: boolean) => {
+    const targetEvent = events.find((e) => e._id === id);
+    if (targetEvent && (targetEvent.isCompleted || isEventFinished(targetEvent.date, targetEvent.time))) {
+      showToast("warning", "Finished events cannot be displayed on the website.", "Event Completed");
+      return;
+    }
+
     try {
       const newDisplay = !currentDisplay;
       const res = await toggleEventDisplay(id, newDisplay);
@@ -724,17 +730,13 @@ const EventManager: React.FC = () => {
 
       if (!matchesSearch) return false;
 
-      if (selectedStatus === "visible") return ev.display !== false;
-      if (selectedStatus === "hidden") return ev.display === false;
+      if (selectedStatus === "visible") return ev.display !== false && !ev.isCompleted && !isEventFinished(ev.date, ev.time);
+      if (selectedStatus === "hidden") return ev.display === false && !ev.isCompleted && !isEventFinished(ev.date, ev.time);
       if (selectedStatus === "upcoming") {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        return new Date(ev.date) >= today;
+        return !ev.isCompleted && !isEventFinished(ev.date, ev.time);
       }
       if (selectedStatus === "past") {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        return new Date(ev.date) < today;
+        return Boolean(ev.isCompleted) || isEventFinished(ev.date, ev.time);
       }
       return true;
     });

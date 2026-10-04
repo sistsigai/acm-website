@@ -1,29 +1,31 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef } from "react";
 import { motion as m } from "framer-motion";
 import { useNavigate, type To } from 'react-router-dom';
 import { fadeIn } from '../../utils/animations';
-import { getPublicTimeline, type TimelineItem } from "../../services/website/timelineService";
 import SEO from "../../components/Common/SEO";
 
-// Fallback timeline data in case backend is offline
-const fallbackTimeline: TimelineItem[] = [
+export interface TimelineItem {
+  id: string;
+  year: string;
+  title: string;
+  description: string;
+  link?: string;
+}
+
+const STATIC_TIMELINE: TimelineItem[] = [
   {
-    _id: "1",
+    id: "1",
     year: "2024-2025",
     title: "The Founding Batch",
     description: "The pioneers of SIST ACM SIGAI Student Chapter. This batch established the chapter's foundation, launching our first initiatives and setting a high bar for innovation.",
     link: "/about?batch=2024-2025",
-    order: 1,
-    isActive: true,
   },
   {
-    _id: "2",
+    id: "2",
     year: "2025-2026",
     title: "The Growth Batch",
     description: "Building on the legacy, this batch expanded our reach, hosted the first regional AI symposium, and doubled our community membership.",
     link: "/about?batch=2025-2026",
-    order: 2,
-    isActive: true,
   },
 ];
 
@@ -48,7 +50,7 @@ const RootsCard = React.memo(({ item, index, onVisit }: { item: TimelineItem; in
 
         {item.link && (
           <button
-            onClick={() => onVisit(item.link)}
+            onClick={() => onVisit(item.link as To)}
             className="timeline-visit-button"
           >
             View Batch
@@ -62,29 +64,6 @@ const RootsCard = React.memo(({ item, index, onVisit }: { item: TimelineItem; in
 const Ourroots: React.FC = () => {
   const navigate = useNavigate();
   const ref = useRef<HTMLDivElement>(null);
-  const [timelineList, setTimelineList] = useState<TimelineItem[]>(fallbackTimeline);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    let isMounted = true;
-    const loadTimeline = async () => {
-      try {
-        const data = await getPublicTimeline();
-        if (isMounted && data && data.length > 0) {
-          setTimelineList(data);
-        }
-      } catch (err) {
-        console.warn("Could not load dynamic timeline, using cached fallback:", err);
-      } finally {
-        if (isMounted) setIsLoading(false);
-      }
-    };
-
-    loadTimeline();
-    return () => {
-      isMounted = false;
-    };
-  }, []);
 
   const handleVisitClick = (link: To) => {
     navigate(link);
@@ -130,21 +109,14 @@ const Ourroots: React.FC = () => {
             transition={{ duration: 0.9, ease: "easeOut" }}
           />
 
-          {isLoading ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: "20px", width: "100%", maxWidth: "600px", margin: "0 auto" }}>
-              <div className="skeleton-shimmer" style={{ height: "180px", borderRadius: "16px" }} />
-              <div className="skeleton-shimmer" style={{ height: "180px", borderRadius: "16px" }} />
-            </div>
-          ) : (
-            timelineList.map((item, index) => (
-              <RootsCard
-                key={item._id || index}
-                item={item}
-                index={index}
-                onVisit={handleVisitClick}
-              />
-            ))
-          )}
+          {STATIC_TIMELINE.map((item, index) => (
+            <RootsCard
+              key={item.id || index}
+              item={item}
+              index={index}
+              onVisit={handleVisitClick}
+            />
+          ))}
         </div>
       </div>
     </>

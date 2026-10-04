@@ -6,6 +6,7 @@ import QRCode from "qrcode";
 import { sendEventMail } from "../utils/sendMail";
 import cloudinary from "../utils/cloudinary";
 import streamifier from "streamifier";
+import { autoExpireFinishedEvents } from "../utils/eventExpiration";
 
 // --- VALIDATION TYPES AND RULES ---
 
@@ -223,6 +224,7 @@ const validateRegistrationData = (body: any): { isValid: boolean; errors: Valida
 
 export const getAllEvents = async (_req: Request, res: Response) => {
   try {
+    await autoExpireFinishedEvents();
     const events = await Event.find({ display: true }).sort({ createdAt: 1 });
     return res.json({ success: true, events });
   } catch (error) {

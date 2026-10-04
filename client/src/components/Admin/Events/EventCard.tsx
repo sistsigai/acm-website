@@ -11,6 +11,7 @@ import {
   FaEyeSlash,
   FaHourglassHalf,
   FaQrcode,
+  FaCheckCircle,
 } from "react-icons/fa";
 import type { IQuestion } from "../../../types/formBuilder";
 
@@ -36,6 +37,66 @@ export const isRegistrationClosed = (regEndDate?: string): boolean => {
   return !isNaN(d.getTime()) && d.getTime() < Date.now();
 };
 
+export const getEventEndDateTime = (dateStr?: string, timeStr?: string): Date | null => {
+  if (!dateStr || !dateStr.trim()) return null;
+
+  let year: number;
+  let month: number;
+  let day: number;
+
+  const trimmedDate = dateStr.trim();
+  const dateParts = trimmedDate.split("-");
+
+  if (dateParts.length === 3 && dateParts[0].length === 4) {
+    year = parseInt(dateParts[0], 10);
+    month = parseInt(dateParts[1], 10) - 1;
+    day = parseInt(dateParts[2], 10);
+  } else {
+    const parsed = new Date(trimmedDate);
+    if (isNaN(parsed.getTime())) return null;
+    year = parsed.getFullYear();
+    month = parsed.getMonth();
+    day = parsed.getDate();
+  }
+
+  if (timeStr && timeStr.trim()) {
+    const rangeParts = timeStr.split(/[-–—]|to/i);
+    if (rangeParts.length >= 2) {
+      const endTimeRaw = rangeParts[rangeParts.length - 1].trim();
+      const match12 = endTimeRaw.match(/^(0?[1-9]|1[0-2]):([0-5][0-9])\s*(AM|PM)$/i);
+
+      if (match12) {
+        let hours = parseInt(match12[1], 10);
+        const minutes = parseInt(match12[2], 10);
+        const meridiem = match12[3].toUpperCase();
+
+        if (meridiem === "PM" && hours < 12) {
+          hours += 12;
+        } else if (meridiem === "AM" && hours === 12) {
+          hours = 0;
+        }
+
+        return new Date(year, month, day, hours, minutes, 0, 0);
+      }
+
+      const match24 = endTimeRaw.match(/^([0-1]?[0-9]|2[0-3]):([0-5][0-9])$/);
+      if (match24) {
+        const hours = parseInt(match24[1], 10);
+        const minutes = parseInt(match24[2], 10);
+        return new Date(year, month, day, hours, minutes, 0, 0);
+      }
+    }
+  }
+
+  return new Date(year, month, day, 23, 59, 59, 999);
+};
+
+export const isEventFinished = (dateStr?: string, timeStr?: string): boolean => {
+  const endDateTime = getEventEndDateTime(dateStr, timeStr);
+  if (!endDateTime) return false;
+  return Date.now() > endDateTime.getTime();
+};
+
 export interface ContactPerson {
   name: string;
   phone: string;
@@ -59,6 +120,8 @@ export interface AdminEvent {
   customQuestions?: IQuestion[];
   whatsappGroupLink?: string;
   display: boolean;
+  isClosed?: boolean;
+  isCompleted?: boolean;
 }
 
 interface EventCardProps {
@@ -99,7 +162,8 @@ export const EventCard: React.FC<EventCardProps> = ({
   onViewDetails,
   onOpenAttendees,
 }) => {
-  const isClosed = isRegistrationClosed(event.registrationEndDate);
+  const isFinished = Boolean(event.isCompleted) || isEventFinished(event.date, event.time);
+  const isClosed = isRegistrationClosed(event.registrationEndDate) || isFinished;
   const bannerImage = event.thumbnailUrl || event.posterUrl;
 
   return (
@@ -139,25 +203,41 @@ export const EventCard: React.FC<EventCardProps> = ({
         <div className="admin-card-inner-content">
           {/* Top Row: Status Badge & Toggle Switch */}
           <div className="admin-card-top-controls">
-            <m.span
-              className={`admin-card-badge ${
-                event.display !== false ? "badge-visible" : "badge-hidden"
-              }`}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              {event.display !== false ? <FaEye size={12} /> : <FaEyeSlash size={12} />}
-              <span>{event.display !== false ? "Visible" : "Hidden"}</span>
-            </m.span>
+            {isFinished ? (
+              <m.span
+                className="admin-card-badge badge-completed"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <FaCheckCircle size={12} />
+                <span>Finished</span>
+              </m.span>
+            ) : (
+              <>
+                <m.span
+                  className={`admin-card-badge ${
+                    event.display !== false ? "badge-visible" : "badge-hidden"
+                  }`}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  {event.display !== false ? <FaEye size={12} /> : <FaEyeSlash size={12} />}
+                  <span>{event.display !== false ? "Visible" : "Hidden"}</span>
+                </m.span>
 
-            <label className="toggle-switch" title={event.display !== false ? "Hide from website" : "Show on website"}>
-              <input
-                type="checkbox"
-                checked={event.display !== false}
-                onChange={() => onToggleDisplay(event._id, event.display !== false)}
-              />
-              <span className="slider"></span>
-            </label>
+                <label
+                  className="toggle-switch"
+                  title={event.display !== false ? "Hide from website" : "Show on website"}
+                >
+                  <input
+                    type="checkbox"
+                    checked={event.display !== false}
+                    onChange={() => onToggleDisplay(event._id, event.display !== false)}
+                  />
+                  <span className="slider"></span>
+                </label>
+              </>
+            )}
           </div>
 
           {/* Bottom Block: Info & Actions */}

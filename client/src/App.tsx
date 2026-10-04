@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { lazy, Suspense, useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider } from "./context/AuthContext";
 import { ToastProvider } from "./context/ToastContext";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -158,8 +159,6 @@ function App() {
     </div>
   );
 }
-
-import { HelmetProvider } from "react-helmet-async";
 
 /* ---------------- ROOT WRAPPER ---------------- */
 function Root() {

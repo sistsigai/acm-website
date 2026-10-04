@@ -3,6 +3,7 @@ import { motion as m, AnimatePresence } from "framer-motion";
 import { FaMedium, FaSearch } from "react-icons/fa";
 import { fetchMediumBlogs, type BlogPost } from '../../services/website/blogService';
 import { fadeIn } from '../../utils/animations';
+import { BlogCardSkeleton } from '../../components/Common/CardSkeleton';
 
 // --- MEMOIZED BLOG CARD (With continuous scroll animation) ---
 const BlogCard = React.memo(({ post }: { post: BlogPost }) => {
@@ -43,16 +44,20 @@ const BlogCard = React.memo(({ post }: { post: BlogPost }) => {
 
 const Blogs: React.FC = () => {
     const [posts, setPosts] = useState<BlogPost[]>([]);
+    const [loading, setLoading] = useState<boolean>(true);
     const [searchTerm, setSearchTerm] = useState('');
 
     // --- FETCH DATA ---
     useEffect(() => {
         const loadBlogs = async () => {
             try {
+                setLoading(true);
                 const data = await fetchMediumBlogs();
                 setPosts(data);
             } catch (error) {
                 console.error("Error fetching blog posts:", error);
+            } finally {
+                setLoading(false);
             }
         };
 
@@ -111,26 +116,30 @@ const Blogs: React.FC = () => {
 
             {/* --- BLOG POSTS --- */}
             <div className="blog-grid">
-                <AnimatePresence>
-                    {filteredPosts.length > 0 ? (
-                        filteredPosts.map((post, index) => (
-                            <BlogCard key={`${post.link}-${index}`} post={post} />
-                        ))
-                    ) : (
-                        <m.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            style={{
-                                color: '#94a3b8',
-                                textAlign: 'center',
-                                gridColumn: '1/-1',
-                                marginTop: '40px'
-                            }}
-                        >
-                            No transmission found matching query.
-                        </m.div>
-                    )}
-                </AnimatePresence>
+                {loading ? (
+                    [1, 2, 3, 4, 5, 6].map((i) => <BlogCardSkeleton key={i} />)
+                ) : (
+                    <AnimatePresence>
+                        {filteredPosts.length > 0 ? (
+                            filteredPosts.map((post, index) => (
+                                <BlogCard key={`${post.link}-${index}`} post={post} />
+                            ))
+                        ) : (
+                            <m.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                style={{
+                                    color: '#94a3b8',
+                                    textAlign: 'center',
+                                    gridColumn: '1/-1',
+                                    marginTop: '40px'
+                                }}
+                            >
+                                No transmission found matching query.
+                            </m.div>
+                        )}
+                    </AnimatePresence>
+                )}
             </div>
         </div>
     );

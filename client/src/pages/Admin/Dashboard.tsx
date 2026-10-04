@@ -9,7 +9,6 @@ import {
   type Activity,
 } from "../../services/admin/dashboardService";
 import DashboardStatCard from "../../components/Admin/Dashboard/DashboardStatCard";
-import DashboardEngagementMetrics from "../../components/Admin/Dashboard/DashboardEngagementMetrics";
 import DashboardUpcomingEvent from "../../components/Admin/Dashboard/DashboardUpcomingEvent";
 import DashboardRecentActivity from "../../components/Admin/Dashboard/DashboardRecentActivity";
 
@@ -66,7 +65,7 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
 
-  const { stats, latestEvent, topPerformers, systemHealth } =
+  const { stats, latestEvent, systemHealth } =
     dashboardData;
 
   /* ---------------- FETCH DATA ---------------- */
@@ -187,22 +186,6 @@ const Dashboard: React.FC = () => {
 
           <m.div variants={itemVariants}>
             <DashboardStatCard
-              title="Today's Registrations"
-              value={stats.todayRegistrations}
-              icon="bi-pencil-square"
-              iconColor="#10b981"
-              subtitle="vs yesterday"
-              badge={{
-                text: stats.registrationRate
-                  ? `${stats.registrationRate > 0 ? "+" : ""}${stats.registrationRate}%`
-                  : "+0%",
-                variant: stats.registrationRate >= 0 ? "success" : "warning",
-              }}
-            />
-          </m.div>
-
-          <m.div variants={itemVariants}>
-            <DashboardStatCard
               title="Ongoing Events"
               value={stats.ongoingEvents}
               icon="bi-activity"
@@ -247,41 +230,32 @@ const Dashboard: React.FC = () => {
           </m.div>
         </div>
 
-        {/* Second Row: Engagement Metrics & Upcoming Event */}
-        <div className="row g-4 mb-4">
-          <m.div
-            className={`col-12 ${latestEvent ? "col-lg-8" : "col-lg-12"}`}
-            variants={itemVariants}
-          >
-            <DashboardEngagementMetrics
-              stats={stats}
-              topPerformers={topPerformers}
-            />
-          </m.div>
-
-          {latestEvent && (
-            <m.div
-              className="col-12 col-lg-4"
-              variants={itemVariants}
-            >
-              <DashboardUpcomingEvent latestEvent={latestEvent} />
+        {/* Content Row: Upcoming Event & Recent Activity */}
+        <div className="row g-4">
+          {latestEvent ? (
+            <>
+              <m.div className="col-12 col-lg-5" variants={itemVariants}>
+                <DashboardUpcomingEvent latestEvent={latestEvent} />
+              </m.div>
+              <m.div className="col-12 col-lg-7" variants={itemVariants}>
+                <DashboardRecentActivity
+                  activities={enhancedRecentActivity}
+                  systemHealth={systemHealth}
+                  loading={loading}
+                  onSync={handleSync}
+                />
+              </m.div>
+            </>
+          ) : (
+            <m.div className="col-12" variants={itemVariants}>
+              <DashboardRecentActivity
+                activities={enhancedRecentActivity}
+                systemHealth={systemHealth}
+                loading={loading}
+                onSync={handleSync}
+              />
             </m.div>
           )}
-        </div>
-
-        {/* Third Row: Recent Activity & System Health */}
-        <div className="row g-4">
-          <m.div
-            className="col-12"
-            variants={itemVariants}
-          >
-            <DashboardRecentActivity
-              activities={enhancedRecentActivity}
-              systemHealth={systemHealth}
-              loading={loading}
-              onSync={handleSync}
-            />
-          </m.div>
         </div>
       </m.div>
     </AdminLayout>

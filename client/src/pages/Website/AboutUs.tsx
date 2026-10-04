@@ -5,9 +5,9 @@ import { useLocation } from 'react-router-dom';
 import { fadeIn } from '../../utils/animations';
 import { FaInstagram, FaLinkedin, FaFacebook } from "react-icons/fa";
 
-// --- LOCAL IMAGES (Only for non-member content) ---
 import { getMembers, type Member } from '../../services/website/aboutService';
 import CustomSelect from '../../components/Common/CustomSelect';
+import { MemberCardSkeleton } from '../../components/Common/CardSkeleton';
 
 const UNIT_OPTIONS = [
   { value: "volunteers", label: "Volunteers Unit" },
@@ -101,6 +101,7 @@ const About: React.FC = () => {
   const location = useLocation();
   const [selectedYear, setSelectedYear] = useState<string>('2025-2026');
   const [members, setMembers] = useState<Member[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
   type SocialType = "instagram" | "linkedin" | "facebook";
 
@@ -113,10 +114,13 @@ const About: React.FC = () => {
   useEffect(() => {
     const fetchMembers = async () => {
       try {
+        setLoading(true);
         const data = await getMembers();
         setMembers(data);
       } catch (err) {
         console.error("Error fetching members:", err);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -295,9 +299,13 @@ const About: React.FC = () => {
           viewport={{ once: false }}
           className="grid-container leadership-grid"
         >
-          {leadershipData.map((member) => (
-            <MemberCard key={member.id} member={member} isLarge />
-          ))}
+          {loading ? (
+            [1, 2, 3, 4].map((i) => <MemberCardSkeleton key={i} isLarge />)
+          ) : (
+            leadershipData.map((member) => (
+              <MemberCard key={member.id} member={member} isLarge />
+            ))
+          )}
         </m.div>
 
         {/* --- ENHANCED SECTION TITLE: CORE TEAM --- */}
@@ -305,9 +313,13 @@ const About: React.FC = () => {
           <h4>OUR CORE UNIT ({selectedYear})</h4>
         </div>
         <div className='grid-container'>
-          {coreTeamData.map((member) => (
-            <MemberCard key={member.id} member={member} />
-          ))}
+          {loading ? (
+            [1, 2, 3, 4].map((i) => <MemberCardSkeleton key={i} />)
+          ) : (
+            coreTeamData.map((member) => (
+              <MemberCard key={member.id} member={member} />
+            ))
+          )}
         </div>
 
         {/* --- ENHANCED SECTION TITLE: FACULTY CONVENER --- */}
@@ -315,9 +327,13 @@ const About: React.FC = () => {
           <h4>FACULTY CONVENER ({selectedYear})</h4>
         </div>
         <div className='grid-container'>
-          {facultyData.map((member) => (
-            <MemberCard key={member.id} member={member} />
-          ))}
+          {loading ? (
+            [1, 2].map((i) => <MemberCardSkeleton key={i} />)
+          ) : (
+            facultyData.map((member) => (
+              <MemberCard key={member.id} member={member} />
+            ))
+          )}
         </div>
 
         {/* --- ENHANCED SECTION TITLE: FACULTY COORDINATORS --- */}
@@ -325,9 +341,13 @@ const About: React.FC = () => {
           <h4>FACULTY COORDINATORS ({selectedYear})</h4>
         </div>
         <div className='grid-container'>
-          {facultyCoordinatorsData.map((member) => (
-            <MemberCard key={member.id} member={member} />
-          ))}
+          {loading ? (
+            [1, 2].map((i) => <MemberCardSkeleton key={i} />)
+          ) : (
+            facultyCoordinatorsData.map((member) => (
+              <MemberCard key={member.id} member={member} />
+            ))
+          )}
         </div>
 
         {/* --- ENHANCED SECTION TITLE: UNITS --- */}
@@ -349,7 +369,9 @@ const About: React.FC = () => {
         </div>
 
         <div className='grid-container'>
-          {unitCardsData.length > 0 ? (
+          {loading ? (
+            [1, 2, 3, 4].map((i) => <MemberCardSkeleton key={i} />)
+          ) : unitCardsData.length > 0 ? (
             unitCardsData.map((member: FrontendMember) => (
               <MemberCard key={member.id} member={member} />
             ))

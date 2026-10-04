@@ -2,9 +2,13 @@ import { Request, Response } from "express";
 import Member from "../models/Member";
 import Event from "../models/Event";
 import Registration from "../models/Registration";
+import { autoExpireFinishedEvents } from "../utils/eventExpiration";
 
 export const getDashboardData = async (_req: Request, res: Response) => {
   try {
+    // Auto-expire events that have passed their end date/time
+    await autoExpireFinishedEvents();
+
     /* ---------------- DATE SETUP ---------------- */
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -38,9 +42,9 @@ export const getDashboardData = async (_req: Request, res: Response) => {
         .select("name email createdAt")
         .lean(),
 
-      // 5. Displayable events
-      Event.find({ display: true })
-        .select("name date time venue contactPersons isClosed createdAt")
+      // 5. All created events (all time)
+      Event.find()
+        .select("name date time venue contactPersons isClosed display createdAt")
         .lean(),
 
       // 6. Registration counts per event
@@ -100,6 +104,9 @@ export const getDashboardData = async (_req: Request, res: Response) => {
 
     events.forEach((event: any) => {
       const eventDate = new Date(event.date);
+      if (!isNaN(eventDate.getTime())) {
+        eventDate.setHours(0, 0, 0, 0);
+      }
       const regData = registrationMap.get(event._id.toString());
       const regCount = regData?.count || 0;
       const todayReg = regData?.todayCount || 0;
@@ -112,7 +119,7 @@ export const getDashboardData = async (_req: Request, res: Response) => {
 
       if (!event.isClosed && eventDate.getTime() === today.getTime()) {
         ongoingEvents++;
-      } else if (!event.isClosed && eventDate > today) {
+      } else if (!event.isClosed && eventDate.getTime() > today.getTime()) {
         upcomingEvents++;
         upcomingList.push(event);
       }
@@ -120,8 +127,8 @@ export const getDashboardData = async (_req: Request, res: Response) => {
 
     const latestEvent = upcomingList.length
       ? upcomingList.sort(
-          (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-        )[0]
+        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+      )[0]
       : null;
 
     const yesterdayRegTotal = registrationsByEvent.reduce(
@@ -183,15 +190,15 @@ export const getDashboardData = async (_req: Request, res: Response) => {
       },
       latestEvent: latestEvent
         ? {
-            _id: latestEvent._id.toString(),
-            name: latestEvent.name,
-            date: latestEvent.date,
-            time: latestEvent.time,
-            venue: latestEvent.venue,
-            contactPersons: latestEvent.contactPersons || [],
-            totalRegistrations:
-              registrationMap.get(latestEvent._id.toString())?.count || 0
-          }
+          _id: latestEvent._id.toString(),
+          name: latestEvent.name,
+          date: latestEvent.date,
+          time: latestEvent.time,
+          venue: latestEvent.venue,
+          contactPersons: latestEvent.contactPersons || [],
+          totalRegistrations:
+            registrationMap.get(latestEvent._id.toString())?.count || 0
+        }
         : null,
       ongoingRecruitments: [],
       recentActivity,
@@ -211,7 +218,7 @@ export const syncDashboardData = async (_req: Request, res: Response) => {
   try {
     const [memberCount, eventCount] = await Promise.all([
       Member.countDocuments(),
-      Event.countDocuments({ display: true })
+      Event.countDocuments()
     ]);
 
     res.status(200).json({

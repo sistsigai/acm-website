@@ -12,8 +12,9 @@ import {
   FaEyeSlash,
   FaListUl,
   FaQrcode,
+  FaCheckCircle,
 } from "react-icons/fa";
-import { formatDateDDMMYYYY, type AdminEvent } from "./EventCard";
+import { formatDateDDMMYYYY, type AdminEvent, isEventFinished } from "./EventCard";
 
 interface AdminEventDetailModalProps {
   selectedEvent: AdminEvent | null;
@@ -64,15 +65,25 @@ export const AdminEventDetailModal: React.FC<AdminEventDetailModalProps> = ({
             <div className="modal-left-pane">
               {/* Status Badge */}
               <div className="d-flex align-items-center justify-content-start">
-                <span
-                  className={`admin-card-badge ${
-                    selectedEvent.display !== false ? "badge-visible" : "badge-hidden"
-                  }`}
-                  style={{ fontSize: "0.75rem", padding: "4px 10px" }}
-                >
-                  {selectedEvent.display !== false ? <FaEye size={12} /> : <FaEyeSlash size={12} />}
-                  <span>{selectedEvent.display !== false ? "Visible on Website" : "Hidden from Website"}</span>
-                </span>
+                {Boolean(selectedEvent.isCompleted) || isEventFinished(selectedEvent.date, selectedEvent.time) ? (
+                  <span
+                    className="admin-card-badge badge-completed"
+                    style={{ fontSize: "0.75rem", padding: "4px 10px" }}
+                  >
+                    <FaCheckCircle size={12} />
+                    <span>Finished</span>
+                  </span>
+                ) : (
+                  <span
+                    className={`admin-card-badge ${
+                      selectedEvent.display !== false ? "badge-visible" : "badge-hidden"
+                    }`}
+                    style={{ fontSize: "0.75rem", padding: "4px 10px" }}
+                  >
+                    {selectedEvent.display !== false ? <FaEye size={12} /> : <FaEyeSlash size={12} />}
+                    <span>{selectedEvent.display !== false ? "Visible on Website" : "Hidden from Website"}</span>
+                  </span>
+                )}
               </div>
 
               {/* Poster / Thumbnail Preview */}
@@ -278,15 +289,17 @@ export const AdminEventDetailModal: React.FC<AdminEventDetailModalProps> = ({
                 </button>
               )}
 
-              <button
-                type="button"
-                className="btn btn-outline-light rounded-2 px-3 py-2 fw-medium d-inline-flex align-items-center"
-                style={{ fontSize: "0.85rem", borderColor: "rgba(255, 255, 255, 0.18)", gap: "8px" }}
-                onClick={() => onToggleDisplay(selectedEvent._id, selectedEvent.display !== false)}
-              >
-                {selectedEvent.display !== false ? <FaEyeSlash size={14} /> : <FaEye size={14} />}
-                <span>{selectedEvent.display !== false ? "Hide Event" : "Make Visible"}</span>
-              </button>
+              {!Boolean(selectedEvent.isCompleted) && !isEventFinished(selectedEvent.date, selectedEvent.time) && (
+                <button
+                  type="button"
+                  className="btn btn-outline-light rounded-2 px-3 py-2 fw-medium d-inline-flex align-items-center"
+                  style={{ fontSize: "0.85rem", borderColor: "rgba(255, 255, 255, 0.18)", gap: "8px" }}
+                  onClick={() => onToggleDisplay(selectedEvent._id, selectedEvent.display !== false)}
+                >
+                  {selectedEvent.display !== false ? <FaEyeSlash size={14} /> : <FaEye size={14} />}
+                  <span>{selectedEvent.display !== false ? "Hide Event" : "Make Visible"}</span>
+                </button>
+              )}
 
               <button
                 type="button"
