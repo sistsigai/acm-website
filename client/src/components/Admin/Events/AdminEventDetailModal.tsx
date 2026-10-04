@@ -33,6 +33,8 @@ export const AdminEventDetailModal: React.FC<AdminEventDetailModalProps> = ({
 }) => {
   if (!selectedEvent) return null;
 
+  const isFinished = Boolean(selectedEvent.isCompleted) || isEventFinished(selectedEvent.date, selectedEvent.time);
+
   return (
     <AnimatePresence>
       <m.div
@@ -65,7 +67,7 @@ export const AdminEventDetailModal: React.FC<AdminEventDetailModalProps> = ({
             <div className="modal-left-pane">
               {/* Status Badge */}
               <div className="d-flex align-items-center justify-content-start">
-                {Boolean(selectedEvent.isCompleted) || isEventFinished(selectedEvent.date, selectedEvent.time) ? (
+                {isFinished ? (
                   <span
                     className="admin-card-badge badge-completed"
                     style={{ fontSize: "0.75rem", padding: "4px 10px" }}
@@ -135,7 +137,7 @@ export const AdminEventDetailModal: React.FC<AdminEventDetailModalProps> = ({
                     {selectedEvent.time}
                   </span>
                 </div>
-                {selectedEvent.registrationEndDate && (
+                {!isFinished && selectedEvent.registrationEndDate && (
                   <div className="modal-meta-item" style={{ borderColor: "rgba(245, 158, 11, 0.25)" }}>
                     <span className="modal-meta-label" style={{ color: "#fbbf24" }}>Reg. Deadline</span>
                     <span className="modal-meta-value" style={{ color: "#fef08a" }}>
@@ -289,7 +291,7 @@ export const AdminEventDetailModal: React.FC<AdminEventDetailModalProps> = ({
                 </button>
               )}
 
-              {!Boolean(selectedEvent.isCompleted) && !isEventFinished(selectedEvent.date, selectedEvent.time) && (
+              {!isFinished && (
                 <button
                   type="button"
                   className="btn btn-outline-light rounded-2 px-3 py-2 fw-medium d-inline-flex align-items-center"
@@ -301,17 +303,19 @@ export const AdminEventDetailModal: React.FC<AdminEventDetailModalProps> = ({
                 </button>
               )}
 
-              <button
-                type="button"
-                className="btn-register"
-                style={{ padding: "9px 20px", fontSize: "0.88rem", gap: "8px" }}
-                onClick={() => {
-                  onClose();
-                  onEdit(selectedEvent);
-                }}
-              >
-                <FaEdit size={15} /> Edit in Studio
-              </button>
+              {!isFinished && (
+                <button
+                  type="button"
+                  className="btn-register"
+                  style={{ padding: "9px 20px", fontSize: "0.88rem", gap: "8px" }}
+                  onClick={() => {
+                    onClose();
+                    onEdit(selectedEvent);
+                  }}
+                >
+                  <FaEdit size={15} /> Edit in Studio
+                </button>
+              )}
             </div>
           </div>
         </m.div>

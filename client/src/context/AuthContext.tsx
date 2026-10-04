@@ -2,16 +2,25 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { getCurrentAdmin, adminLogin, adminLogout, type AdminLoginPayload, type AdminLoginResponse } from "../services/admin/authService";
 import { clearAuthToken } from "../utils/authToken";
 
+export type AdminRole = "superadmin" | "admin";
+export type AdminPermission = "dashboard" | "members" | "events";
+
 export interface AdminUser {
   id: string;
   username: string;
-  role: string;
+  email?: string;
+  name?: string;
+  role: AdminRole;
+  permissions?: AdminPermission[];
 }
 
 interface AuthContextType {
   isAuthenticated: boolean;
   user: AdminUser | null;
   loading: boolean;
+  isSuperAdmin: boolean;
+  hasPermission: (permission: AdminPermission) => boolean;
+  getDefaultAuthorizedRoute: () => string;
   login: (payload: AdminLoginPayload) => Promise<AdminLoginResponse>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<boolean>;
@@ -24,11 +33,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
 
+  const isSuperAdmin = user?.role === "superadmin";
+
+  const hasPermission = (permission: AdminPermission): boolean => {
+    if (!user) return false;
+    if (user.role === "superadmin") return true;
+    return Boolean(user.permissions && user.permissions.includes(permission));
+  };
+
+  const getDefaultAuthorizedRoute = (): string => {
+    if (!user) return "/admin/login";
+    if (user.role === "superadmin" || hasPermission("dashboard")) return "/admin/dashboard";
+    if (hasPermission("events")) return "/admin/eventmanager";
+    if (hasPermission("members")) return "/admin/members";
+    return "/admin/dashboard";
+  };
+
   const checkAuth = async (): Promise<boolean> => {
     try {
       const res = await getCurrentAdmin();
       if (res.success && res.user) {
-        setUser(res.user);
+        setUser(res.user as AdminUser);
         setIsAuthenticated(true);
         return true;
       } else {
@@ -53,7 +78,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const res = await adminLogin(payload);
     if (res.success) {
       if (res.user) {
-        setUser(res.user);
+        setUser(res.user as AdminUser);
       }
       setIsAuthenticated(true);
     }
@@ -78,6 +103,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAuthenticated,
         user,
         loading,
+        isSuperAdmin,
+        hasPermission,
+        getDefaultAuthorizedRoute,
         login,
         logout,
         checkAuth,
@@ -95,3 +123,4 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
+

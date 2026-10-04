@@ -10,15 +10,18 @@ import {
 } from "../controllers/memberController";
 import { upload } from "../middleware/upload";
 import verifyAdminToken from "../middleware/verifyAdminToken";
+import { requirePermission } from "../middleware/requirePermission";
 
 const router = express.Router();
 
-router.post("/upload-image", verifyAdminToken, upload.single("image"), uploadMemberImage);
-router.post("/delete-image", verifyAdminToken, deleteMemberImage);
-router.post("/add", verifyAdminToken, upload.single("profilePic"), createMember);
-router.get("/getAll", verifyAdminToken, getMembers);
-router.delete("/:id", verifyAdminToken, deleteMember);
-router.put("/:id", verifyAdminToken, upload.single("profilePic"), updateMember);
-router.delete("/:id/social/:platform", verifyAdminToken, deleteMemberSocial);
+router.use(verifyAdminToken, requirePermission("members"));
 
-export default router;
+router.post("/upload-image", upload.single("image"), uploadMemberImage);
+router.post("/delete-image", deleteMemberImage);
+router.post("/add", upload.single("profilePic"), createMember);
+router.get("/getAll", getMembers);
+router.delete("/:id", deleteMember);
+router.put("/:id", upload.single("profilePic"), updateMember);
+router.delete("/:id/social/:platform", deleteMemberSocial);
+
+export default router;

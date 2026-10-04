@@ -489,6 +489,13 @@ export const updateEvent = async (req: Request, res: Response) => {
       });
     }
 
+    if (event.isCompleted || isEventFinished(event.date, event.time)) {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot edit an event that has already finished.",
+      });
+    }
+
     const {
       name,
       date,

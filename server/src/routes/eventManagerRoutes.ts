@@ -10,6 +10,7 @@ import {
 } from "../controllers/eventController";
 import { upload } from "../middleware/upload";
 import verifyAdminToken from "../middleware/verifyAdminToken";
+import { requirePermission } from "../middleware/requirePermission";
 
 import {
   getEventRegistrations,
@@ -21,22 +22,25 @@ import {
 
 const router = express.Router();
 
-router.post("/upload-image", verifyAdminToken, upload.single("image"), uploadEventImage);
-router.post("/delete-image", verifyAdminToken, deleteEventImage);
-router.post("/add", verifyAdminToken, addEvent);
-router.get("/getAll", verifyAdminToken, getAllEvents);
+router.use(verifyAdminToken, requirePermission("events"));
+
+router.post("/upload-image", upload.single("image"), uploadEventImage);
+router.post("/delete-image", deleteEventImage);
+router.post("/add", addEvent);
+router.get("/getAll", getAllEvents);
 
 /* --- Event Attendance & Registrations (Defined before generic :id routes) --- */
-router.put("/registration/:registrationId/attendance", verifyAdminToken, toggleRegistrationAttendance);
-router.delete("/registration/:registrationId", verifyAdminToken, deleteEventRegistration);
-router.get("/:eventId/registrations/export", verifyAdminToken, exportEventRegistrationsCsv);
-router.get("/:eventId/registrations", verifyAdminToken, getEventRegistrations);
-router.post("/:eventId/attendance/scan", verifyAdminToken, scanAttendanceQr);
+router.put("/registration/:registrationId/attendance", toggleRegistrationAttendance);
+router.delete("/registration/:registrationId", deleteEventRegistration);
+router.get("/:eventId/registrations/export", exportEventRegistrationsCsv);
+router.get("/:eventId/registrations", getEventRegistrations);
+router.post("/:eventId/attendance/scan", scanAttendanceQr);
 
 /* --- Generic Event CRUD with :id --- */
-router.delete("/:id", verifyAdminToken, deleteEvent);
-router.put("/:id", verifyAdminToken, updateEvent);
-router.put("/:id/display", verifyAdminToken, toggleEventDisplay);
+router.delete("/:id", deleteEvent);
+router.put("/:id", updateEvent);
+router.put("/:id/display", toggleEventDisplay);
 
 export default router;
+
 

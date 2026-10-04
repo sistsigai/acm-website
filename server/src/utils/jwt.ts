@@ -5,6 +5,7 @@ import jwt, { Secret, SignOptions } from "jsonwebtoken";
 export interface AdminTokenPayload {
   id: string;
   role: string;
+  permissions?: string[];
 }
 
 /* ---------------- CREATE ADMIN TOKEN ---------------- */

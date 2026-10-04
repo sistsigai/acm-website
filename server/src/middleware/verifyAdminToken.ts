@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 export interface AdminJwtPayload {
   id: string;
   role: string;
+  permissions?: string[];
   iat?: number;
   exp?: number;
   iss?: string;

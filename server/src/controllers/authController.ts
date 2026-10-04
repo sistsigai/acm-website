@@ -103,9 +103,11 @@ export const adminLogin = async (req: Request, res: Response) => {
       });
     }
 
-    /* ---------- FIND ADMIN ---------- */
-
-    const admin = await Admin.findOne({ username: sanitizedUsername });
+    /* ---------- FIND ADMIN (Case-Insensitive) ---------- */
+    const escapedUsername = sanitizedUsername.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const admin = await Admin.findOne({
+      username: { $regex: new RegExp(`^${escapedUsername}$`, "i") }
+    });
 
     if (!admin) {
       return res.status(401).json({
@@ -141,10 +143,16 @@ export const adminLogin = async (req: Request, res: Response) => {
       });
     }
 
-    /* ---------- JWT SECRET HANDLING ---------- */
+    /* ---------- ROLE NORMALIZATION & JWT SECRET HANDLING ---------- */
+    const normalizedRole = (admin.role || "admin").toLowerCase() === "superadmin" ? "superadmin" : "admin";
+    const permissions = normalizedRole === "superadmin" 
+      ? ["dashboard", "members", "events"] 
+      : (admin.permissions || ["dashboard", "events"]);
+
     const token = createAdminToken({
       id: admin._id.toString(),
-      role: admin.role
+      role: normalizedRole,
+      permissions
     });
 
     /* ---------- SET HTTP-ONLY COOKIE ---------- */
@@ -164,7 +172,10 @@ export const adminLogin = async (req: Request, res: Response) => {
       user: {
         id: admin._id,
         username: admin.username,
-        role: admin.role
+        email: admin.email || "",
+        name: admin.name || admin.username,
+        role: normalizedRole,
+        permissions
       }
     });
 
@@ -206,8 +217,226 @@ export const adminLogout = async (_req: Request, res: Response) => {
 /* ---------------- VERIFY AUTH CONTROLLER ---------------- */
 
 export const verifyAuth = async (req: Request, res: Response) => {
-  return res.status(200).json({
-    success: true,
-    user: (req as any).admin
-  });
+  try {
+    const adminPayload = (req as any).admin;
+    if (!adminPayload || !adminPayload.id) {
+      return res.status(401).json({
+        success: false,
+        message: "Not authenticated"
+      });
+    }
+
+    const admin = await Admin.findById(adminPayload.id).select("-password");
+    if (!admin || !admin.isActive) {
+      return res.status(401).json({
+        success: false,
+        message: "Account is inactive or not found"
+      });
+    }
+
+    const normalizedRole = (admin.role || "admin").toLowerCase() === "superadmin" ? "superadmin" : "admin";
+    const permissions = normalizedRole === "superadmin"
+      ? ["dashboard", "members", "events"]
+      : (admin.permissions || []);
+
+    return res.status(200).json({
+      success: true,
+      user: {
+        id: admin._id,
+        username: admin.username,
+        email: admin.email || "",
+        name: admin.name || admin.username,
+        role: normalizedRole,
+        permissions
+      }
+    });
+  } catch (err: any) {
+    return res.status(500).json({
+      success: false,
+      message: "Authentication verification failed"
+    });
+  }
 };
+
+/* ---------------- GET PROFILE CONTROLLER ---------------- */
+
+export const getAdminProfile = async (req: Request, res: Response) => {
+  try {
+    const adminPayload = (req as any).admin;
+    if (!adminPayload || !adminPayload.id) {
+      return res.status(401).json({
+        success: false,
+        message: "Not authenticated",
+      });
+    }
+
+    const admin = await Admin.findById(adminPayload.id)
+      .select("-password")
+      .populate("memberId", "name imageUrl designation batch");
+
+    if (!admin) {
+      return res.status(404).json({
+        success: false,
+        message: "Admin account not found",
+      });
+    }
+
+    const normalizedRole = (admin.role || "admin").toLowerCase() === "superadmin" ? "superadmin" : "admin";
+    const permissions = normalizedRole === "superadmin"
+      ? ["dashboard", "members", "events"]
+      : (admin.permissions || []);
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        id: admin._id,
+        username: admin.username,
+        email: admin.email || "",
+        name: admin.name || admin.username,
+        role: normalizedRole,
+        permissions,
+        createdAt: (admin as any).createdAt,
+        member: admin.memberId,
+      },
+    });
+  } catch (err: any) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to load profile details",
+    });
+  }
+};
+
+/* ---------------- UPDATE PROFILE CONTROLLER ---------------- */
+
+export const updateAdminProfile = async (req: Request, res: Response) => {
+  try {
+    const adminPayload = (req as any).admin;
+    if (!adminPayload || !adminPayload.id) {
+      return res.status(401).json({
+        success: false,
+        message: "Not authenticated",
+      });
+    }
+
+    const { username, name, email } = req.body;
+
+    const admin = await Admin.findById(adminPayload.id);
+    if (!admin) {
+      return res.status(404).json({
+        success: false,
+        message: "Admin account not found",
+      });
+    }
+
+    if (username && username.trim()) {
+      const sanitizedUsername = sanitizeInput(username).toLowerCase();
+      if (sanitizedUsername.length < 3) {
+        return res.status(400).json({
+          success: false,
+          message: "Username must be at least 3 characters",
+        });
+      }
+
+      // Check uniqueness against other admins
+      const existing = await Admin.findOne({
+        username: sanitizedUsername,
+        _id: { $ne: admin._id },
+      });
+      if (existing) {
+        return res.status(400).json({
+          success: false,
+          message: "This username is already in use by another account",
+        });
+      }
+
+      admin.username = sanitizedUsername;
+    }
+
+    if (name !== undefined) admin.name = sanitizeInput(name);
+    if (email !== undefined) admin.email = sanitizeInput(email);
+
+    await admin.save();
+
+    const normalizedRole = (admin.role || "admin").toLowerCase() === "superadmin" ? "superadmin" : "admin";
+    const permissions = normalizedRole === "superadmin"
+      ? ["dashboard", "members", "events"]
+      : (admin.permissions || []);
+
+    return res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      user: {
+        id: admin._id,
+        username: admin.username,
+        email: admin.email || "",
+        name: admin.name || admin.username,
+        role: normalizedRole,
+        permissions,
+      },
+    });
+  } catch (err: any) {
+    console.error("Update Admin Profile error:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update profile",
+    });
+  }
+};
+
+/* ---------------- CHANGE PASSWORD CONTROLLER ---------------- */
+
+export const changeAdminPassword = async (req: Request, res: Response) => {
+  try {
+    const adminPayload = (req as any).admin;
+    if (!adminPayload || !adminPayload.id) {
+      return res.status(401).json({
+        success: false,
+        message: "Not authenticated",
+      });
+    }
+
+    const { currentPassword, newPassword } = req.body;
+
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "New password must be at least 6 characters long",
+      });
+    }
+
+    const admin = await Admin.findById(adminPayload.id);
+    if (!admin) {
+      return res.status(404).json({
+        success: false,
+        message: "Admin account not found",
+      });
+    }
+
+    // Verify current password if provided
+    if (currentPassword) {
+      const isValid = await admin.comparePassword(currentPassword);
+      if (!isValid) {
+        return res.status(400).json({
+          success: false,
+          message: "Current password is incorrect",
+        });
+      }
+    }
+
+    admin.password = newPassword;
+    await admin.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Password changed successfully",
+    });
+  } catch (err: any) {
+    console.error("Change Password error:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update password",
+    });
+  }
+};
+

@@ -247,8 +247,8 @@ export const EventCard: React.FC<EventCardProps> = ({
               {event.name}
             </h3>
 
-            {/* Registration Deadline Chip */}
-            {event.registrationEndDate && (
+            {/* Registration Deadline Chip (Hidden when event is finished) */}
+            {!isFinished && event.registrationEndDate && (
               <div className="admin-card-deadline-wrapper">
                 <m.div
                   className={`admin-card-deadline-chip ${isClosed ? "is-closed" : ""}`}
@@ -314,17 +314,19 @@ export const EventCard: React.FC<EventCardProps> = ({
                 </m.button>
               )}
 
-              <m.button
-                type="button"
-                className="admin-card-btn-icon btn-edit"
-                onClick={() => onEdit(event)}
-                whileHover={{ scale: 1.08, y: -1 }}
-                whileTap={{ scale: 0.92 }}
-                title="Edit Event"
-                aria-label="Edit Event"
-              >
-                <FaPencilAlt size={18} />
-              </m.button>
+              {!isFinished && (
+                <m.button
+                  type="button"
+                  className="admin-card-btn-icon btn-edit"
+                  onClick={() => onEdit(event)}
+                  whileHover={{ scale: 1.08, y: -1 }}
+                  whileTap={{ scale: 0.92 }}
+                  title="Edit Event"
+                  aria-label="Edit Event"
+                >
+                  <FaPencilAlt size={18} />
+                </m.button>
+              )}
 
               <m.button
                 type="button"

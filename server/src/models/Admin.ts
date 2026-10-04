@@ -1,20 +1,37 @@
 import mongoose, { Document } from "mongoose";
 import bcrypt from "bcryptjs";
 
+export type AdminRole = "superadmin" | "admin";
+export type AdminPermission = "dashboard" | "members" | "events";
+
 export interface IAdmin extends Document {
   username: string;
+  email?: string;
   password: string;
-  role: string;
+  role: AdminRole;
+  permissions: AdminPermission[];
+  memberId?: mongoose.Types.ObjectId;
+  name?: string;
   isActive: boolean;
+  createdBy?: mongoose.Types.ObjectId;
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
 const AdminSchema = new mongoose.Schema<IAdmin>(
   {
     username: { type: String, required: true, unique: true },
+    email: { type: String, default: "" },
     password: { type: String, required: true },
-    role: { type: String, default: "admin" },
+    role: { type: String, enum: ["superadmin", "admin"], default: "admin" },
+    permissions: {
+      type: [String],
+      enum: ["dashboard", "members", "events"],
+      default: ["dashboard", "events"],
+    },
+    memberId: { type: mongoose.Schema.Types.ObjectId, ref: "Member", default: null },
+    name: { type: String, default: "" },
     isActive: { type: Boolean, default: true },
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "Admin", default: null },
   },
   { timestamps: true }
 );
@@ -39,3 +56,4 @@ AdminSchema.methods.comparePassword = async function (candidatePassword: string)
 };
 
 export default mongoose.model<IAdmin>("Admin", AdminSchema);
+

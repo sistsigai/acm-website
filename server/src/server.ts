@@ -14,6 +14,7 @@ import compression from "compression";
 import adminAuthRoutes from "./routes/authRoutes";
 import homeRoutes from "./routes/homeRoutes";
 import adminSettingsRoutes from "./routes/adminSettingsRoutes";
+import adminUserRoutes from "./routes/adminUserRoutes";
 import dashboardRoutes from "./routes/dashboardRoutes";
 import eventManagerRoutes from "./routes/eventManagerRoutes";
 import memberRoutes from "./routes/memberRoutes";
@@ -181,6 +182,7 @@ app.use("/api/admin/members", memberRoutes);
 app.use("/api/admin/eventmanager", eventManagerRoutes);
 app.use("/api/admin/dashboard", dashboardRoutes);
 app.use("/api/admin/settings", adminSettingsRoutes);
+app.use("/api/admin/users", adminUserRoutes);
 
 // ========== HEALTH CHECK ==========
 const healthCheckHandler = async (req: Request, res: Response) => {

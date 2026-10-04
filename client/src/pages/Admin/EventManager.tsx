@@ -451,6 +451,11 @@ const EventManager: React.FC = () => {
   };
 
   const handleEditEvent = (event: AdminEvent) => {
+    if (event.isCompleted || isEventFinished(event.date, event.time)) {
+      showToast("warning", "Finished events cannot be edited.", "Event Finished");
+      return;
+    }
+
     setEditingId(event._id);
     let sTime = "";
     let eTime = "";

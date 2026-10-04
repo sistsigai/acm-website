@@ -2,7 +2,7 @@ import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from "r
 import { lazy, Suspense, useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { HelmetProvider } from "react-helmet-async";
-import { AuthProvider } from "./context/AuthContext";
+import { AuthProvider, useAuth } from "./context/AuthContext";
 import { ToastProvider } from "./context/ToastContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -10,7 +10,9 @@ import ProtectedRoute from "./components/ProtectedRoute";
 const Dashboard = lazy(() => import("./pages/Admin/Dashboard"));
 const Members = lazy(() => import("./pages/Admin/Members"));
 const EventManager = lazy(() => import("./pages/Admin/EventManager"));
+const AdminUsers = lazy(() => import("./pages/Admin/AdminUsers"));
 const AdminSettings = lazy(() => import("./pages/Admin/AdminSettings"));
+const AdminProfile = lazy(() => import("./pages/Admin/AdminProfile"));
 const AdminLogin = lazy(() => import("./pages/Admin/AdminLogin"));
 const MobileScanner = lazy(() => import("./pages/Admin/MobileScanner"));
 
@@ -33,6 +35,14 @@ import LogoLoading from "./components/LogoLoader";
 
 /* ---------------- STYLES ---------------- */
 import "./App.css";
+
+const AdminCatchAll: React.FC = () => {
+  const { isAuthenticated, getDefaultAuthorizedRoute } = useAuth();
+  if (!isAuthenticated) {
+    return <Navigate to="/admin/login" replace />;
+  }
+  return <Navigate to={getDefaultAuthorizedRoute()} replace />;
+};
 
 function App() {
   const location = useLocation();
@@ -73,7 +83,7 @@ function App() {
           <Route
             path="/admin/dashboard"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute requiredPermission="dashboard">
                 <Dashboard />
               </ProtectedRoute>
             }
@@ -81,7 +91,7 @@ function App() {
           <Route
             path="/admin/members"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute requiredPermission="members">
                 <Members />
               </ProtectedRoute>
             }
@@ -89,21 +99,37 @@ function App() {
           <Route
             path="/admin/eventmanager"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute requiredPermission="events">
                 <EventManager />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/users"
+            element={
+              <ProtectedRoute superAdminOnly>
+                <AdminUsers />
               </ProtectedRoute>
             }
           />
           <Route
             path="/admin/settings"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute superAdminOnly>
                 <AdminSettings />
               </ProtectedRoute>
             }
           />
-          {/* Admin Catch-All */}
-          <Route path="/admin/*" element={<Navigate to="/admin/dashboard" replace />} />
+          <Route
+            path="/admin/profile"
+            element={
+              <ProtectedRoute>
+                <AdminProfile />
+              </ProtectedRoute>
+            }
+          />
+          {/* Admin Smart Catch-All */}
+          <Route path="/admin/*" element={<AdminCatchAll />} />
         </Routes>
       </Suspense>
     );

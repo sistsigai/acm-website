@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import Member from "../models/Member";
+import Admin from "../models/Admin";
 import sharp from "sharp";
 import cloudinary from "../utils/cloudinary";
 import { uploadToCloudinary } from "../utils/uploadHelper";
@@ -249,8 +250,26 @@ export const createMember = async (req: any, res: any) => {
 
 export const getMembers = async (_req: Request, res: Response) => {
   try {
-    const members = await Member.find().sort({ createdAt: -1 });
-    res.json(members);
+    const members = await Member.find().sort({ createdAt: -1 }).lean();
+    
+    // Fetch all admins linked to members
+    const admins = await Admin.find({ memberId: { $ne: null } })
+      .select("username email name role permissions isActive memberId")
+      .lean();
+
+    const adminMap = new Map();
+    admins.forEach((admin) => {
+      if (admin.memberId) {
+        adminMap.set(admin.memberId.toString(), admin);
+      }
+    });
+
+    const enrichedMembers = members.map((m) => ({
+      ...m,
+      adminAccount: adminMap.get(m._id.toString()) || null,
+    }));
+
+    res.json(enrichedMembers);
   } catch (error: any) {
     res.status(500).json({ message: "Server Error", error: error.message });
   }
